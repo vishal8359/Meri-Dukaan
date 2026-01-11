@@ -1,150 +1,108 @@
-import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import {
+    ActivityIndicator,
+    StyleProp,
+    StyleSheet,
+    Text,
+    TextStyle,
+    TouchableOpacity,
+    ViewStyle,
+} from 'react-native';
 
-// Sangam Design System - Kanneen kana koodii keessatti bakka buufna
-const COLORS = {
-  primary: '#ADC178',
-  primaryLight: '#DDE5B6',
-  background: '#F0EAD2',
-  surface: '#FFFFFF',
-  navy: '#073B4C',
-};
+import { colors, radius, spacing } from '../../theme/colors';
 
-const SPACING = {
-  md: 16,
-  xl: 32,
-};
+interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'outline';
+  loading?: boolean;
+  disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
+}
 
-// SangamButton - Kompoonantii irra deddeebiin fayyadamuun danda'amu
-const SangamButton = ({ title, onPress, variant = 'primary', loading = false, style }: any) => {
-  const isOutline = variant === 'outline';
-  const isSecondary = variant === 'secondary';
+export const Button = ({
+  title,
+  onPress,
+  variant = 'primary',
+  loading = false,
+  disabled = false,
+  style,
+  textStyle,
+}: ButtonProps) => {
+  const getButtonStyle = () => {
+    if (disabled) return styles.disabled;
+    switch (variant) {
+      case 'outline':
+        return styles.outline;
+      case 'secondary':
+        return styles.secondary;
+      default:
+        return styles.primary;
+    }
+  };
 
-  return (
-    <View style={[{ width: '100%' }, style]}>
-      <Text 
-        onPress={onPress}
-        style={[
-          styles.buttonBase,
-          {
-            backgroundColor: isOutline ? 'transparent' : (isSecondary ? COLORS.primaryLight : COLORS.primary),
-            borderColor: COLORS.primary,
-            borderWidth: isOutline ? 2 : 0,
-            color: isOutline ? COLORS.primary : COLORS.navy,
-            textAlign: 'center',
-            paddingVertical: 15,
-            borderRadius: 20,
-            overflow: 'hidden',
-            fontWeight: 'bold',
-            fontSize: 16
-          }
-        ]}
-      >
-        {loading ? "Hojiirra jira..." : title}
-      </Text>
-    </View>
-  );
-};
-
-export default function App() {
-  const [loading, setLoading] = useState(false);
-
-  const handleStart = () => {
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      console.log("Locality Selection tti darbaa jira...");
-    }, 2000);
+  const getTextColor = () => {
+    if (disabled) return { color: colors.text.secondary };
+    if (variant === 'outline') return { color: colors.brand.primary };
+    return { color: colors.text.inverse };
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo Placeholder */}
-        <View style={styles.logoContainer}>
-          <View style={styles.logoCircle}>
-             <Text style={styles.logoText}>S</Text>
-          </View>
-          <Text style={styles.title}>Sangam</Text>
-          <Text style={styles.subtitle}>Waliin ganda kee ijaari</Text>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <SangamButton 
-            title="Jalqabi" 
-            onPress={handleStart} 
-            loading={loading}
-          />
-          
-          <SangamButton 
-            title="Daldalaa ta'ii dabalamaa" 
-            variant="secondary"
-            onPress={() => console.log("Gara daldalaatti")} 
-            style={{ marginTop: SPACING.md }}
-          />
-
-          <SangamButton 
-            title="Seeni" 
-            variant="outline"
-            onPress={() => console.log("Gara login tti")} 
-            style={{ marginTop: SPACING.md }}
-          />
-        </View>
-      </View>
-    </SafeAreaView>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      disabled={disabled || loading}
+      style={[styles.base, getButtonStyle(), style]}
+    >
+      {loading ? (
+        <ActivityIndicator
+          color={
+            variant === 'outline'
+              ? colors.brand.primary
+              : colors.text.inverse
+          }
+        />
+      ) : (
+        <Text style={[styles.text, getTextColor(), textStyle]}>
+          {title}
+        </Text>
+      )}
+    </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  content: {
-    flex: 1,
-    padding: SPACING.xl,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  logoContainer: {
+  base: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.md,
     alignItems: 'center',
-    marginBottom: 60,
-  },
-  logoCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
+    flexDirection: 'row',
   },
-  logoText: {
-    color: COLORS.surface,
-    fontSize: 40,
-    fontWeight: 'bold',
+
+  primary: {
+    backgroundColor: colors.brand.primary,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: COLORS.navy,
+
+  secondary: {
+    backgroundColor: colors.brand.primaryLight,
   },
-  subtitle: {
+
+  outline: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.brand.primary,
+  },
+
+  disabled: {
+    backgroundColor: colors.ui.border,
+  },
+
+  text: {
     fontSize: 16,
-    color: COLORS.navy,
-    opacity: 0.6,
-    marginTop: 8,
+    fontWeight: '700',
+    fontFamily: 'System',
   },
-  buttonContainer: {
-    width: '100%',
-    maxWidth: 400
-  },
-  buttonBase: {
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  }
 });
