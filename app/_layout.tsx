@@ -1,11 +1,13 @@
 // app/_layout.tsx
+import { AppProvider } from '@/src/context/AppContext';
 import { Stack } from 'expo-router';
-
 export default function RootLayout() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      {/* This will automatically look for an index file in this folder */}
-      <Stack.Screen name="index" />
-    </Stack>
+    <AppProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        {/* We use (tabs) as the main route */}
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </AppProvider>
   );
 }

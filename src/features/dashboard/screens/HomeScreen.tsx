@@ -1,18 +1,20 @@
-// src/features/dashboard/screens/HomeScreen.tsx
+import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '../../../components/common/Button';
 import { colors, spacing } from '../../../theme/colors';
 
 export default function HomeScreen() {
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Meri Dukaan</Text>
-
-      <Button
-        title="View My Shop"
-        onPress={() => {
-          // navigate to shop screen later
-        }}
+      <Text style={styles.welcome}>Namaste!</Text>
+      <Text style={styles.subtitle}>Welcome to your Meri Dukaan dashboard.</Text>
+      
+      <Button 
+        title="Go to Bazar" 
+        onPress={() => router.push('/bazar')} 
+        style={styles.btn}
       />
     </View>
   );
@@ -26,10 +28,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.lg,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
+  welcome: {
+    fontSize: 28,
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: spacing.lg,
   },
+  subtitle: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginVertical: spacing.md,
+  },
+  btn: { width: '100%' }
 });
