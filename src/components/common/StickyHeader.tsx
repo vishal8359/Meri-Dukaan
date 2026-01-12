@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
 import { useNavigation } from 'expo-router';
 import React from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import { colors, radius, shadows, spacing } from '../../theme/colors';
 
 export const StickyHeader = () => {
@@ -11,7 +11,13 @@ export const StickyHeader = () => {
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <Text style={styles.logoText}>Meri Dukaan</Text>
+        {/* Replace Text with Image Logo */}
+        <Image 
+          source={require('../../assets/Meri_dukaan_logo.png')} // Ensure your logo is named logo.png in assets
+          style={styles.logo}
+          resizeMode="contain"
+        />
+        
         <TouchableOpacity onPress={() => navigation.dispatch(DrawerActions.openDrawer())}>
           <Ionicons name="menu-outline" size={28} color={colors.text.inverse} />
         </TouchableOpacity>
@@ -20,7 +26,7 @@ export const StickyHeader = () => {
       <View style={styles.searchSection}>
         <Ionicons name="search" size={18} color={colors.text.secondary} style={styles.searchIcon} />
         <TextInput 
-          placeholder="Search bazar..." 
+          placeholder="Search items in Bazar..." 
           style={styles.input}
           placeholderTextColor={colors.text.secondary}
         />
@@ -31,8 +37,8 @@ export const StickyHeader = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.brand.primary,
-    paddingTop: 50,
+    backgroundColor: colors.brand.primary, // Peacock Blue
+    paddingTop: 45,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
     ...shadows.medium,
@@ -43,10 +49,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.sm,
   },
-  logoText: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text.inverse,
+  logo: {
+    width: 150, // Adjust width based on your logo aspect ratio
+    height: 40,
   },
   searchSection: {
     flexDirection: 'row',
