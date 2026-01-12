@@ -10,7 +10,7 @@ export const colors = {
     primaryLight: '#ea744d', // Soft Clay
     secondary: '#2E2E2E',    // Charcoal
     accent: '#8D6E63',       // Earth Brown
-    primary: '#307d95', 
+    primary: '#657479', 
     // primary: '#005F73', 
     // primaryLight: '#B7DEE5', // Soft Aqua
     // secondary: '#E9C46A',    // Muted Gold
