@@ -38,7 +38,7 @@ export const StickyHeader = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.brand.primary, // Peacock Blue
-    paddingTop: 45,
+    paddingTop: 40,
     paddingBottom: spacing.md,
     paddingHorizontal: spacing.md,
     ...shadows.medium,
