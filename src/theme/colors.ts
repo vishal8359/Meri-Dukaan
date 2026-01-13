@@ -57,6 +57,7 @@ export const radius = {
   md: 12,
   lg: 20, // Sangam signature rounded look
   full: 9999,
+  xl: 24
 };
 
 // Added Elevation (Shadows) for the "Dukaan" cards
