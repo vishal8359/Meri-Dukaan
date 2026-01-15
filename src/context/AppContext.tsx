@@ -1,10 +1,29 @@
 import React, { createContext, ReactNode, useContext, useState } from 'react';
-import { mockStores, Store } from '../assets/mockData';
+import { mockReels, mockStores, Store } from '../assets/mockData';
+
+// --- Interfaces ---
 interface CartItem {
   id: string;
   name: string;
   price: number;
   quantity: number;
+}
+
+export interface Reel {
+  _id: string;
+  videoUrl: string;
+  description: string;
+  likesCount: number;
+  liked: boolean;
+  user: {
+    name: string;
+    avatar: string;
+  };
+  comments: Array<{
+    user: { name: string; avatar: string };
+    text: string;
+    isReview: boolean;
+  }>;
 }
 
 interface AppContextType {
@@ -15,7 +34,9 @@ interface AppContextType {
   addToCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
   cartTotal: number;
-  allStores: Store[]; // Uses the interface from your mockData
+  allStores: Store[];
+  reels: Reel[];
+  toggleLikeReel: (reelId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -23,12 +44,24 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<{ name: string; isLoggedIn: boolean } | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  
-  // Use the imported mockStores from your assets folder instead of hardcoding here
   const [allStores] = useState<Store[]>(mockStores);
+  
+  // Initialize with mockReels so the page isn't blank
+  const [reels, setReels] = useState<Reel[]>(mockReels);
 
   const login = (name: string) => setUser({ name, isLoggedIn: true });
   const logout = () => setUser(null);
+
+  // Dhindora Logic: Handle Likes
+  const toggleLikeReel = (reelId: string) => {
+    setReels((prev) =>
+      prev.map((r) =>
+        r._id === reelId
+          ? { ...r, liked: !r.liked, likesCount: r.liked ? r.likesCount - 1 : r.likesCount + 1 }
+          : r
+      )
+    );
+  };
 
   const addToCart = (product: any) => {
     setCart((prevCart) => {
@@ -50,14 +83,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AppContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      cart, 
-      addToCart, 
-      removeFromCart, 
-      cartTotal, 
-      allStores 
+      user, login, logout, cart, addToCart, removeFromCart, cartTotal, allStores,
+      reels, toggleLikeReel 
     }}>
       {children}
     </AppContext.Provider>

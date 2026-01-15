@@ -1,5 +1,5 @@
 // src/assets/mockData.ts
-
+import { Reel } from "../context/AppContext";
 export interface Store {
   id: string;
   name: string;
@@ -41,4 +41,21 @@ export const STORE_TYPES = [
   "Fish", "Garden", "Tyre", "Pan", "Sewing Machine", "Dhaba", "Teeth", 
   "Cosmetic", "Travel", "Milk", "Parking", "Steel", "Car Wash", "Toy", 
   "Battery", "Saloon", "Car Repair", "Gold/Silver", "Gym"
+];
+
+
+export const mockReels: Reel[] = [
+  {
+    _id: '1',
+    videoUrl: require('./videos/video2.mp4'),
+    description: 'Fresh organic veggies arrived at Green Store! 🥦 #SangamDeals',
+    likesCount: 120,
+    liked: false,
+    user: { name: 'Green Grocery Store', avatar: 'https://i.pravatar.cc/150?u=green' },
+    comments: [
+      { user: { name: 'Rahul', avatar: '' }, text: 'The tomatoes were very fresh!', isReview: true },
+      { user: { name: 'Sita', avatar: '' }, text: 'Do you have avocados?', isReview: false },
+    ]
+  },
+  // Add more reels here...
 ];
