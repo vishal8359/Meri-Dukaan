@@ -11,7 +11,7 @@ interface CartItem {
 
 export interface Reel {
   _id: string;
-  videoUrl: string;
+  videoUrl: any;
   description: string;
   likesCount: number;
   liked: boolean;
