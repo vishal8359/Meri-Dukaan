@@ -11,6 +11,7 @@ import {
   TextInput // 1. Added TextInput
   ,
 
+
   TouchableOpacity,
   View
 } from 'react-native';
@@ -169,7 +170,7 @@ export default function BazarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#a7abaf' },
   filterHeader: { 
     flexDirection: 'row', 
     alignItems: 'center', 
