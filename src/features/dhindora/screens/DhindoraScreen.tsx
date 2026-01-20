@@ -160,11 +160,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 50,
     left: 20,
-    zIndex: 20,
+    zIndex: 15,
   } as ViewStyle,
   logo: {
     width: 100,
-    height: 40,
+    height: 38,
   } as ImageStyle,
   videoContainer: {
     width: width,
