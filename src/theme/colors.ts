@@ -6,40 +6,38 @@
 export const colors = {
   // Brand Identity
   brand: {
-  
-    primaryLight: '#ea744d', // Soft Clay
-    secondary: '#2E2E2E',    // Charcoal
-    accent: '#8D6E63',       // Earth Brown
-    primary: '#657479', 
-    // primary: '#005F73', 
-    // primaryLight: '#B7DEE5', // Soft Aqua
-    // secondary: '#E9C46A',    // Muted Gold
-    // accent: '#0A3A40',       // Deep Teal
-      
+    primaryLight: "#ea744d", // Soft Clay
+    secondary: "#2E2E2E", // Charcoal
+    accent: "#ef8a68", // Earth Brown
+    primary: "#ec9477",
+    // primary: "#005F73",
+    // primaryLight: "#B7DEE5", // Soft Aqua
+    // secondary: "#E9C46A", // Muted Gold
+    // accent: "#0A3A40", // Deep Teal
   },
 
   // Interface Colors
   ui: {
-   background: '#F7F4EF',  // Warn off white
-    surface: '#FFFFFF',      // White Cards
-    border: '#E9ECEF',       // Soft Dividers
-    overlay: 'rgba(7, 59, 76, 0.5)',
+    background: "#F7F4EF", // Warn off white
+    surface: "#FFFFFF", // White Cards
+    border: "#E9ECEF", // Soft Dividers
+    overlay: "rgba(7, 59, 76, 0.5)",
   },
 
   // Typography
   text: {
-    primary: '#1F2937',      // Charcoal
-    secondary: '#6C757D',    // Muted Gray
-    light: '#F8F9FA',        // For dark backgrounds
-    inverse: '#FFFFFF',
+    primary: "#1F2937", // Charcoal
+    secondary: "#6C757D", // Muted Gray
+    light: "#F8F9FA", // For dark backgrounds
+    inverse: "#FFFFFF",
   },
 
   // Status Feedback
   status: {
-    success: '#52B788',
-    error: '#E63946',
-    warning: '#FFB703',
-    info: '#118AB2',
+    success: "#52B788",
+    error: "#E63946",
+    warning: "#FFB703",
+    info: "#118AB2",
   },
 };
 
@@ -57,20 +55,20 @@ export const radius = {
   md: 12,
   lg: 20, // Sangam signature rounded look
   full: 9999,
-  xl: 24
+  xl: 24,
 };
 
 // Added Elevation (Shadows) for the "Dukaan" cards
 export const shadows = {
   small: {
-    shadowColor: '#073B4C',
+    shadowColor: "#073B4C",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   medium: {
-    shadowColor: '#073B4C',
+    shadowColor: "#073B4C",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,

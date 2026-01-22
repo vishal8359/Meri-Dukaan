@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { STORE_TYPES } from "../../../assets/mockData";
-import { radius, shadows, spacing } from "../../../theme/colors";
+import { colors, radius, shadows, spacing } from "../../../theme/colors";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   mainFilterBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#143e47", // Peacock Blue
+    backgroundColor: colors.brand.primary, // Peacock Blue
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: radius.md,
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   distRow: { flexDirection: "row", gap: 5 },
   distBtn: { backgroundColor: "#E2E8F0", padding: 8, borderRadius: radius.sm },
   activeDistBtn: { backgroundColor: "#B7DEE5" },
-  distBtnText: { fontSize: 11, fontWeight: "700", color: "#143e47" },
+  distBtnText: { fontSize: 11, fontWeight: "700", color: "#0e0e0e" },
 
   // Modal Styles
   modalOverlay: {
@@ -249,7 +249,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  modalTitle: { fontSize: 20, fontWeight: "800", color: "#143e47" },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.brand.primary,
+  },
   modalScroll: { paddingBottom: 40 },
   categoryItem: {
     flexDirection: "row",
@@ -259,7 +263,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-  categoryLabel: { fontSize: 16, color: "#334155", fontWeight: "500" },
+  categoryLabel: {
+    fontSize: 16,
+    color: colors.brand.accent,
+    fontWeight: "500",
+  },
 
   // List Styles
   gridRow: { justifyContent: "space-between", paddingHorizontal: spacing.md },
