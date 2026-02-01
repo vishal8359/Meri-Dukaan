@@ -15,7 +15,7 @@ import {
   Star,
 } from "lucide-react-native";
 import { AnimatePresence, MotiView } from "moti";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -26,15 +26,17 @@ import {
   View,
 } from "react-native";
 
-const { width } = Dimensions.get("window");
-const HEADER_HEIGHT = 240;
+const { width, height } = Dimensions.get("window");
+const HEADER_HEIGHT = 280;
 
 export default function StoreDetailsScreen() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const [activeTab, setActiveTab] = useState<"products" | "dhindora">(
     "products",
   );
-  const [isExpanded, setIsExpanded] = useState(true); // Toggle State
+  const lastScrollY = useRef(0);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const store = {
     name: "Laxmi Organic Store",
@@ -47,17 +49,21 @@ export default function StoreDetailsScreen() {
     isOpen: true,
     image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
   };
-  // 1. Insta-style Dashboard for Dhindora
+
+  const handleToggle = () => {
+    if (isExpanded) {
+      // When collapsing, we scroll to top to ensure the card "slides up" over image
+      scrollRef.current?.scrollTo({ y: HEADER_HEIGHT - 60, animated: true });
+    } else {
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+    setIsExpanded(!isExpanded);
+  };
+
   const renderDhindoraGrid = () => (
     <View style={styles.dhindoraGrid}>
       {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-        <TouchableOpacity
-          key={i}
-          style={styles.reelThumbnail}
-          onPress={() => {
-            /* Navigate to Full Reel Player */
-          }}
-        >
+        <TouchableOpacity key={i} style={styles.reelThumbnail}>
           <Image
             source={{ uri: `https://picsum.photos/400/600?sig=${i + 20}` }}
             style={styles.thumbImage}
@@ -65,7 +71,6 @@ export default function StoreDetailsScreen() {
           <View style={styles.playOverlay}>
             <Play size={18} color="#fff" fill="#fff" />
           </View>
-          {/* Mock view count like Insta */}
           <View style={styles.viewCountBadge}>
             <Play size={10} color="#fff" />
             <Text style={styles.viewCountText}>
@@ -77,7 +82,6 @@ export default function StoreDetailsScreen() {
     </View>
   );
 
-  // 2. Clean Commerce Grid for Products
   const renderProductGrid = () => (
     <View style={styles.productGrid}>
       {[1, 2, 3, 4, 5, 6].map((item) => (
@@ -91,7 +95,6 @@ export default function StoreDetailsScreen() {
               Premium Item {item}
             </Text>
             <Text style={styles.productPrice}>₹{item * 45 + 100}</Text>
-
             <TouchableOpacity style={styles.addButton}>
               <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
@@ -100,33 +103,54 @@ export default function StoreDetailsScreen() {
       ))}
     </View>
   );
+
   return (
     <View style={styles.container}>
+      {/* 1. FIXED BACKGROUND IMAGE */}
+      <View style={styles.fixedHeader}>
+        <Image source={{ uri: store.image }} style={styles.heroImage} />
+        <View style={styles.imageOverlay} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ChevronLeft color={colors.text.primary} size={28} />
+        </TouchableOpacity>
+      </View>
+
+      {/* 2. SCROLLABLE LAYER */}
       <ScrollView
+        ref={scrollRef}
         showsVerticalScrollIndicator={false}
         stickyHeaderIndices={[1]}
-      >
-        {/* 1. Hero Header */}
-        <View style={styles.header}>
-          <Image source={{ uri: store.image }} style={styles.heroImage} />
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <ChevronLeft color={colors.text.primary} size={28} />
-          </TouchableOpacity>
-        </View>
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+        // onScroll={(e) => {
+        //   const y = e.nativeEvent.contentOffset.y;
 
-        {/* 2. Interactive Collapsible Info Card */}
+        //   // scrolling UP → collapse
+        //   if (y > lastScrollY.current && isExpanded) {
+        //     setIsExpanded(false);
+        //   }
+
+        //   // scrolling DOWN → expand
+        //   if (y < lastScrollY.current && !isExpanded && y < HEADER_HEIGHT / 2) {
+        //     setIsExpanded(true);
+        //   }
+
+        //   lastScrollY.current = y;
+        // }}
+        // scrollEventThrottle={16}
+      >
+        {/* 3. INFO CARD (Slides over image) */}
         <MotiView
-          animate={{ height: isExpanded ? "auto" : 85 }}
+          animate={{ height: isExpanded ? "auto" : 100 }}
           transition={{ type: "timing", duration: 300 }}
           style={styles.infoCard}
         >
-          {/* Toggle Button */}
           <TouchableOpacity
             style={styles.toggleBtn}
-            onPress={() => setIsExpanded(!isExpanded)}
+            onPress={handleToggle}
             activeOpacity={0.8}
           >
             {isExpanded ? (
@@ -141,27 +165,26 @@ export default function StoreDetailsScreen() {
               <Text style={styles.storeName} numberOfLines={1}>
                 {store.name}
               </Text>
-              {!isExpanded && (
-                <View style={styles.ratingBoxSmall}>
-                  <Star
-                    size={12}
-                    fill={colors.status.warning}
-                    color="transparent"
-                  />
-                  <Text style={styles.ratingTextSmall}>{store.rating}</Text>
-                </View>
-              )}
+              <View style={styles.ratingBoxSmall}>
+                <Star
+                  size={12}
+                  fill={colors.status.warning}
+                  color="transparent"
+                />
+                <Text style={styles.ratingTextSmall}>{store.rating}</Text>
+              </View>
             </View>
-            <Text style={styles.storeType}>{store.type}</Text>
+            <Text style={styles.storeType}>
+              {store.type} • {store.category}
+            </Text>
           </View>
 
-          {/* This section disappears when collapsed */}
           <AnimatePresence>
             {isExpanded && (
               <MotiView
-                from={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
+                from={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
               >
                 <View style={styles.statusRow}>
                   <View
@@ -202,7 +225,6 @@ export default function StoreDetailsScreen() {
 
                 <View style={styles.divider} />
 
-                {/* Actions Grid */}
                 <View style={styles.actionGrid}>
                   <ActionButton
                     icon={Phone}
@@ -230,60 +252,65 @@ export default function StoreDetailsScreen() {
           </AnimatePresence>
         </MotiView>
 
-        {/* 3. Section Toggles (Stays accessible) */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tabItem,
-              activeTab === "products" && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab("products")}
-          >
-            <LayoutGrid
-              size={20}
-              color={
-                activeTab === "products"
-                  ? colors.brand.primaryLight
-                  : colors.text.secondary
-              }
-            />
-            <Text
-              style={[
-                styles.tabLabel,
-                activeTab === "products" && styles.activeTabLabel,
-              ]}
-            >
-              Products
-            </Text>
-          </TouchableOpacity>
+        {/* 4. STICKY TABS */}
 
-          <TouchableOpacity
-            style={[
-              styles.tabItem,
-              activeTab === "dhindora" && styles.activeTab,
-            ]}
-            onPress={() => setActiveTab("dhindora")}
-          >
-            <Play
-              size={20}
-              color={
-                activeTab === "dhindora"
-                  ? colors.brand.primaryLight
-                  : colors.text.secondary
-              }
-            />
-            <Text
+        <View style={styles.tabBarWrapper}>
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
               style={[
-                styles.tabLabel,
-                activeTab === "dhindora" && styles.activeTabLabel,
+                styles.tabItem,
+                activeTab === "products" && styles.activeTab,
               ]}
+              onPress={() => setActiveTab("products")}
             >
-              Dhindora
-            </Text>
-          </TouchableOpacity>
+              <LayoutGrid
+                size={20}
+                color={
+                  activeTab === "products"
+                    ? colors.brand.primaryLight
+                    : colors.text.secondary
+                }
+              />
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tabLabel,
+                  activeTab === "products" && styles.activeTabLabel,
+                ]}
+              >
+                Products
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tabItem,
+                activeTab === "dhindora" && styles.activeTab,
+              ]}
+              onPress={() => setActiveTab("dhindora")}
+            >
+              <Play
+                size={20}
+                color={
+                  activeTab === "dhindora"
+                    ? colors.brand.primaryLight
+                    : colors.text.secondary
+                }
+              />
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.tabLabel,
+                  activeTab === "dhindora" && styles.activeTabLabel,
+                ]}
+              >
+                Dhindora
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* 4. Scrollable Content */}
+        {/* 5. CONTENT AREA */}
         <View style={styles.contentArea}>
           {activeTab === "products"
             ? renderProductGrid()
@@ -291,7 +318,7 @@ export default function StoreDetailsScreen() {
         </View>
       </ScrollView>
 
-      {/* 5. Floating Action Bar */}
+      {/* 6. FLOATING FOOTER */}
       <View style={styles.floatingCart}>
         <TouchableOpacity style={styles.cartMain}>
           <ShoppingBag size={20} color="#fff" />
@@ -313,7 +340,18 @@ const ActionButton = ({ icon: Icon, label, color }: any) => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ui.background },
-  header: { height: HEADER_HEIGHT, width: "100%" },
+  fixedHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_HEIGHT,
+    zIndex: 0,
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.1)",
+  },
   heroImage: { width: "100%", height: "100%", resizeMode: "cover" },
   backButton: {
     position: "absolute",
@@ -327,20 +365,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...shadows.small,
   },
+  scrollContent: {
+    paddingTop: HEADER_HEIGHT - 40, // Shows part of the image initially
+  },
   infoCard: {
     backgroundColor: colors.ui.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    marginTop: -30,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
     ...shadows.medium,
-    overflow: "hidden",
+    zIndex: 10,
   },
   toggleBtn: {
     alignSelf: "center",
-    width: 40,
-    height: 25,
+    width: 60,
+    height: 30,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -352,7 +392,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   storeName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "800",
     color: colors.text.primary,
     flex: 1,
@@ -363,9 +403,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     backgroundColor: "#FFF9E6",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
   ratingTextSmall: { fontSize: 12, fontWeight: "700", color: "#B08900" },
   statusRow: {
@@ -408,35 +448,47 @@ const styles = StyleSheet.create({
   actionGrid: { flexDirection: "row", justifyContent: "space-between" },
   actionButton: { alignItems: "center", gap: 6 },
   actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: "center",
     alignItems: "center",
   },
   actionLabel: { fontSize: 11, fontWeight: "700", color: colors.text.primary },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // LEFT ↔ RIGHT
+    pointerEvents: "auto",
+    alignItems: "center",
     backgroundColor: colors.ui.surface,
-    padding: spacing.md,
+    paddingHorizontal: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.border,
+    elevation: 20,
   },
+  tabBarWrapper: {
+    width: "100%",
+  },
+
   tabItem: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
     paddingVertical: 10,
+    paddingHorizontal: 18,
   },
+
   activeTab: {
     borderBottomWidth: 3,
     borderBottomColor: colors.brand.primaryLight,
   },
   tabLabel: { fontSize: 14, fontWeight: "700", color: colors.text.secondary },
   activeTabLabel: { color: colors.brand.primaryLight },
-  contentArea: { padding: spacing.md },
+  contentArea: {
+    padding: spacing.md,
+    backgroundColor: colors.ui.surface,
+    minHeight: height,
+  },
   floatingCart: {
     position: "absolute",
     bottom: 30,
@@ -454,16 +506,14 @@ const styles = StyleSheet.create({
     ...shadows.medium,
   },
   cartText: { color: "#fff", fontWeight: "800", fontSize: 16 },
-
-  // --- Dhindora Dashboard Styles ---
   dhindoraGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 2, // Tight gap like Instagram
-    paddingBottom: 100,
+    gap: 2,
+    paddingBottom: 120,
   },
   reelThumbnail: {
-    width: (width - spacing.md * 2 - 4) / 3, // Perfect 3-column grid
+    width: (width - spacing.md * 2 - 4) / 3,
     height: (width / 3) * 1.5,
     backgroundColor: colors.brand.secondary,
     borderRadius: 4,
@@ -485,13 +535,11 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   viewCountText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-
-  // --- Product Grid Styles ---
   productGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    paddingBottom: 120,
+    paddingBottom: 150,
   },
   productCard: {
     width: (width - spacing.md * 3) / 2,
