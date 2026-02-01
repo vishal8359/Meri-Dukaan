@@ -1,6 +1,6 @@
 // app/_layout.tsx
-import { AppProvider } from '@/src/context/AppContext';
-import { Stack } from 'expo-router';
+import { AppProvider } from "@/src/context/AppContext";
+import { Stack } from "expo-router";
 
 export default function RootLayout() {
   return (
@@ -11,12 +11,12 @@ export default function RootLayout() {
 
         {/* 2. Register the Dynamic Store Route */}
         {/* We set headerShown: true so you get a 'Back' button automatically */}
-        <Stack.Screen 
-          name="dukaan/[id]" 
-          options={{ 
-            headerShown: true, 
-            title: 'Store Details' 
-          }} 
+        <Stack.Screen
+          name="dukaan/[id]"
+          options={{
+            headerShown: true,
+            title: "Store Details",
+          }}
         />
       </Stack>
     </AppProvider>
