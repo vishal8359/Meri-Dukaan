@@ -1,15 +1,19 @@
+// app/dukaan/[id].tsx
+import { useApp } from "@/src/context/AppContext";
+import { colors, radius } from "@/src/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  BarChart3,
-  Edit,
-  Menu,
-  Plus,
+  Heart,
+  MapPin,
+  Phone,
   Search,
-  Settings,
-  Store,
-  Trash2,
+  Share2,
+  Store as StoreIcon
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -20,17 +24,19 @@ import {
   View,
 } from "react-native";
 
-// Mock Navigation (Replace with useRouter() from expo-router or useNavigation())
-const useNavigation = () => {
-  return { navigate: (path: string) => console.log("Navigating to:", path) };
-};
+export default function StoreDetailScreen() {
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const { getStoreById } = useApp();
 
-export default function MyDukaanScreen() {
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
   );
-  const navigation = useNavigation();
 
+  // Get the store from context using the ID
+  const store = getStoreById(id as string);
+
+  // Mock products and services (in real app, these would come from the store data)
   const products = [
     {
       id: 1,
@@ -91,6 +97,24 @@ export default function MyDukaanScreen() {
     },
   ];
 
+  // If store not found
+  if (!store) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#94a3b8" />
+          <Text style={styles.errorText}>Store not found</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   // Helper Component for Stats Card
   const StatCard = ({
     value,
@@ -109,15 +133,6 @@ export default function MyDukaanScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
-      {/* Header Placeholder */}
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <Menu color="#333" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Dukaan</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -125,36 +140,57 @@ export default function MyDukaanScreen() {
         {/* Store Header Card */}
         <View style={styles.card}>
           <View style={styles.storeHeaderRow}>
-            <View style={styles.storeIconContainer}>
-              <Text style={{ fontSize: 32 }}>🏪</Text>
+            <View style={styles.storeImageContainer}>
+              <Image
+                source={
+                  typeof store.image === "string"
+                    ? { uri: store.image }
+                    : store.image
+                }
+                style={styles.storeImage}
+                resizeMode="cover"
+              />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.storeName}>Sharma Kirana</Text>
-              <Text style={styles.storeCategory}>
-                Grocery & Daily Essentials
-              </Text>
-              <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.outlineBtnSmall}>
-                  <Settings size={14} color="#333" />
-                  <Text style={styles.btnTextSmall}>Settings</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.outlineBtnSmall}
-                  onPress={() => navigation.navigate("/vendor-dashboard")}
-                >
-                  <BarChart3 size={14} color="#333" />
-                  <Text style={styles.btnTextSmall}>Analytics</Text>
-                </TouchableOpacity>
+              <Text style={styles.storeName}>{store.name}</Text>
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeText}>{store.type}</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <MapPin size={14} color="#64748b" />
+                <Text style={styles.infoText}>{store.distance} away</Text>
+              </View>
+
+              <View style={styles.infoRow}>
+                <Ionicons name="star" size={14} color="#E9C46A" />
+                <Text style={styles.infoText}>{store.rating} rating</Text>
               </View>
             </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.outlineBtnSmall}>
+              <Heart size={14} color="#ef4444" />
+              <Text style={styles.btnTextSmall}>Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.outlineBtnSmall}>
+              <Share2 size={14} color="#333" />
+              <Text style={styles.btnTextSmall}>Share</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.outlineBtnSmall}>
+              <Phone size={14} color="#22c55e" />
+              <Text style={styles.btnTextSmall}>Call</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Quick Stats */}
         <View style={styles.statsGrid}>
+          <StatCard value={store.followers} label="Followers" />
           <StatCard value={products.length} label="Products" />
           <StatCard value={services.length} label="Services" />
-          <StatCard value="2.5K" label="Followers" />
         </View>
 
         {/* Custom Tabs */}
@@ -206,10 +242,6 @@ export default function MyDukaanScreen() {
                   placeholderTextColor="#999"
                 />
               </View>
-              <TouchableOpacity style={styles.primaryBtn}>
-                <Plus size={18} color="#fff" />
-                <Text style={styles.primaryBtnText}>Add</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Products List */}
@@ -240,7 +272,7 @@ export default function MyDukaanScreen() {
                             ]}
                           >
                             {product.status === "active"
-                              ? "Active"
+                              ? "Available"
                               : "Out of Stock"}
                           </Text>
                         </View>
@@ -254,16 +286,6 @@ export default function MyDukaanScreen() {
                       </View>
                     </View>
                   </View>
-
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity style={[styles.outlineBtn, { flex: 1 }]}>
-                      <Edit size={14} color="#333" />
-                      <Text style={styles.btnText}>Edit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.outlineBtnDestructive}>
-                      <Trash2 size={14} color="#ef4444" />
-                    </TouchableOpacity>
-                  </View>
                 </View>
               ))}
             </View>
@@ -273,13 +295,6 @@ export default function MyDukaanScreen() {
         {/* SERVICES TAB CONTENT */}
         {activeTab === "services" && (
           <View>
-            <TouchableOpacity
-              style={[styles.primaryBtn, { marginBottom: 16, width: "100%" }]}
-            >
-              <Plus size={18} color="#fff" />
-              <Text style={styles.primaryBtnText}>Add Service</Text>
-            </TouchableOpacity>
-
             <View style={{ gap: 12 }}>
               {services.map((service) => (
                 <View key={service.id} style={styles.card}>
@@ -292,7 +307,7 @@ export default function MyDukaanScreen() {
                           gap: 6,
                         }}
                       >
-                        <Store size={16} color="#6366f1" />
+                        <StoreIcon size={16} color="#6366f1" />
                         <Text style={styles.cardTitle}>{service.name}</Text>
                       </View>
                       <Text style={styles.subText}>{service.description}</Text>
@@ -310,24 +325,6 @@ export default function MyDukaanScreen() {
                       </Text>
                     </View>
                   </View>
-
-                  <View style={styles.cardActions}>
-                    <TouchableOpacity style={[styles.outlineBtn, { flex: 1 }]}>
-                      <Edit size={14} color="#333" />
-                      <Text style={styles.btnText}>Edit</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={[styles.outlineBtn, { flex: 1 }]}>
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: "500",
-                          color: service.active ? "#ef4444" : "#6366f1",
-                        }}
-                      >
-                        {service.active ? "Deactivate" : "Activate"}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
                 </View>
               ))}
             </View>
@@ -343,37 +340,44 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-  },
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#64748b",
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  backButton: {
+    backgroundColor: colors.brand.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+  },
+  backButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   // Card Styles
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
-    marginBottom: 4,
-    // Shadow for iOS
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    // Elevation for Android
     elevation: 2,
     borderWidth: 1,
     borderColor: "#f1f5f9",
@@ -381,25 +385,48 @@ const styles = StyleSheet.create({
   storeHeaderRow: {
     flexDirection: "row",
     gap: 16,
+    marginBottom: 16,
   },
-  storeIconContainer: {
-    height: 64,
-    width: 64,
-    borderRadius: 32,
-    backgroundColor: "#e0e7ff", // Light indigo
-    justifyContent: "center",
-    alignItems: "center",
+  storeImageContainer: {
+    height: 80,
+    width: 80,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    backgroundColor: "#f1f5f9",
+  },
+  storeImage: {
+    width: "100%",
+    height: "100%",
   },
   storeName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#1e293b",
+    marginBottom: 6,
+  },
+  typeBadge: {
+    backgroundColor: "#B7DEE540",
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginBottom: 8,
+  },
+  typeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#143e47",
+    textTransform: "uppercase",
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginBottom: 4,
   },
-  storeCategory: {
-    fontSize: 14,
+  infoText: {
+    fontSize: 13,
     color: "#64748b",
-    marginBottom: 12,
   },
   actionRow: {
     flexDirection: "row",
@@ -409,55 +436,18 @@ const styles = StyleSheet.create({
   outlineBtnSmall: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     borderRadius: 6,
     gap: 4,
+    flex: 1,
+    justifyContent: "center",
   },
   btnTextSmall: {
     fontSize: 12,
-    fontWeight: "500",
-    color: "#334155",
-  },
-  primaryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#111", // Primary black/dark
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 6,
-    gap: 6,
-  },
-  primaryBtnText: {
-    color: "#fff",
     fontWeight: "600",
-    fontSize: 14,
-  },
-  outlineBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 6,
-    gap: 6,
-  },
-  outlineBtnDestructive: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#fee2e2",
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnText: {
-    fontSize: 13,
-    fontWeight: "500",
     color: "#334155",
   },
   // Stats Grid
@@ -479,7 +469,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#0f172a", // Dark blue/slate
+    color: "#0f172a",
   },
   statLabel: {
     fontSize: 12,
@@ -575,14 +565,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#94a3b8",
   },
-  cardActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
-  },
   // Badges
   badge: {
     paddingHorizontal: 8,
@@ -597,7 +579,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
-
   badgeText: { fontSize: 11, fontWeight: "600" },
   textSuccess: { color: "#166534" },
   textDestructive: { color: "#991b1b" },

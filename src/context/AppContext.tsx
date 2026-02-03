@@ -1,4 +1,12 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
+// src/context/AppContext.tsx
+
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 import { mockReels, mockStores, Store } from "../assets/mockData";
 
 // --- Interfaces ---
@@ -27,14 +35,26 @@ export interface Reel {
 }
 
 interface AppContextType {
+  // User Management
   user: { name: string; isLoggedIn: boolean; email?: string } | null;
   login: (name: string) => void;
   logout: () => void;
+
+  // Cart Management
   cart: CartItem[];
   addToCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
   cartTotal: number;
+
+  // Store Management (Centralized)
   allStores: Store[];
+  getStoreById: (id: string) => Store | undefined;
+  getFeaturedStores: (limit?: number) => Store[];
+  getStoresByType: (type: string) => Store[];
+  getNearbyStores: (distance: number) => Store[];
+  searchStores: (query: string) => Store[];
+
+  // Reel Management
   reels: Reel[];
   toggleLikeReel: (reelId: string) => void;
 }
@@ -42,34 +62,25 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  // --- State Management ---
   const [user, setUser] = useState<{
     name: string;
     isLoggedIn: boolean;
+    email?: string;
   } | null>(null);
+
   const [cart, setCart] = useState<CartItem[]>([]);
   const [allStores] = useState<Store[]>(mockStores);
-
-  // Initialize with mockReels so the page isn't blank
   const [reels, setReels] = useState<Reel[]>(mockReels);
 
+  // --- User Functions ---
   const login = (name: string) => setUser({ name, isLoggedIn: true });
-  const logout = () => setUser(null);
-
-  // Dhindora Logic: Handle Likes
-  const toggleLikeReel = (reelId: string) => {
-    setReels((prev) =>
-      prev.map((r) =>
-        r._id === reelId
-          ? {
-              ...r,
-              liked: !r.liked,
-              likesCount: r.liked ? r.likesCount - 1 : r.likesCount + 1,
-            }
-          : r,
-      ),
-    );
+  const logout = () => {
+    setUser(null);
+    setCart([]); // Clear cart on logout
   };
 
+  // --- Cart Functions ---
   const addToCart = (product: any) => {
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.id === product.id);
@@ -88,33 +99,118 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
   };
 
-  const cartTotal = cart.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
+  const cartTotal = useMemo(
+    () => cart.reduce((total, item) => total + item.price * item.quantity, 0),
+    [cart],
+  );
+
+  // --- Store Functions (Centralized & Reusable) ---
+
+  /**
+   * Get a single store by ID
+   */
+  const getStoreById = (id: string): Store | undefined => {
+    return allStores.find((store) => store.id === id);
+  };
+
+  /**
+   * Get featured stores (sorted by rating)
+   * @param limit - Number of stores to return (default: all)
+   */
+  const getFeaturedStores = (limit?: number): Store[] => {
+    const sorted = [...allStores].sort((a, b) => b.rating - a.rating);
+    return limit ? sorted.slice(0, limit) : sorted;
+  };
+
+  /**
+   * Get stores by type/category
+   * @param type - Store type (e.g., "Grocery", "Restaurant")
+   */
+  const getStoresByType = (type: string): Store[] => {
+    if (type === "All") return allStores;
+    return allStores.filter((store) => store.type === type);
+  };
+
+  /**
+   * Get nearby stores within a distance
+   * @param distance - Maximum distance in km
+   */
+  const getNearbyStores = (distance: number): Store[] => {
+    return allStores.filter((store) => {
+      const storeDist = parseFloat(store.distance);
+      return storeDist <= distance;
+    });
+  };
+
+  /**
+   * Search stores by name or type
+   * @param query - Search query string
+   */
+  const searchStores = (query: string): Store[] => {
+    if (!query.trim()) return allStores;
+
+    const lowerQuery = query.toLowerCase();
+    return allStores.filter(
+      (store) =>
+        store.name.toLowerCase().includes(lowerQuery) ||
+        store.type.toLowerCase().includes(lowerQuery),
+    );
+  };
+
+  // --- Reel Functions ---
+  const toggleLikeReel = (reelId: string) => {
+    setReels((prev) =>
+      prev.map((r) =>
+        r._id === reelId
+          ? {
+              ...r,
+              liked: !r.liked,
+              likesCount: r.liked ? r.likesCount - 1 : r.likesCount + 1,
+            }
+          : r,
+      ),
+    );
+  };
+
+  // --- Context Value ---
+  const contextValue = useMemo(
+    () => ({
+      // User
+      user,
+      login,
+      logout,
+
+      // Cart
+      cart,
+      addToCart,
+      removeFromCart,
+      cartTotal,
+
+      // Stores
+      allStores,
+      getStoreById,
+      getFeaturedStores,
+      getStoresByType,
+      getNearbyStores,
+      searchStores,
+
+      // Reels
+      reels,
+      toggleLikeReel,
+    }),
+    [user, cart, cartTotal, allStores, reels],
   );
 
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        login,
-        logout,
-        cart,
-        addToCart,
-        removeFromCart,
-        cartTotal,
-        allStores,
-        reels,
-        toggleLikeReel,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
+    <AppContext.Provider value={contextValue}>{children}</AppContext.Provider>
   );
 };
 
+// --- Custom Hook ---
 export const useApp = () => {
   const context = useContext(AppContext);
-  if (!context) throw new Error("useApp must be used within an AppProvider");
+  if (!context) {
+    throw new Error("useApp must be used within an AppProvider");
+  }
   return context;
 };

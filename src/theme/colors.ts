@@ -2,7 +2,7 @@
  * Sangam Design System - Theme Configuration
  * Aesthetic: Modern Indian Hyperlocal
  */
-
+// src/theme/colors.ts
 export const colors = {
   // Brand Identity
   brand: {

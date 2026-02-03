@@ -1,5 +1,8 @@
+// src/features/dukaan/screens/BazarScreen.tsx
+
 import { useApp } from "@/src/context/AppContext";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -8,7 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput, // 1. Added TextInput
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,19 +20,20 @@ import { colors, radius, shadows, spacing } from "../../../theme/colors";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
+  const router = useRouter();
   const { allStores } = useApp();
 
   // States
   const [selectedType, setSelectedType] = useState("All");
   const [distLimit, setDistLimit] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [categorySearch, setCategorySearch] = useState(""); // 2. Search State
+  const [categorySearch, setCategorySearch] = useState("");
 
   // Lazy Loading States
   const [limit, setLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // 3. Filter Categories for the Modal
+  // Filter Categories for the Modal
   const searchedCategories = useMemo(() => {
     if (!categorySearch) return STORE_TYPES;
     return STORE_TYPES.filter((type) =>
@@ -68,8 +72,13 @@ export default function BazarScreen() {
 
   const selectCategory = (type: string) => {
     setSelectedType(type);
-    setCategorySearch(""); // Clear search after selection
+    setCategorySearch("");
     setIsModalVisible(false);
+  };
+
+  // Navigate to individual store detail page
+  const navigateToStore = (storeId: string) => {
+    router.push(`/dukaan/${storeId}`);
   };
 
   return (
@@ -182,7 +191,12 @@ export default function BazarScreen() {
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={styles.gridRow}
-        renderItem={({ item }) => <StoreCardGrid store={item} />}
+        renderItem={({ item }) => (
+          <StoreCardGrid
+            store={item}
+            onPress={() => navigateToStore(item.id)}
+          />
+        )}
         contentContainerStyle={styles.listPadding}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.3}
@@ -216,7 +230,7 @@ const styles = StyleSheet.create({
   mainFilterBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.brand.primary, // Peacock Blue
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: radius.md,

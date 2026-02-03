@@ -1,2 +1,2 @@
-export { default } from '../../../src/features/dashboard/screens/HomeScreen';
+export { default } from "../../../src/features/dashboard/screens/HomeScreen";
 

@@ -1,3 +1,4 @@
+// src/features/auth/screens/ProfileScreen.tsx
 import {
   ChevronRight,
   Edit3,
@@ -17,7 +18,7 @@ import {
   TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle
+  ViewStyle,
 } from "react-native";
 import { Card } from "../../../components/common/Card";
 import { useApp } from "../../../context/AppContext";

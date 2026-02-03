@@ -1,3 +1,4 @@
+// app/(drawer)/_layout.tsx
 import { DrawerContentScrollView } from "@react-navigation/drawer";
 import { Drawer } from "expo-router/drawer";
 import {
@@ -8,7 +9,7 @@ import {
   ShoppingBag,
   Store,
   Truck,
-  User
+  User,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import {

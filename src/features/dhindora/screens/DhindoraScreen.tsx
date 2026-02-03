@@ -1,3 +1,4 @@
+// src/features/dhindora/screens/DhindoraScreen.tsx
 import * as NavigationBar from "expo-navigation-bar";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { BadgeCheck, Heart, MessageSquare } from "lucide-react-native";

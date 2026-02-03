@@ -1,3 +1,5 @@
+// src/features/dukaan/components/StoreCardVertical.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
@@ -24,12 +26,21 @@ interface Store {
   image: any;
 }
 
-export const StoreCardGrid = ({ store }: { store: Store }) => {
+interface StoreCardGridProps {
+  store: Store;
+  onPress?: () => void;
+}
+
+export const StoreCardGrid = ({ store, onPress }: StoreCardGridProps) => {
   const imageSource =
     typeof store.image === "string" ? { uri: store.image } : store.image;
 
   return (
-    <TouchableOpacity activeOpacity={0.75} style={styles.card}>
+    <TouchableOpacity
+      activeOpacity={0.75}
+      style={styles.card}
+      onPress={onPress}
+    >
       {/* Top: Store Image & Rating Overlay */}
       <View style={styles.imageContainer}>
         <Image source={imageSource} style={styles.image} resizeMode="cover" />
