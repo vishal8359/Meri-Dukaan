@@ -83,6 +83,19 @@ export default function BazarScreen() {
 
   return (
     <View style={styles.container}>
+      {/* --- ADDED HEADER START --- */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.headerBtn}
+        >
+          <Ionicons name="arrow-back" size={24} color="#1e293b" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Store details</Text>
+        <View style={styles.headerBtn} />
+      </View>
+      {/* --- ADDED HEADER END --- */}
+
       {/* 1. FILTER BAR */}
       <View style={styles.filterHeader}>
         <TouchableOpacity
@@ -219,6 +232,29 @@ export default function BazarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fdfdfd" },
+  // --- ADDED HEADER STYLES ---
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "flex-start",
+  },
+  // ---------------------------
   filterHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -240,7 +276,11 @@ const styles = StyleSheet.create({
   },
   mainFilterText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
   distRow: { flexDirection: "row", gap: 5 },
-  distBtn: { backgroundColor: "#E2E8F0", padding: 8, borderRadius: radius.sm },
+  distBtn: {
+    backgroundColor: "#E2E8F0",
+    padding: 8,
+    borderRadius: radius.sm,
+  },
   activeDistBtn: { backgroundColor: "#B7DEE5" },
   distBtnText: { fontSize: 11, fontWeight: "700", color: "#0e0e0e" },
 

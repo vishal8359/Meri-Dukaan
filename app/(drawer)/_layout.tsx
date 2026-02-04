@@ -1,5 +1,6 @@
 // app/(drawer)/_layout.tsx
 import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
   ChevronRight,
@@ -23,21 +24,72 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Import your theme configuration
+import { useApp } from "../../src/context/AppContext";
 import { colors, radius, shadows, spacing } from "../../src/theme/colors";
 
 const { width } = Dimensions.get("window");
 
 function CustomDrawerContent(props: any) {
-  const accountItems = [
-    { label: "My Profile", icon: User, color: colors.brand.primary },
-    { label: "My Orders", icon: ShoppingBag, color: colors.brand.primary },
-    { label: "Wishlist", icon: Heart, color: colors.brand.primary },
+  const router = useRouter();
+  const { user, logout } = useApp();
+
+  const accountItems: {
+    label: string;
+    icon: any;
+    color: string;
+    route: Href;
+  }[] = [
+    {
+      label: "My Profile",
+      icon: User,
+      color: colors.brand.primary,
+      route: "/(drawer)/(tabs)/profile",
+    },
+    {
+      label: "My Orders",
+      icon: ShoppingBag,
+      color: colors.brand.primary,
+      route: "/myorders/orders",
+    },
+    {
+      label: "Wishlist",
+      icon: Heart,
+      color: colors.brand.primary,
+      route: "/wishlist/wishlist",
+    },
   ];
 
-  const businessItems = [
-    { label: "My Dukaan", icon: Store, color: colors.brand.primaryLight },
-    { label: "Join as Transporter", icon: Truck, color: colors.brand.accent },
+  const businessItems: {
+    label: string;
+    icon: any;
+    color: string;
+    route: Href;
+  }[] = [
+    {
+      label: "My Dukaan",
+      icon: Store,
+      color: colors.brand.primaryLight,
+      route: "/meri_dukaan/my-dukaan",
+    },
+    {
+      label: "Join as Transporter",
+      icon: Truck,
+      color: colors.brand.accent,
+      route: "/Transporter/transporter",
+    },
   ];
+
+  const handleNavigation = (route: Href) => {
+    props.navigation.closeDrawer();
+    router.push(route);
+  };
+
+  const handleLogout = () => {
+    props.navigation.closeDrawer();
+    logout();
+    // Optionally navigate to login screen if you have one
+    // router.replace("/login");
+  };
 
   return (
     <DrawerContentScrollView
@@ -54,13 +106,17 @@ function CustomDrawerContent(props: any) {
       >
         <View style={styles.avatarContainer}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarLetter}>V</Text>
+            <Text style={styles.avatarLetter}>
+              {user?.name?.charAt(0) || "V"}
+            </Text>
           </View>
           <View style={styles.onlineIndicator} />
         </View>
         <View style={styles.profileInfo}>
-          <Text style={styles.userName}>Vishal Kumar</Text>
-          <Text style={styles.userEmail}>vishal@sangam.in</Text>
+          <Text style={styles.userName}>{user?.name || "Vishal Kumar"}</Text>
+          <Text style={styles.userEmail}>
+            {user?.email || "vishal@sangam.in"}
+          </Text>
           <View style={styles.roleBadge}>
             <Text style={styles.roleText}>Customer</Text>
           </View>
@@ -84,7 +140,11 @@ function CustomDrawerContent(props: any) {
             animate={{ opacity: 1, translateX: 0 }}
             transition={{ delay: 100 + index * 50 }}
           >
-            <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.navItem}
+              activeOpacity={0.7}
+              onPress={() => handleNavigation(item.route)}
+            >
               <View style={styles.navItemLeft}>
                 <View
                   style={[
@@ -117,7 +177,11 @@ function CustomDrawerContent(props: any) {
             animate={{ opacity: 1, translateX: 0 }}
             transition={{ delay: 300 + index * 50 }}
           >
-            <TouchableOpacity style={styles.navItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.navItem}
+              activeOpacity={0.7}
+              onPress={() => handleNavigation(item.route)}
+            >
               <View style={styles.navItemLeft}>
                 <View
                   style={[
@@ -142,7 +206,10 @@ function CustomDrawerContent(props: any) {
           <Text style={styles.footerActionText}>English (India)</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.footerAction, styles.logoutAction]}>
+        <TouchableOpacity
+          style={[styles.footerAction, styles.logoutAction]}
+          onPress={handleLogout}
+        >
           <LogOut size={18} color={colors.status.error} />
           <Text
             style={[styles.footerActionText, { color: colors.status.error }]}

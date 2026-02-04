@@ -10,12 +10,48 @@ export default function RootLayout() {
         <Stack.Screen name="(drawer)" />
 
         {/* 2. Register the Dynamic Store Route */}
-        {/* We set headerShown: true so you get a 'Back' button automatically */}
         <Stack.Screen
           name="dukaan/[id]"
           options={{
             headerShown: true,
             title: "Store Details",
+            presentation: "card",
+          }}
+        />
+
+        {/* 3. Register Orders Screen */}
+        <Stack.Screen
+          name="orders"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 4. Register Wishlist Screen */}
+        <Stack.Screen
+          name="wishlist"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 5. Register My Dukaan Screen (if you have it) */}
+        <Stack.Screen
+          name="my-dukaan"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 6. Register Transporter Screen (optional) */}
+        <Stack.Screen
+          name="transporter"
+          options={{
+            headerShown: false,
+            presentation: "card",
           }}
         />
       </Stack>
