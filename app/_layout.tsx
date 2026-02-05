@@ -19,7 +19,25 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 3. Register Orders Screen */}
+        {/* 3. Register Cart Screen */}
+        <Stack.Screen
+          name="cart"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 4. Register Notifications Screen */}
+        <Stack.Screen
+          name="notifications"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 5. Register Orders Screen */}
         <Stack.Screen
           name="orders"
           options={{
@@ -28,7 +46,7 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 4. Register Wishlist Screen */}
+        {/* 6. Register Wishlist Screen */}
         <Stack.Screen
           name="wishlist"
           options={{
@@ -37,7 +55,7 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 5. Register My Dukaan Screen (if you have it) */}
+        {/* 7. Register My Dukaan Screen (optional) */}
         <Stack.Screen
           name="my-dukaan"
           options={{
@@ -46,7 +64,7 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 6. Register Transporter Screen (optional) */}
+        {/* 8. Register Transporter Screen (optional) */}
         <Stack.Screen
           name="transporter"
           options={{

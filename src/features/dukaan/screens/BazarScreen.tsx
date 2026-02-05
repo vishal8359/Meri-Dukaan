@@ -83,19 +83,6 @@ export default function BazarScreen() {
 
   return (
     <View style={styles.container}>
-      {/* --- ADDED HEADER START --- */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerBtn}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Store details</Text>
-        <View style={styles.headerBtn} />
-      </View>
-      {/* --- ADDED HEADER END --- */}
-
       {/* 1. FILTER BAR */}
       <View style={styles.filterHeader}>
         <TouchableOpacity

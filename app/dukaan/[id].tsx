@@ -7,6 +7,7 @@ import {
   Heart,
   MapPin,
   Phone,
+  Plus,
   Search,
   Share2,
   Store as StoreIcon,
@@ -27,7 +28,7 @@ import {
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { getStoreById } = useApp();
+  const { getStoreById, addToCart } = useApp();
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
@@ -42,7 +43,8 @@ export default function StoreDetailScreen() {
       id: 1,
       name: "Fresh Tomatoes",
       category: "Vegetables",
-      price: "₹40/kg",
+      price: 40,
+      displayPrice: "₹40/kg",
       stock: "50 kg",
       image: "🍅",
       status: "active",
@@ -51,7 +53,8 @@ export default function StoreDetailScreen() {
       id: 2,
       name: "Onions",
       category: "Vegetables",
-      price: "₹30/kg",
+      price: 30,
+      displayPrice: "₹30/kg",
       stock: "80 kg",
       image: "🧅",
       status: "active",
@@ -60,7 +63,8 @@ export default function StoreDetailScreen() {
       id: 3,
       name: "Green Chilies",
       category: "Vegetables",
-      price: "₹60/kg",
+      price: 60,
+      displayPrice: "₹60/kg",
       stock: "0 kg",
       image: "🌶️",
       status: "out-of-stock",
@@ -69,7 +73,8 @@ export default function StoreDetailScreen() {
       id: 4,
       name: "Potatoes",
       category: "Vegetables",
-      price: "₹25/kg",
+      price: 25,
+      displayPrice: "₹25/kg",
       stock: "120 kg",
       image: "🥔",
       status: "active",
@@ -82,20 +87,38 @@ export default function StoreDetailScreen() {
       name: "Home Delivery",
       description: "Free over ₹500",
       active: true,
+      price: 0,
     },
     {
       id: 2,
       name: "Same Day Delivery",
       description: "Order before 5 PM",
       active: true,
+      price: 50,
     },
     {
       id: 3,
       name: "Bulk Orders",
       description: "Special pricing for bulk",
       active: false,
+      price: 0,
     },
   ];
+
+  const handleAddToCart = (product: (typeof products)[0]) => {
+    addToCart({
+      id: `${store?.id}-${product.id}`,
+      name: product.name,
+      price: product.price,
+    });
+    // You can add a toast/snackbar notification here
+  };
+
+  const handleBookService = (service: (typeof services)[0]) => {
+    // Navigate to booking page or show booking modal
+    console.log("Booking service:", service.name);
+    // You can implement booking logic here
+  };
 
   // If store not found
   if (!store) {
@@ -132,16 +155,7 @@ export default function StoreDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.headerBtn}
-        >
-          <Ionicons name="arrow-back" size={24} color="#1e293b" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Store details</Text>
-        <View style={styles.headerBtn} /> {/* Keeps title centered */}
-      </View>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -241,7 +255,7 @@ export default function StoreDetailScreen() {
         {/* PRODUCTS TAB CONTENT */}
         {activeTab === "products" && (
           <View>
-            {/* Search & Add */}
+            {/* Search */}
             <View style={styles.searchRow}>
               <View style={styles.searchInputContainer}>
                 <Search size={18} color="#999" style={{ marginRight: 8 }} />
@@ -261,38 +275,48 @@ export default function StoreDetailScreen() {
                     <View style={styles.productImage}>
                       <Text style={{ fontSize: 28 }}>{product.image}</Text>
                     </View>
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.spaceBetween}>
-                        <Text style={styles.cardTitle}>{product.name}</Text>
-                        <View
+
+                    <View style={{ flex: 1, justifyContent: "center" }}>
+                      <Text style={styles.cardTitle}>{product.name}</Text>
+                      <Text style={styles.subText}>{product.category}</Text>
+                      <Text style={styles.priceText}>
+                        {product.displayPrice}
+                      </Text>
+                      <Text style={styles.stockText}>
+                        Stock: {product.stock}
+                      </Text>
+                    </View>
+
+                    <View style={styles.rightActionContainer}>
+                      <View
+                        style={[
+                          styles.badge,
+                          product.status === "active"
+                            ? styles.badgeSuccess
+                            : styles.badgeDestructive,
+                          { marginBottom: 8 },
+                        ]}
+                      >
+                        <Text
                           style={[
-                            styles.badge,
+                            styles.badgeText,
                             product.status === "active"
-                              ? styles.badgeSuccess
-                              : styles.badgeDestructive,
+                              ? styles.textSuccess
+                              : styles.textDestructive,
                           ]}
                         >
-                          <Text
-                            style={[
-                              styles.badgeText,
-                              product.status === "active"
-                                ? styles.textSuccess
-                                : styles.textDestructive,
-                            ]}
-                          >
-                            {product.status === "active"
-                              ? "Available"
-                              : "Out of Stock"}
-                          </Text>
-                        </View>
-                      </View>
-                      <Text style={styles.subText}>{product.category}</Text>
-                      <View style={styles.spaceBetween}>
-                        <Text style={styles.priceText}>{product.price}</Text>
-                        <Text style={styles.stockText}>
-                          Stock: {product.stock}
+                          {product.status === "active" ? "In Stock" : "Out"}
                         </Text>
                       </View>
+
+                      {product.status === "active" && (
+                        <TouchableOpacity
+                          style={styles.addToCartBtnSmall}
+                          onPress={() => handleAddToCart(product)}
+                        >
+                          <Plus size={16} color="#FFF" />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -303,40 +327,57 @@ export default function StoreDetailScreen() {
 
         {/* SERVICES TAB CONTENT */}
         {activeTab === "services" && (
-          <View>
-            <View style={{ gap: 12 }}>
-              {services.map((service) => (
-                <View key={service.id} style={styles.card}>
-                  <View style={styles.spaceBetween}>
-                    <View style={{ flex: 1 }}>
-                      <View
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <StoreIcon size={16} color="#6366f1" />
-                        <Text style={styles.cardTitle}>{service.name}</Text>
-                      </View>
-                      <Text style={styles.subText}>{service.description}</Text>
+          <View style={{ gap: 12 }}>
+            {services.map((service) => (
+              <View key={service.id} style={styles.card}>
+                <View style={styles.productRow}>
+                  <View style={{ flex: 1 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                    >
+                      <StoreIcon size={16} color={colors.brand.primaryLight} />
+                      <Text style={styles.cardTitle}>{service.name}</Text>
                     </View>
+                    <Text style={styles.subText} numberOfLines={1}>
+                      {service.description}
+                    </Text>
+                    {service.price > 0 && (
+                      <Text style={styles.servicePriceText}>
+                        ₹{service.price}
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.rightActionContainer}>
                     <View
                       style={[
                         styles.badge,
                         service.active
                           ? styles.badgeDefault
                           : styles.badgeSecondary,
+                        { marginBottom: 8 },
                       ]}
                     >
                       <Text style={styles.badgeTextSmall}>
-                        {service.active ? "Active" : "Inactive"}
+                        {service.active ? "Active" : "Off"}
                       </Text>
                     </View>
+                    {service.active && (
+                      <TouchableOpacity
+                        style={styles.bookServiceBtnSmall}
+                        onPress={() => handleBookService(service)}
+                      >
+                        <Plus size={16} color="#FFF" />
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
-              ))}
-            </View>
+              </View>
+            ))}
           </View>
         )}
       </ScrollView>
@@ -348,27 +389,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1e293b",
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "flex-start",
   },
   scrollContent: {
     padding: 16,
@@ -428,6 +448,33 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  rightActionContainer: {
+    alignItems: "flex-end",
+    justifyContent: "center",
+    minWidth: 60,
+  },
+  addToCartBtnSmall: {
+    backgroundColor: colors.brand.primary,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  bookServiceBtnSmall: {
+    backgroundColor: colors.brand.primaryLight,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 2,
+  },
   storeName: {
     fontSize: 20,
     fontWeight: "bold",
@@ -479,6 +526,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#334155",
+  },
+
+  addToCartText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFF",
+  },
+
+  bookServiceText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFF",
   },
   // Stats Grid
   statsGrid: {
@@ -560,6 +619,7 @@ const styles = StyleSheet.create({
   // Products/Services Items
   productRow: {
     flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   productImage: {
@@ -594,6 +654,12 @@ const styles = StyleSheet.create({
   stockText: {
     fontSize: 12,
     color: "#94a3b8",
+  },
+  servicePriceText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.brand.primary,
+    marginTop: 4,
   },
   // Badges
   badge: {

@@ -44,6 +44,8 @@ interface AppContextType {
   cart: CartItem[];
   addToCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
+  updateCartQuantity: (productId: string, quantity: number) => void;
+  clearCart: () => void;
   cartTotal: number;
 
   // Store Management (Centralized)
@@ -97,6 +99,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const removeFromCart = (productId: string) => {
     setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+  };
+
+  const updateCartQuantity = (productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === productId ? { ...item, quantity } : item,
+      ),
+    );
+  };
+
+  const clearCart = () => {
+    setCart([]);
   };
 
   const cartTotal = useMemo(
@@ -184,6 +202,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       cart,
       addToCart,
       removeFromCart,
+      updateCartQuantity,
+      clearCart,
       cartTotal,
 
       // Stores
