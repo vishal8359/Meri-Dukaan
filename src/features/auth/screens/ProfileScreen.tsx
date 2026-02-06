@@ -1,13 +1,16 @@
 // src/features/auth/screens/ProfileScreen.tsx
+import { useRouter } from "expo-router";
 import {
   ChevronRight,
   Edit3,
   Heart,
+  HelpCircle,
   LogOut,
   Mail,
   MapPin,
   Package,
   Phone,
+  Settings,
   Users,
 } from "lucide-react-native";
 import React from "react";
@@ -25,6 +28,7 @@ import { useApp } from "../../../context/AppContext";
 import { colors, radius, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const { user, logout } = useApp();
 
   // Sub-component for Info Rows
@@ -50,7 +54,10 @@ export default function ProfileScreen() {
               {user?.name?.charAt(0) || "V"}
             </Text>
           </View>
-          <TouchableOpacity style={styles.editBadge}>
+          <TouchableOpacity
+            style={styles.editBadge}
+            onPress={() => router.push("/Profile/edit-profile")}
+          >
             <Edit3 size={14} color="#FFF" />
           </TouchableOpacity>
         </View>
@@ -58,7 +65,10 @@ export default function ProfileScreen() {
         <Text style={styles.userName}>{user?.name || "Vishal Kumar"}</Text>
         <Text style={styles.memberSince}>Member since Jan 2024</Text>
 
-        <TouchableOpacity style={styles.editBtn}>
+        <TouchableOpacity
+          style={styles.editBtn}
+          onPress={() => router.push("/Profile/edit-profile")}
+        >
           <Text style={styles.editBtnText}>Edit Profile</Text>
         </TouchableOpacity>
       </View>
@@ -101,13 +111,29 @@ export default function ProfileScreen() {
 
       {/* 4. Menu List */}
       <View style={styles.menuList}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Settings</Text>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/Settings/settings")}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrapper}>
+              <Settings size={18} color={colors.brand.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Settings</Text>
+          </View>
           <ChevronRight size={20} color={colors.ui.border} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Help & Support</Text>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/HelpCenter/help-support")}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={styles.menuIconWrapper}>
+              <HelpCircle size={18} color={colors.brand.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Help & Support</Text>
+          </View>
           <ChevronRight size={20} color={colors.ui.border} />
         </TouchableOpacity>
 
@@ -275,6 +301,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     padding: spacing.md,
     borderRadius: radius.md,
+  } as ViewStyle,
+  menuItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  } as ViewStyle,
+  menuIconWrapper: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    justifyContent: "center",
+    alignItems: "center",
   } as ViewStyle,
   menuItemText: {
     fontSize: 15,

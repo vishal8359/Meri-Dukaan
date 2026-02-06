@@ -4,50 +4,111 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Minus,
-    Plus,
-    ShoppingBag,
-    Trash2,
+  ArrowLeft,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Store,
+  Trash2,
 } from "lucide-react-native";
 import React from "react";
 import {
-    FlatList,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+
+// Extended cart item interface with store details
+interface EnhancedCartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  storeName?: string;
+  storeId?: string;
+}
 
 export default function CartScreen() {
   const router = useRouter();
-  const { cart, addToCart, updateCartQuantity, removeFromCart, cartTotal } =
-    useApp();
+  const { cart, addToCart, removeFromCart, cartTotal } = useApp();
 
   const updateQuantity = (item: any, increment: boolean) => {
     if (increment) {
       addToCart(item);
     } else {
-      updateCartQuantity(item.id, item.quantity - 1);
+      if (item.quantity === 1) {
+        removeFromCart(item.id);
+      } else {
+        // Decrease quantity by removing and adding back with reduced quantity
+        removeFromCart(item.id);
+        addToCart({ ...item, quantity: item.quantity - 1 });
+      }
     }
   };
 
   const CartItem = ({ item }: { item: any }) => {
+    // Determine image source
+    const hasImage = item.image && item.image !== "";
+    const imageSource = hasImage
+      ? typeof item.image === "string"
+        ? { uri: item.image }
+        : item.image
+      : null;
+
     return (
       <View style={styles.cartItem}>
-        <View style={styles.itemInfo}>
-          <View style={styles.itemIconContainer}>
-            <ShoppingBag size={20} color={colors.brand.primary} />
+        <View style={styles.itemHeader}>
+          {/* Product Image or Placeholder */}
+          <View style={styles.imageContainer}>
+            {imageSource ? (
+              <Image source={imageSource} style={styles.productImage} />
+            ) : (
+              <View style={styles.imagePlaceholder}>
+                <ShoppingBag size={24} color={colors.brand.primary} />
+              </View>
+            )}
           </View>
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemName}>{item.name}</Text>
+
+          {/* Product Info */}
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemName} numberOfLines={2}>
+              {item.name}
+            </Text>
+
+            {/* Store Name */}
+            {item.storeName && (
+              <TouchableOpacity
+                style={styles.storeTag}
+                onPress={() =>
+                  item.storeId && router.push(`/dukaan/${item.storeId}`)
+                }
+              >
+                <Store size={12} color={colors.brand.primary} />
+                <Text style={styles.storeText} numberOfLines={1}>
+                  {item.storeName}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <Text style={styles.itemPrice}>₹{item.price}</Text>
           </View>
+
+          {/* Delete Button */}
+          <TouchableOpacity
+            style={styles.deleteBtn}
+            onPress={() => removeFromCart(item.id)}
+          >
+            <Trash2 size={18} color={colors.status.error} />
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.itemActions}>
-          {/* Quantity Controls */}
+        {/* Quantity Controls and Subtotal */}
+        <View style={styles.itemFooter}>
           <View style={styles.quantityContainer}>
             <TouchableOpacity
               style={styles.quantityBtn}
@@ -64,13 +125,12 @@ export default function CartScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Delete Button */}
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => removeFromCart(item.id)}
-          >
-            <Trash2 size={18} color={colors.status.error} />
-          </TouchableOpacity>
+          <View style={styles.subtotalContainer}>
+            <Text style={styles.subtotalLabel}>Subtotal:</Text>
+            <Text style={styles.subtotalValue}>
+              ₹{item.price * item.quantity}
+            </Text>
+          </View>
         </View>
       </View>
     );
@@ -125,6 +185,11 @@ export default function CartScreen() {
                 <Text style={styles.itemCountText}>
                   {cart.length} {cart.length === 1 ? "item" : "items"} in cart
                 </Text>
+                <TouchableOpacity
+                  onPress={() => router.push("/(drawer)/(tabs)/bazar")}
+                >
+                  <Text style={styles.addMoreText}>+ Add more items</Text>
+                </TouchableOpacity>
               </View>
             }
           />
@@ -222,15 +287,23 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.md,
-    paddingBottom: 120,
+    paddingBottom: 300,
   },
   listHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
   itemCountText: {
     fontSize: 14,
     fontWeight: "600",
     color: colors.text.secondary,
+  },
+  addMoreText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.brand.primary,
   },
   cartItem: {
     backgroundColor: "#FFF",
@@ -241,22 +314,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#f1f5f9",
   },
-  itemInfo: {
+  itemHeader: {
     flexDirection: "row",
-    alignItems: "center",
     marginBottom: spacing.md,
   },
-  itemIconContainer: {
-    width: 48,
-    height: 48,
+  imageContainer: {
+    width: 70,
+    height: 70,
     borderRadius: radius.md,
+    overflow: "hidden",
+    marginRight: spacing.md,
+  },
+  productImage: {
+    width: "100%",
+    height: "100%",
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: "100%",
     backgroundColor: "#f1f5f9",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: spacing.md,
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1,
+    justifyContent: "space-between",
   },
   itemName: {
     fontSize: 16,
@@ -264,15 +346,45 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: 4,
   },
+  storeTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    alignSelf: "flex-start",
+    marginBottom: 4,
+  },
+  storeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.brand.primary,
+    maxWidth: 120,
+  },
   itemPrice: {
     fontSize: 15,
     fontWeight: "700",
     color: colors.brand.primary,
   },
-  itemActions: {
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "#fee2e2",
+    backgroundColor: "#fef2f2",
+  },
+  itemFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
   },
   quantityContainer: {
     flexDirection: "row",
@@ -297,15 +409,20 @@ const styles = StyleSheet.create({
     minWidth: 40,
     textAlign: "center",
   },
-  deleteBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  subtotalContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: "#fee2e2",
-    backgroundColor: "#fef2f2",
+    gap: 6,
+  },
+  subtotalLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+  subtotalValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.text.primary,
   },
   summaryCard: {
     position: "absolute",

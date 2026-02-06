@@ -55,7 +55,34 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 7. Register My Dukaan Screen (optional) */}
+        {/* 7. Register Edit Profile Screen */}
+        <Stack.Screen
+          name="edit-profile"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 8. Register Settings Screen */}
+        <Stack.Screen
+          name="settings"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 9. Register Help & Support Screen */}
+        <Stack.Screen
+          name="help-support"
+          options={{
+            headerShown: false,
+            presentation: "card",
+          }}
+        />
+
+        {/* 10. Register My Dukaan Screen (optional) */}
         <Stack.Screen
           name="my-dukaan"
           options={{
@@ -64,7 +91,7 @@ export default function RootLayout() {
           }}
         />
 
-        {/* 8. Register Transporter Screen (optional) */}
+        {/* 11. Register Transporter Screen (optional) */}
         <Stack.Screen
           name="transporter"
           options={{
