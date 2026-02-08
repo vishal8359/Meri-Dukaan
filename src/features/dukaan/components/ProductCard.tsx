@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs / 2,
   },
   price: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.brand.primary, // Using primary for price, or brand.secondary
     marginBottom: spacing.sm,
