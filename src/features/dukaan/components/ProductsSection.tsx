@@ -1,4 +1,3 @@
-// src/features/dukaan/components/ProductsSection.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
 import { Search, ShoppingCart } from "lucide-react-native";
@@ -46,7 +45,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       name: product.name,
       price: product.price,
       image: product.image,
-      storeName: "Store Name", // Pass from parent
+      storeName: "Store Name",
       storeId: storeId,
     });
   };
@@ -54,7 +53,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const ProductCard = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
       <View style={styles.productRow}>
-        {/* Product Image */}
         <View style={styles.productImageContainer}>
           {item.image.startsWith("http") ? (
             <Image source={{ uri: item.image }} style={styles.productImage} />
@@ -63,7 +61,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           )}
         </View>
 
-        {/* Product Info */}
         <View style={styles.productInfo}>
           <View style={styles.productHeader}>
             <Text style={styles.productName} numberOfLines={1}>
@@ -99,7 +96,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         </View>
       </View>
 
-      {/* Add to Cart Button */}
       {item.status === "active" && (
         <TouchableOpacity
           style={styles.addToCartBtn}
@@ -114,7 +110,6 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Search size={18} color="#999" style={styles.searchIcon} />
         <TextInput
@@ -126,13 +121,18 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         />
       </View>
 
-      {/* Products List */}
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ProductCard item={item} />}
         contentContainerStyle={styles.productsList}
-        showsVerticalScrollIndicator={false}
+        // --- FIXES ---
+        // 1. Disable inner scrolling so the parent FlatList handles it
+        scrollEnabled={false}
+        // 2. Add visual spacing between cards
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        // -------------
+
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No products found</Text>
@@ -167,7 +167,11 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   productsList: {
-    gap: 12,
+    // We use paddingBottom to ensure the last card isn't cut off
+    paddingBottom: 20,
+  },
+  separator: {
+    height: 16, // This creates the 16px gap between cards
   },
   productCard: {
     backgroundColor: "#fff",
@@ -180,6 +184,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    // Add marginHorizontal if you want them away from the screen edges
+    marginHorizontal: 2,
   },
   productRow: {
     flexDirection: "row",
@@ -187,8 +193,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   productImageContainer: {
-    width: 56,
-    height: 56,
+    width: 64, // Slightly larger for better look
+    height: 64,
     borderRadius: 8,
     backgroundColor: "#f1f5f9",
     justifyContent: "center",
@@ -263,7 +269,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: colors.brand.primary,
+    backgroundColor: colors.brand.primaryLight,
     paddingVertical: 10,
     borderRadius: 8,
   },

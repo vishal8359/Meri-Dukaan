@@ -1,4 +1,14 @@
-// app/dukaan/[id].tsx
+import React, { useState } from "react";
+import {
+  FlatList,
+  Image,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+// Fixed: Using react-native-safe-area-context instead of react-native
 import { useApp } from "@/src/context/AppContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
 import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
@@ -6,17 +16,7 @@ import { colors, radius } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Heart, MapPin, Phone, Share2 } from "lucide-react-native";
-import React, { useState } from "react";
-import {
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StoreDetailScreen() {
   const router = useRouter();
@@ -27,10 +27,9 @@ export default function StoreDetailScreen() {
     "products",
   );
 
-  // Get the store from context
   const store = getStoreById(id as string);
 
-  // Mock data - in real app, fetch from API
+  // Mock data preserved
   const products = [
     {
       id: "1",
@@ -93,7 +92,6 @@ export default function StoreDetailScreen() {
 
   const handleBookService = (service: any) => {
     console.log("Booking service:", service.name);
-    // Implement booking logic
   };
 
   if (!store) {
@@ -126,118 +124,128 @@ export default function StoreDetailScreen() {
     </View>
   );
 
+  // This renders everything ABOVE the product/service list
+  const renderHeader = () => (
+    <View>
+      {/* Store Header Card */}
+      <View style={styles.card}>
+        <View style={styles.storeHeaderRow}>
+          <View style={styles.storeImageContainer}>
+            <Image
+              source={
+                typeof store.image === "string"
+                  ? { uri: store.image }
+                  : store.image
+              }
+              style={styles.storeImage}
+              resizeMode="cover"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.storeName}>{store.name}</Text>
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeText}>{store.type}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <MapPin size={14} color="#64748b" />
+              <Text style={styles.infoText}>{store.distance} away</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Ionicons name="star" size={14} color="#E9C46A" />
+              <Text style={styles.infoText}>{store.rating} rating</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={styles.outlineBtnSmall}>
+            <Heart size={14} color="#ef4444" />
+            <Text style={styles.btnTextSmall}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.outlineBtnSmall}>
+            <Share2 size={14} color="#333" />
+            <Text style={styles.btnTextSmall}>Share</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.outlineBtnSmall}>
+            <Phone size={14} color="#22c55e" />
+            <Text style={styles.btnTextSmall}>Call</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Quick Stats */}
+      <View style={styles.statsGrid}>
+        <StatCard value={store.followers} label="Followers" />
+        <StatCard value={products.length} label="Products" />
+        <StatCard value={services.length} label="Services" />
+      </View>
+
+      {/* Custom Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === "products" && styles.activeTabButton,
+          ]}
+          onPress={() => setActiveTab("products")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "products" && styles.activeTabText,
+            ]}
+          >
+            Products
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.tabButton,
+            activeTab === "services" && styles.activeTabButton,
+          ]}
+          onPress={() => setActiveTab("services")}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "services" && styles.activeTabText,
+            ]}
+          >
+            Services
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
 
-      <ScrollView
+      {/* The Fix: Using a FlatList as the main container. 
+        Since ProductsSection/ServicesSection likely contain lists, 
+        we pass them as the only item in the data array or 
+        render them inside the footer/header.
+      */}
+      <FlatList
+        data={[1]} // Dummy data to allow the list to render
+        renderItem={() => (
+          <View style={styles.tabContent}>
+            {activeTab === "products" ? (
+              <ProductsSection storeId={id as string} products={products} />
+            ) : (
+              <ServicesSection
+                services={services}
+                onBookService={handleBookService}
+              />
+            )}
+          </View>
+        )}
+        ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Store Header Card */}
-        <View style={styles.card}>
-          <View style={styles.storeHeaderRow}>
-            <View style={styles.storeImageContainer}>
-              <Image
-                source={
-                  typeof store.image === "string"
-                    ? { uri: store.image }
-                    : store.image
-                }
-                style={styles.storeImage}
-                resizeMode="cover"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.storeName}>{store.name}</Text>
-              <View style={styles.typeBadge}>
-                <Text style={styles.typeText}>{store.type}</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <MapPin size={14} color="#64748b" />
-                <Text style={styles.infoText}>{store.distance} away</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Ionicons name="star" size={14} color="#E9C46A" />
-                <Text style={styles.infoText}>{store.rating} rating</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.outlineBtnSmall}>
-              <Heart size={14} color="#ef4444" />
-              <Text style={styles.btnTextSmall}>Save</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.outlineBtnSmall}>
-              <Share2 size={14} color="#333" />
-              <Text style={styles.btnTextSmall}>Share</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.outlineBtnSmall}>
-              <Phone size={14} color="#22c55e" />
-              <Text style={styles.btnTextSmall}>Call</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.statsGrid}>
-          <StatCard value={store.followers} label="Followers" />
-          <StatCard value={products.length} label="Products" />
-          <StatCard value={services.length} label="Services" />
-        </View>
-
-        {/* Custom Tabs */}
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "products" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("products")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "products" && styles.activeTabText,
-              ]}
-            >
-              Products
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.tabButton,
-              activeTab === "services" && styles.activeTabButton,
-            ]}
-            onPress={() => setActiveTab("services")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "services" && styles.activeTabText,
-              ]}
-            >
-              Services
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Tab Content */}
-        <View style={styles.tabContent}>
-          {activeTab === "products" ? (
-            <ProductsSection storeId={id as string} products={products} />
-          ) : (
-            <ServicesSection
-              services={services}
-              onBookService={handleBookService}
-            />
-          )}
-        </View>
-      </ScrollView>
+        keyExtractor={() => "main-content"}
+      />
     </SafeAreaView>
   );
 }

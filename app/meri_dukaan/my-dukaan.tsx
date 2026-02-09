@@ -2,26 +2,26 @@ import { colors, radius, shadows } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    Camera,
-    ChevronLeft,
-    Edit2,
-    Plus,
-    Star,
-    Trash2
+  Camera,
+  ChevronLeft,
+  Edit2,
+  Plus,
+  Star,
+  Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function MyDukaanScreen() {

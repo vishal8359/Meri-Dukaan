@@ -1,4 +1,3 @@
-// src/features/dukaan/components/ServicesSection.tsx
 import { colors } from "@/src/theme/colors";
 import { Plus, Store } from "lucide-react-native";
 import React from "react";
@@ -73,6 +72,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ServiceCard item={item} />}
         contentContainerStyle={styles.servicesList}
+        // --- FIXES ---
+        // 1. Disable inner scrolling to let parent handle it
+        scrollEnabled={false}
+        // 2. Add consistent spacing between service cards
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        // -------------
+
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -89,7 +95,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   servicesList: {
-    gap: 12,
+    // Adding bottom padding to ensure the last card has breathing room
+    paddingBottom: 20,
+  },
+  separator: {
+    height: 16, // Spacing between cards
   },
   serviceCard: {
     backgroundColor: "#fff",
@@ -102,6 +112,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
+    marginHorizontal: 2, // Keeps shadow from clipping
   },
   serviceHeader: {
     flexDirection: "row",
@@ -157,7 +168,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: "#6366f1",
+    backgroundColor: colors.brand.primaryLight,
     paddingVertical: 10,
     borderRadius: 8,
   },
