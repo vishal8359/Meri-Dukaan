@@ -1,17 +1,11 @@
 // app/dukaan/[id].tsx
 import { useApp } from "@/src/context/AppContext";
+import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
+import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
 import { colors, radius } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  Heart,
-  MapPin,
-  Phone,
-  Plus,
-  Search,
-  Share2,
-  Store as StoreIcon,
-} from "lucide-react-native";
+import { Heart, MapPin, Phone, Share2 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Image,
@@ -20,7 +14,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -28,76 +21,69 @@ import {
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { getStoreById, addToCart } = useApp();
+  const { getStoreById } = useApp();
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
   );
 
-  // Get the store from context using the ID
+  // Get the store from context
   const store = getStoreById(id as string);
 
-  // Mock products and services (in real app, these would come from the store data)
+  // Mock data - in real app, fetch from API
   const products = [
     {
-      id: 1,
+      id: "1",
       name: "Fresh Tomatoes",
       category: "Vegetables",
       price: 40,
       displayPrice: "₹40/kg",
       stock: "50 kg",
-      image: "🍅",
-      status: "active",
+      image:
+        "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
+      status: "active" as const,
     },
     {
-      id: 2,
+      id: "2",
       name: "Onions",
       category: "Vegetables",
       price: 30,
       displayPrice: "₹30/kg",
       stock: "80 kg",
-      image: "🧅",
-      status: "active",
+      image:
+        "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=300",
+      status: "active" as const,
     },
     {
-      id: 3,
+      id: "3",
       name: "Green Chilies",
       category: "Vegetables",
       price: 60,
       displayPrice: "₹60/kg",
       stock: "0 kg",
-      image: "🌶️",
-      status: "out-of-stock",
-    },
-    {
-      id: 4,
-      name: "Potatoes",
-      category: "Vegetables",
-      price: 25,
-      displayPrice: "₹25/kg",
-      stock: "120 kg",
-      image: "🥔",
-      status: "active",
+      image:
+        "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
+      status: "out-of-stock" as const,
     },
   ];
 
   const services = [
     {
-      id: 1,
+      id: "1",
       name: "Home Delivery",
       description: "Free over ₹500",
       active: true,
       price: 0,
     },
     {
-      id: 2,
+      id: "2",
       name: "Same Day Delivery",
       description: "Order before 5 PM",
       active: true,
       price: 50,
     },
     {
-      id: 3,
+      id: "3",
       name: "Bulk Orders",
       description: "Special pricing for bulk",
       active: false,
@@ -105,22 +91,11 @@ export default function StoreDetailScreen() {
     },
   ];
 
-  const handleAddToCart = (product: (typeof products)[0]) => {
-    addToCart({
-      id: `${store?.id}-${product.id}`,
-      name: product.name,
-      price: product.price,
-    });
-    // You can add a toast/snackbar notification here
-  };
-
-  const handleBookService = (service: (typeof services)[0]) => {
-    // Navigate to booking page or show booking modal
+  const handleBookService = (service: any) => {
     console.log("Booking service:", service.name);
-    // You can implement booking logic here
+    // Implement booking logic
   };
 
-  // If store not found
   if (!store) {
     return (
       <SafeAreaView style={styles.container}>
@@ -138,7 +113,6 @@ export default function StoreDetailScreen() {
     );
   }
 
-  // Helper Component for Stats Card
   const StatCard = ({
     value,
     label,
@@ -252,134 +226,17 @@ export default function StoreDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* PRODUCTS TAB CONTENT */}
-        {activeTab === "products" && (
-          <View>
-            {/* Search */}
-            <View style={styles.searchRow}>
-              <View style={styles.searchInputContainer}>
-                <Search size={18} color="#999" style={{ marginRight: 8 }} />
-                <TextInput
-                  placeholder="Search products..."
-                  style={styles.searchInput}
-                  placeholderTextColor="#999"
-                />
-              </View>
-            </View>
-
-            {/* Products List */}
-            <View style={{ gap: 12 }}>
-              {products.map((product) => (
-                <View key={product.id} style={styles.card}>
-                  <View style={styles.productRow}>
-                    <View style={styles.productImage}>
-                      <Text style={{ fontSize: 28 }}>{product.image}</Text>
-                    </View>
-
-                    <View style={{ flex: 1, justifyContent: "center" }}>
-                      <Text style={styles.cardTitle}>{product.name}</Text>
-                      <Text style={styles.subText}>{product.category}</Text>
-                      <Text style={styles.priceText}>
-                        {product.displayPrice}
-                      </Text>
-                      <Text style={styles.stockText}>
-                        Stock: {product.stock}
-                      </Text>
-                    </View>
-
-                    <View style={styles.rightActionContainer}>
-                      <View
-                        style={[
-                          styles.badge,
-                          product.status === "active"
-                            ? styles.badgeSuccess
-                            : styles.badgeDestructive,
-                          { marginBottom: 8 },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.badgeText,
-                            product.status === "active"
-                              ? styles.textSuccess
-                              : styles.textDestructive,
-                          ]}
-                        >
-                          {product.status === "active" ? "In Stock" : "Out"}
-                        </Text>
-                      </View>
-
-                      {product.status === "active" && (
-                        <TouchableOpacity
-                          style={styles.addToCartBtnSmall}
-                          onPress={() => handleAddToCart(product)}
-                        >
-                          <Plus size={16} color="#FFF" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* SERVICES TAB CONTENT */}
-        {activeTab === "services" && (
-          <View style={{ gap: 12 }}>
-            {services.map((service) => (
-              <View key={service.id} style={styles.card}>
-                <View style={styles.productRow}>
-                  <View style={{ flex: 1 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <StoreIcon size={16} color={colors.brand.primaryLight} />
-                      <Text style={styles.cardTitle}>{service.name}</Text>
-                    </View>
-                    <Text style={styles.subText} numberOfLines={1}>
-                      {service.description}
-                    </Text>
-                    {service.price > 0 && (
-                      <Text style={styles.servicePriceText}>
-                        ₹{service.price}
-                      </Text>
-                    )}
-                  </View>
-
-                  <View style={styles.rightActionContainer}>
-                    <View
-                      style={[
-                        styles.badge,
-                        service.active
-                          ? styles.badgeDefault
-                          : styles.badgeSecondary,
-                        { marginBottom: 8 },
-                      ]}
-                    >
-                      <Text style={styles.badgeTextSmall}>
-                        {service.active ? "Active" : "Off"}
-                      </Text>
-                    </View>
-                    {service.active && (
-                      <TouchableOpacity
-                        style={styles.bookServiceBtnSmall}
-                        onPress={() => handleBookService(service)}
-                      >
-                        <Plus size={16} color="#FFF" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
+        {/* Tab Content */}
+        <View style={styles.tabContent}>
+          {activeTab === "products" ? (
+            <ProductsSection storeId={id as string} products={products} />
+          ) : (
+            <ServicesSection
+              services={services}
+              onBookService={handleBookService}
+            />
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -418,7 +275,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  // Card Styles
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
@@ -447,33 +303,6 @@ const styles = StyleSheet.create({
   storeImage: {
     width: "100%",
     height: "100%",
-  },
-  rightActionContainer: {
-    alignItems: "flex-end",
-    justifyContent: "center",
-    minWidth: 60,
-  },
-  addToCartBtnSmall: {
-    backgroundColor: colors.brand.primary,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-  },
-  bookServiceBtnSmall: {
-    backgroundColor: colors.brand.primaryLight,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    elevation: 2,
   },
   storeName: {
     fontSize: 20,
@@ -509,7 +338,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  // Buttons
   outlineBtnSmall: {
     flexDirection: "row",
     alignItems: "center",
@@ -527,19 +355,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#334155",
   },
-
-  addToCartText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-
-  bookServiceText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFF",
-  },
-  // Stats Grid
   statsGrid: {
     flexDirection: "row",
     gap: 12,
@@ -564,7 +379,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748b",
   },
-  // Tabs
   tabContainer: {
     flexDirection: "row",
     backgroundColor: "#f1f5f9",
@@ -594,89 +408,7 @@ const styles = StyleSheet.create({
     color: "#0f172a",
     fontWeight: "600",
   },
-  // Search
-  searchRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 16,
+  tabContent: {
+    minHeight: 400,
   },
-  searchInputContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: "#333",
-  },
-  // Products/Services Items
-  productRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  productImage: {
-    height: 56,
-    width: 56,
-    borderRadius: 8,
-    backgroundColor: "#f1f5f9",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  spaceBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1e293b",
-    marginBottom: 2,
-  },
-  subText: {
-    fontSize: 13,
-    color: "#64748b",
-    marginBottom: 6,
-  },
-  priceText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  stockText: {
-    fontSize: 12,
-    color: "#94a3b8",
-  },
-  servicePriceText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.brand.primary,
-    marginTop: 4,
-  },
-  // Badges
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 12,
-  },
-  badgeSuccess: { backgroundColor: "#dcfce7" },
-  badgeDestructive: { backgroundColor: "#fee2e2" },
-  badgeDefault: { backgroundColor: "#e2e8f0" },
-  badgeSecondary: {
-    backgroundColor: "#f1f5f9",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  badgeText: { fontSize: 11, fontWeight: "600" },
-  textSuccess: { color: "#166534" },
-  textDestructive: { color: "#991b1b" },
-  badgeTextSmall: { fontSize: 11, color: "#334155" },
 });

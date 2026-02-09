@@ -1,0 +1,35 @@
+// src/constants/storeCategories.ts
+export const STORE_CATEGORIES = [
+  "Grocery",
+  "Restaurant",
+  "Pharmacy",
+  "Electronics",
+  "Clothing",
+  "Furniture",
+  "Bakery",
+  "Butcher",
+  "Fish Market",
+  "Dairy",
+  "Stationery",
+  "Hardware",
+  "Mobile Shop",
+  "Salon",
+  "Gym",
+  "Laundry",
+  "Tailor",
+  "Shoe Store",
+  "Jewelry",
+  "Books",
+  "Toys",
+  "Gifts",
+  "Flowers",
+  "Pet Store",
+  "Auto Parts",
+  "Other",
+];
+
+export const BUSINESS_TYPES = [
+  { id: "products", label: "Products", description: "Sell physical products" },
+  { id: "services", label: "Services", description: "Offer services" },
+  { id: "both", label: "Both", description: "Products & Services" },
+];
