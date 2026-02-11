@@ -1,28 +1,28 @@
-// app/settings.tsx
+// app/settings.tsx (UPDATED)
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Bell,
-    ChevronRight,
-    Globe,
-    Lock,
-    Moon,
-    Shield,
-    Smartphone,
-    Trash2,
+  ArrowLeft,
+  Bell,
+  ChevronRight,
+  Globe,
+  Lock,
+  Moon,
+  Shield,
+  Smartphone,
+  Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function SettingsScreen() {
@@ -32,25 +32,6 @@ export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [locationServices, setLocationServices] = useState(true);
-
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            // Handle account deletion
-            logout();
-            router.replace("/");
-          },
-        },
-      ],
-    );
-  };
 
   const SettingItem = ({
     icon: Icon,
@@ -127,7 +108,7 @@ export default function SettingsScreen() {
             icon={Globe}
             title="Language"
             subtitle="English (India)"
-            onPress={() => {}}
+            onPress={() => router.push("/Settings/language-selection")}
           />
           <SettingItem
             icon={Smartphone}
@@ -176,19 +157,19 @@ export default function SettingsScreen() {
             icon={Lock}
             title="Change Password"
             subtitle="Update your password"
-            onPress={() => {}}
+            onPress={() => router.push("/Settings/change-password")}
           />
           <SettingItem
             icon={Shield}
             title="Privacy Policy"
             subtitle="Read our privacy policy"
-            onPress={() => {}}
+            onPress={() => router.push("/privacy-policy")}
           />
           <SettingItem
             icon={Shield}
             title="Terms of Service"
             subtitle="Read terms and conditions"
-            onPress={() => {}}
+            onPress={() => router.push("/terms-of-service")}
           />
         </SettingSection>
 
@@ -208,7 +189,7 @@ export default function SettingsScreen() {
         <View style={styles.dangerZone}>
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={handleDeleteAccount}
+            onPress={() => router.push("/Settings/delete-account")}
           >
             <Trash2 size={20} color={colors.status.error} />
             <Text style={styles.deleteButtonText}>Delete Account</Text>
