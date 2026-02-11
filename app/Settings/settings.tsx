@@ -163,13 +163,13 @@ export default function SettingsScreen() {
             icon={Shield}
             title="Privacy Policy"
             subtitle="Read our privacy policy"
-            onPress={() => router.push("/privacy-policy")}
+            onPress={() => router.push("/Settings/privacy-policy")}
           />
           <SettingItem
             icon={Shield}
             title="Terms of Service"
             subtitle="Read terms and conditions"
-            onPress={() => router.push("/terms-of-service")}
+            onPress={() => router.push("/Settings/terms-of-service")}
           />
         </SettingSection>
 

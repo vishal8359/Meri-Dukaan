@@ -3,22 +3,22 @@ import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-    AlertCircle,
-    ArrowLeft,
-    CheckCircle2,
-    CreditCard,
-    MapPin,
-    Wallet,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  CreditCard,
+  MapPin,
+  Wallet,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function CheckoutScreen() {
@@ -82,7 +82,7 @@ export default function CheckoutScreen() {
             text: "View Orders",
             onPress: () => {
               clearCart();
-              router.replace("/orders");
+              router.replace("/myorders/orders");
             },
           },
         ],
@@ -106,7 +106,7 @@ export default function CheckoutScreen() {
                   text: "Done",
                   onPress: () => {
                     clearCart();
-                    router.replace("/orders");
+                    router.replace("/myorders/orders");
                   },
                 },
               ],
