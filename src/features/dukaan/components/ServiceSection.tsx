@@ -1,12 +1,13 @@
 import { colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
 import { Plus, Store } from "lucide-react-native";
 import React from "react";
 import {
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface Service {
@@ -26,8 +27,19 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   services,
   onBookService,
 }) => {
+  const router = useRouter();
+
+  const handleServicePress = (service: Service) => {
+    router.push({
+      pathname: "/service/[id]",
+      params: { id: service.id },
+    } as any);
+  };
   const ServiceCard = ({ item }: { item: Service }) => (
-    <View style={styles.serviceCard}>
+    <TouchableOpacity
+      style={styles.serviceCard}
+      onPress={() => handleServicePress(item)}
+    >
       <View style={styles.serviceHeader}>
         <View style={styles.serviceInfo}>
           <View style={styles.serviceNameRow}>
@@ -62,7 +74,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           <Text style={styles.bookText}>Book Service</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (

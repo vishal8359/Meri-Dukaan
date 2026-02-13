@@ -1,15 +1,16 @@
 import { useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
+import { useRouter } from "expo-router";
 import { Search, ShoppingCart } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface Product {
@@ -32,6 +33,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   storeId,
   products,
 }) => {
+  const router = useRouter();
   const { addToCart } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -50,8 +52,18 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
     });
   };
 
+  const handleProductPress = (product: Product) => {
+    router.push({
+      pathname: "/product/[id]",
+      params: { id: product.id, storeId: storeId },
+    } as any);
+  };
+
   const ProductCard = ({ item }: { item: Product }) => (
-    <View style={styles.productCard}>
+    <TouchableOpacity
+      style={styles.productCard}
+      onPress={() => handleProductPress(item)}
+    >
       <View style={styles.productRow}>
         <View style={styles.productImageContainer}>
           {item.image.startsWith("http") ? (
@@ -105,7 +117,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           <Text style={styles.addToCartText}>Add to Cart</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 
   return (

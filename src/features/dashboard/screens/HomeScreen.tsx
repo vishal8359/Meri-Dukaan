@@ -20,7 +20,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -35,6 +35,14 @@ const QUICK_PICKS = [
   { id: "6", name: "Bakery", icon: "🍞", color: "#a78bfa" },
   { id: "7", name: "Meat", icon: "🍗", color: "#f87171" },
   { id: "8", name: "Household", icon: "🧼", color: "#34d399" },
+  { id: "9", name: "Electronics", icon: "📱", color: "#3b82f6" },
+  { id: "10", name: "Gifts", icon: "🎁", color: "#ec4899" },
+  { id: "11", name: "Stationery", icon: "📝", color: "#f59e0b" },
+  { id: "12", name: "Garments", icon: "👕", color: "#8b5cf6" },
+  { id: "13", name: "Salon", icon: "💇", color: "#f97316" },
+  { id: "14", name: "Beauty", icon: "💄", color: "#db2777" },
+  { id: "15", name: "Books", icon: "📚", color: "#06b6d4" },
+  { id: "16", name: "Toys", icon: "🧸", color: "#10b981" },
 ];
 
 const FLASH_DEALS = [
@@ -100,7 +108,14 @@ export default function HomeScreen() {
   const featuredStores = getFeaturedStores(6);
 
   const navigateToStore = (storeId: string) => {
-    router.push(`/dukaan/${storeId}`);
+    router.push(`/dukaan/${storeId}` as any);
+  };
+
+  const navigateToProduct = (productId: string) => {
+    router.push({
+      pathname: "/product/[id]",
+      params: { id: productId },
+    } as any);
   };
 
   const QuickPickItem = ({ item }: { item: (typeof QUICK_PICKS)[0] }) => (
@@ -115,7 +130,10 @@ export default function HomeScreen() {
   );
 
   const FlashDealCard = ({ item }: { item: (typeof FLASH_DEALS)[0] }) => (
-    <TouchableOpacity style={styles.flashDealCard}>
+    <TouchableOpacity
+      style={styles.flashDealCard}
+      onPress={() => navigateToProduct(item.id)}
+    >
       <Image source={{ uri: item.image }} style={styles.flashDealImage} />
 
       {/* Discount Badge */}
