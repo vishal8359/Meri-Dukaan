@@ -2,6 +2,7 @@
 
 import { useApp } from "@/src/context/AppContext";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -16,7 +17,7 @@ import {
   View,
 } from "react-native";
 import { STORE_TYPES } from "../../../assets/mockData";
-import { colors, radius, shadows, spacing } from "../../../theme/colors";
+import { radius, spacing } from "../../../theme/colors";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
@@ -83,17 +84,35 @@ export default function BazarScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 1. FILTER BAR */}
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={["#0f172a", "#143e47"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.headerGreeting}>Explore</Text>
+            <Text style={styles.headerTitle}>Nearby Stores</Text>
+          </View>
+          <View style={styles.headerBadge}>
+            <Ionicons name="storefront-outline" size={24} color="#FFF" />
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Filter Bar */}
       <View style={styles.filterHeader}>
         <TouchableOpacity
           style={styles.mainFilterBtn}
           onPress={() => setIsModalVisible(true)}
         >
-          <Ionicons name="apps-outline" size={20} color="#FFF" />
+          <Ionicons name="filter-outline" size={18} color="#FFF" />
           <Text style={styles.mainFilterText} numberOfLines={1}>
-            {selectedType === "All" ? "Select Store Type" : selectedType}
+            {selectedType === "All" ? "All Categories" : selectedType}
           </Text>
-          <Ionicons name="chevron-down" size={18} color="#FFF" />
+          <Ionicons name="chevron-down" size={16} color="#FFF" />
         </TouchableOpacity>
 
         <View style={styles.distRow}>
@@ -103,7 +122,12 @@ export default function BazarScreen() {
               onPress={() => setDistLimit(distLimit === d ? null : d)}
               style={[styles.distBtn, distLimit === d && styles.activeDistBtn]}
             >
-              <Text style={styles.distBtnText}>
+              <Text
+                style={[
+                  styles.distBtnText,
+                  distLimit === d && styles.activeDistBtnText,
+                ]}
+              >
                 {d < 1 ? "500m" : d + "km"}
               </Text>
             </TouchableOpacity>
@@ -111,14 +135,32 @@ export default function BazarScreen() {
         </View>
       </View>
 
-      {/* 2. POP-UP MODAL WITH SEARCH */}
+      {/* Results Count */}
+      <View style={styles.resultsBar}>
+        <Text style={styles.resultsText}>
+          {filteredData.length} {filteredData.length === 1 ? "store" : "stores"}{" "}
+          found
+        </Text>
+        {(selectedType !== "All" || distLimit) && (
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedType("All");
+              setDistLimit(null);
+            }}
+          >
+            <Text style={styles.clearFilterText}>Clear filters</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* POP-UP MODAL WITH SEARCH */}
       <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>All Categories</Text>
+              <Text style={styles.modalTitle}>Categories</Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close-circle" size={28} color="#143e47" />
+                <Ionicons name="close-circle" size={28} color="#ef4444" />
               </TouchableOpacity>
             </View>
 
@@ -144,15 +186,21 @@ export default function BazarScreen() {
               {(!categorySearch ||
                 "all stores".includes(categorySearch.toLowerCase())) && (
                 <TouchableOpacity
-                  style={styles.categoryItem}
+                  style={[
+                    styles.categoryItem,
+                    selectedType === "All" && styles.categoryItemSelected,
+                  ]}
                   onPress={() => selectCategory("All")}
                 >
-                  <Text style={styles.categoryLabel}>All Stores</Text>
+                  <View style={styles.categoryItemContent}>
+                    <Ionicons name="apps-outline" size={20} color="#0f172a" />
+                    <Text style={styles.categoryLabel}>All Stores</Text>
+                  </View>
                   {selectedType === "All" && (
                     <Ionicons
                       name="checkmark-circle"
                       size={20}
-                      color="#143e47"
+                      color="#3b82f6"
                     />
                   )}
                 </TouchableOpacity>
@@ -161,15 +209,25 @@ export default function BazarScreen() {
               {searchedCategories.map((type) => (
                 <TouchableOpacity
                   key={type}
-                  style={styles.categoryItem}
+                  style={[
+                    styles.categoryItem,
+                    selectedType === type && styles.categoryItemSelected,
+                  ]}
                   onPress={() => selectCategory(type)}
                 >
-                  <Text style={styles.categoryLabel}>{type}</Text>
+                  <View style={styles.categoryItemContent}>
+                    <Ionicons
+                      name="storefront-outline"
+                      size={20}
+                      color="#0f172a"
+                    />
+                    <Text style={styles.categoryLabel}>{type}</Text>
+                  </View>
                   {selectedType === type && (
                     <Ionicons
                       name="checkmark-circle"
                       size={20}
-                      color="#143e47"
+                      color="#3b82f6"
                     />
                   )}
                 </TouchableOpacity>
@@ -185,7 +243,7 @@ export default function BazarScreen() {
         </View>
       </Modal>
 
-      {/* 3. STORE GRID */}
+      {/* STORE GRID */}
       <FlatList
         data={displayData}
         keyExtractor={(item) => item.id}
@@ -204,13 +262,24 @@ export default function BazarScreen() {
           isLoadingMore ? (
             <ActivityIndicator
               size="small"
-              color="#143e47"
+              color="#3b82f6"
               style={{ marginVertical: 20 }}
             />
           ) : null
         }
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No shops found in this category.</Text>
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="search-outline"
+              size={48}
+              color="#cbd5e1"
+              style={{ marginBottom: 16 }}
+            />
+            <Text style={styles.emptyText}>
+              No shops found in this category
+            </Text>
+            <Text style={styles.emptySubText}>Try adjusting your filters</Text>
+          </View>
         }
       />
     </View>
@@ -218,58 +287,105 @@ export default function BazarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fdfdfd" },
-  // --- ADDED HEADER STYLES ---
-  header: {
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  gradientHeader: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+  },
+  headerGreeting: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#cbd5e1",
+    marginBottom: 4,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1e293b",
+    fontSize: 24,
+    fontWeight: "900",
+    color: "#FFF",
   },
-  headerBtn: {
-    width: 40,
-    height: 40,
+  headerBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
     justifyContent: "center",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
-  // ---------------------------
   filterHeader: {
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.md,
     backgroundColor: "#FFF",
     justifyContent: "space-between",
-    ...shadows.small,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
   },
   mainFilterBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.brand.primary,
-    paddingHorizontal: 15,
+    backgroundColor: "#3b82f6",
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: radius.md,
     gap: 8,
     flex: 1,
     marginRight: 10,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  mainFilterText: { color: "#FFF", fontWeight: "700", fontSize: 14 },
-  distRow: { flexDirection: "row", gap: 5 },
+  mainFilterText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  distRow: { flexDirection: "row", gap: 6 },
   distBtn: {
-    backgroundColor: "#E2E8F0",
-    padding: 8,
-    borderRadius: radius.sm,
+    backgroundColor: "#f1f5f9",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
-  activeDistBtn: { backgroundColor: "#B7DEE5" },
-  distBtnText: { fontSize: 11, fontWeight: "700", color: "#0e0e0e" },
+  activeDistBtn: {
+    backgroundColor: "#dbeafe",
+    borderColor: "#3b82f6",
+  },
+  distBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+  activeDistBtnText: {
+    color: "#3b82f6",
+  },
+  resultsBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: "#FFF",
+  },
+  resultsText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  clearFilterText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3b82f6",
+  },
 
   // Modal Styles
   modalOverlay: {
@@ -279,55 +395,92 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "#FFF",
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    height: "70%",
-    padding: spacing.md,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: "75%",
+    paddingTop: spacing.md,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: colors.brand.primary,
+    color: "#0f172a",
   },
-  modalScroll: { paddingBottom: 40 },
+  modalScroll: { paddingBottom: 40, paddingHorizontal: spacing.md },
   categoryItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  categoryItemSelected: {
+    backgroundColor: "#f0f9ff",
+    borderColor: "#3b82f6",
+  },
+  categoryItemContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    flex: 1,
   },
   categoryLabel: {
-    fontSize: 16,
-    color: colors.brand.accent,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0f172a",
   },
 
   // List Styles
-  gridRow: { justifyContent: "space-between", paddingHorizontal: spacing.md },
-  listPadding: { paddingTop: spacing.md, paddingBottom: 100 },
-  emptyText: { textAlign: "center", marginTop: 50, color: "#64748b" },
+  gridRow: {
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  listPadding: { paddingTop: spacing.sm, paddingBottom: 100 },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#64748b",
+  },
+  emptySubText: {
+    textAlign: "center",
+    fontSize: 13,
+    color: "#94a3b8",
+    marginTop: 4,
+  },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#f1f5f9",
     borderRadius: radius.md,
-    paddingHorizontal: 12,
-    marginBottom: 15,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
   searchInput: {
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 10,
-    fontSize: 16,
-    color: "#1e293b",
+    fontSize: 15,
+    color: "#0f172a",
   },
   noResultText: {
     textAlign: "center",

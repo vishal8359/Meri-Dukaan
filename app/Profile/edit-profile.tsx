@@ -1,25 +1,27 @@
 // app/edit-profile.tsx
 import { useApp } from "@/src/context/AppContext";
-import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { spacing } from "@/src/theme/colors";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Camera,
-    Mail,
-    MapPin,
-    Phone,
-    User,
+  ArrowLeft,
+  Camera,
+  Check,
+  Mail,
+  MapPin,
+  Phone,
+  User,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function EditProfileScreen() {
@@ -36,8 +38,9 @@ export default function EditProfileScreen() {
     pincode: "800016",
   });
 
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+
   const handleSave = () => {
-    // Here you would typically update the user data in context/backend
     Alert.alert("Success", "Profile updated successfully!", [
       { text: "OK", onPress: () => router.back() },
     ]);
@@ -51,13 +54,22 @@ export default function EditProfileScreen() {
     icon: Icon,
     keyboardType = "default",
     multiline = false,
+    fieldName,
   }: any) => (
     <View style={styles.inputContainer}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={styles.inputWrapper}>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>{label}</Text>
+        {focusedField === fieldName && <Check size={14} color="#10b981" />}
+      </View>
+      <View
+        style={[
+          styles.inputWrapper,
+          focusedField === fieldName && styles.inputWrapperFocused,
+        ]}
+      >
         <Icon
           size={18}
-          color={colors.text.secondary}
+          color={focusedField === fieldName ? "#3b82f6" : "#94a3b8"}
           style={styles.inputIcon}
         />
         <TextInput
@@ -65,10 +77,12 @@ export default function EditProfileScreen() {
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.text.secondary}
+          placeholderTextColor="#cbd5e1"
           keyboardType={keyboardType}
           multiline={multiline}
           numberOfLines={multiline ? 3 : 1}
+          onFocus={() => setFocusedField(fieldName)}
+          onBlur={() => setFocusedField(null)}
         />
       </View>
     </View>
@@ -82,7 +96,7 @@ export default function EditProfileScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color={colors.text.primary} />
+          <ArrowLeft size={24} color="#0f172a" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={{ width: 24 }} />
@@ -93,7 +107,12 @@ export default function EditProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Picture Section */}
-        <View style={styles.profileSection}>
+        <LinearGradient
+          colors={["#f0f9ff", "#f8fafc"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.profileSection}
+        >
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{formData.name.charAt(0)}</Text>
@@ -103,11 +122,15 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           </View>
           <Text style={styles.changePhotoText}>Change Profile Photo</Text>
-        </View>
+          <Text style={styles.photoSubText}>JPG or PNG up to 5MB</Text>
+        </LinearGradient>
 
         {/* Personal Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+          </View>
 
           <InputField
             label="Full Name"
@@ -117,6 +140,7 @@ export default function EditProfileScreen() {
             }
             placeholder="Enter your name"
             icon={User}
+            fieldName="name"
           />
 
           <InputField
@@ -128,6 +152,7 @@ export default function EditProfileScreen() {
             placeholder="Enter your email"
             icon={Mail}
             keyboardType="email-address"
+            fieldName="email"
           />
 
           <InputField
@@ -139,12 +164,16 @@ export default function EditProfileScreen() {
             placeholder="Enter your phone"
             icon={Phone}
             keyboardType="phone-pad"
+            fieldName="phone"
           />
         </View>
 
         {/* Address Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Address Information</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Address Information</Text>
+          </View>
 
           <InputField
             label="Street Address"
@@ -155,6 +184,7 @@ export default function EditProfileScreen() {
             placeholder="Enter your address"
             icon={MapPin}
             multiline
+            fieldName="address"
           />
 
           <View style={styles.row}>
@@ -167,6 +197,7 @@ export default function EditProfileScreen() {
                 }
                 placeholder="City"
                 icon={MapPin}
+                fieldName="city"
               />
             </View>
 
@@ -179,6 +210,7 @@ export default function EditProfileScreen() {
                 }
                 placeholder="State"
                 icon={MapPin}
+                fieldName="state"
               />
             </View>
           </View>
@@ -192,21 +224,24 @@ export default function EditProfileScreen() {
             placeholder="Enter PIN code"
             icon={MapPin}
             keyboardType="numeric"
+            fieldName="pincode"
           />
         </View>
 
-        {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.buttonSection}>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Check size={20} color="#FFF" />
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          </TouchableOpacity>
 
-        {/* Cancel Button */}
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>
@@ -217,7 +252,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f8fafc",
   },
   header: {
     flexDirection: "row",
@@ -226,38 +261,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     backgroundColor: "#FFF",
-    ...shadows.small,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
   },
   backButton: {
     padding: 4,
+    width: 40,
+    height: 40,
+    justifyContent: "center",
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: colors.text.primary,
+    color: "#0f172a",
+    letterSpacing: -0.5,
   },
   content: {
-    padding: spacing.md,
+    paddingBottom: 40,
   },
   profileSection: {
     alignItems: "center",
+    marginTop: spacing.md,
+    marginHorizontal: spacing.md,
+    paddingVertical: spacing.xl,
+    borderRadius: 16,
     marginBottom: spacing.xl,
-    paddingVertical: spacing.lg,
   },
   avatarContainer: {
     position: "relative",
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: colors.brand.primary,
+    backgroundColor: "#3b82f6",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 4,
     borderColor: "#FFF",
-    ...shadows.medium,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
     fontSize: 36,
@@ -268,7 +315,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: colors.brand.accent,
+    backgroundColor: "#ef4444",
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -276,39 +323,73 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 3,
     borderColor: "#FFF",
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   changePhotoText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.brand.primary,
-    marginTop: spacing.xs,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0f172a",
+    marginTop: spacing.sm,
+  },
+  photoSubText: {
+    fontSize: 12,
+    color: "#94a3b8",
+    marginTop: 2,
   },
   section: {
+    marginHorizontal: spacing.md,
     marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionIndicator: {
+    width: 4,
+    height: 20,
+    borderRadius: 2,
+    backgroundColor: "#3b82f6",
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: colors.text.primary,
-    marginBottom: spacing.md,
+    color: "#0f172a",
   },
   inputContainer: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.sm,
   },
   label: {
     fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+    fontWeight: "700",
+    color: "#0f172a",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFF",
-    borderRadius: radius.md,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: "#e2e8f0",
     paddingHorizontal: spacing.md,
+    transition: "all 0.3s ease",
+  },
+  inputWrapperFocused: {
+    borderColor: "#3b82f6",
+    backgroundColor: "#f0f9ff",
   },
   inputIcon: {
     marginRight: spacing.sm,
@@ -317,7 +398,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     fontSize: 15,
-    color: colors.text.primary,
+    color: "#0f172a",
+    fontWeight: "500",
   },
   multilineInput: {
     paddingVertical: spacing.sm,
@@ -331,31 +413,42 @@ const styles = StyleSheet.create({
   halfWidth: {
     flex: 1,
   },
+  buttonSection: {
+    marginHorizontal: spacing.md,
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
   saveButton: {
-    backgroundColor: colors.brand.primary,
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: spacing.lg,
-    ...shadows.medium,
+    justifyContent: "center",
+    gap: spacing.sm,
+    backgroundColor: "#3b82f6",
+    paddingVertical: spacing.lg,
+    borderRadius: 12,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   saveButtonText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
     color: "#FFF",
+    letterSpacing: 0.5,
   },
   cancelButton: {
     backgroundColor: "#FFF",
-    paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    paddingVertical: spacing.lg,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: spacing.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#e2e8f0",
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: colors.text.secondary,
+    color: "#64748b",
   },
 });

@@ -1,28 +1,30 @@
 // app/settings.tsx (UPDATED)
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Bell,
-  ChevronRight,
-  Globe,
-  Lock,
-  Moon,
-  Shield,
-  Smartphone,
-  Trash2,
+    ArrowLeft,
+    Bell,
+    ChevronRight,
+    Globe,
+    Lock,
+    Moon,
+    Settings,
+    Shield,
+    Smartphone,
+    Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function SettingsScreen() {
@@ -40,15 +42,17 @@ export default function SettingsScreen() {
     onPress,
     showArrow = true,
     rightComponent,
+    color = colors.brand.primary,
   }: any) => (
     <TouchableOpacity
       style={styles.settingItem}
       onPress={onPress}
       disabled={!onPress}
+      activeOpacity={0.7}
     >
       <View style={styles.settingLeft}>
-        <View style={styles.iconContainer}>
-          <Icon size={20} color={colors.brand.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
+          <Icon size={20} color={color} />
         </View>
         <View style={styles.settingText}>
           <Text style={styles.settingTitle}>{title}</Text>
@@ -62,24 +66,38 @@ export default function SettingsScreen() {
 
   const SettingSection = ({ title, children }: any) => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionIndicator} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       <View style={styles.sectionContent}>{children}</View>
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={["#0f172a", "#1e3a4f", "#1e5a62"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={24} color="#FFF" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Settings size={28} color="#10b981" style={{ marginBottom: 4 }} />
+            <Text style={styles.headerTitle}>Settings</Text>
+            <Text style={styles.headerSubtitle}>Manage your preferences</Text>
+          </View>
+          <View style={{ width: 24 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -91,15 +109,16 @@ export default function SettingsScreen() {
             icon={Bell}
             title="Notifications"
             subtitle="Manage notification preferences"
+            color="#ef4444"
             rightComponent={
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
                 trackColor={{
                   false: "#e2e8f0",
-                  true: colors.brand.primaryLight,
+                  true: "#fecaca",
                 }}
-                thumbColor={notifications ? colors.brand.primary : "#f4f3f4"}
+                thumbColor={notifications ? "#ef4444" : "#f4f3f4"}
               />
             }
             showArrow={false}
@@ -108,21 +127,23 @@ export default function SettingsScreen() {
             icon={Globe}
             title="Language"
             subtitle="English (India)"
+            color="#f59e0b"
             onPress={() => router.push("/Settings/language-selection")}
           />
           <SettingItem
             icon={Smartphone}
             title="Location Services"
             subtitle="Allow app to access your location"
+            color="#3b82f6"
             rightComponent={
               <Switch
                 value={locationServices}
                 onValueChange={setLocationServices}
                 trackColor={{
                   false: "#e2e8f0",
-                  true: colors.brand.primaryLight,
+                  true: "#bfdbfe",
                 }}
-                thumbColor={locationServices ? colors.brand.primary : "#f4f3f4"}
+                thumbColor={locationServices ? "#3b82f6" : "#f4f3f4"}
               />
             }
             showArrow={false}
@@ -135,6 +156,7 @@ export default function SettingsScreen() {
             icon={Moon}
             title="Dark Mode"
             subtitle="Coming soon"
+            color="#8b5cf6"
             rightComponent={
               <Switch
                 value={darkMode}
@@ -142,9 +164,9 @@ export default function SettingsScreen() {
                 disabled
                 trackColor={{
                   false: "#e2e8f0",
-                  true: colors.brand.primaryLight,
+                  true: "#ddd6fe",
                 }}
-                thumbColor={darkMode ? colors.brand.primary : "#f4f3f4"}
+                thumbColor={darkMode ? "#8b5cf6" : "#f4f3f4"}
               />
             }
             showArrow={false}
@@ -157,18 +179,21 @@ export default function SettingsScreen() {
             icon={Lock}
             title="Change Password"
             subtitle="Update your password"
+            color="#10b981"
             onPress={() => router.push("/Settings/change-password")}
           />
           <SettingItem
             icon={Shield}
             title="Privacy Policy"
             subtitle="Read our privacy policy"
+            color="#06b6d4"
             onPress={() => router.push("/Settings/privacy-policy")}
           />
           <SettingItem
             icon={Shield}
             title="Terms of Service"
             subtitle="Read terms and conditions"
+            color="#8b5cf6"
             onPress={() => router.push("/Settings/terms-of-service")}
           />
         </SettingSection>
@@ -179,6 +204,7 @@ export default function SettingsScreen() {
             icon={Trash2}
             title="Clear Cache"
             subtitle="Free up storage space"
+            color="#f59e0b"
             onPress={() => {
               Alert.alert("Success", "Cache cleared successfully!");
             }}
@@ -213,22 +239,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  gradientHeader: {
+    paddingBottom: spacing.md,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
-    ...shadows.small,
+  },
+  headerContent: {
+    alignItems: "center",
+    flex: 1,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
-    color: colors.text.primary,
+    color: "#FFF",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#cbd5e1",
+    marginTop: 2,
+    fontWeight: "600",
   },
   content: {
     padding: spacing.md,
@@ -236,14 +273,25 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.lg,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    gap: spacing.sm,
+  },
+  sectionIndicator: {
+    width: 4,
+    height: 20,
+    backgroundColor: "#3b82f6",
+    borderRadius: 2,
+  },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "800",
     color: colors.text.secondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.xs,
   },
   sectionContent: {
     backgroundColor: "#FFF",

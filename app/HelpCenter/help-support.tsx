@@ -1,6 +1,7 @@
 // app/help-support.tsx
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
     ArrowLeft,
@@ -110,10 +111,22 @@ export default function HelpSupportScreen() {
     );
   };
 
-  const ContactOption = ({ icon: Icon, title, subtitle, onPress }: any) => (
-    <TouchableOpacity style={styles.contactOption} onPress={onPress}>
-      <View style={styles.contactIconContainer}>
-        <Icon size={22} color={colors.brand.primary} />
+  const ContactOption = ({
+    icon: Icon,
+    title,
+    subtitle,
+    onPress,
+    color = colors.brand.primary,
+  }: any) => (
+    <TouchableOpacity
+      style={styles.contactOption}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View
+        style={[styles.contactIconContainer, { backgroundColor: `${color}15` }]}
+      >
+        <Icon size={22} color={color} />
       </View>
       <View style={styles.contactInfo}>
         <Text style={styles.contactTitle}>{title}</Text>
@@ -125,17 +138,28 @@ export default function HelpSupportScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      {/* Gradient Header */}
+      <LinearGradient
+        colors={["#0f172a", "#1e3a4f", "#1e5a62"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientHeader}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={24} color="#FFF" />
+          </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <HelpCircle size={28} color="#10b981" style={{ marginBottom: 4 }} />
+            <Text style={styles.headerTitle}>Help & Support</Text>
+            <Text style={styles.headerSubtitle}>We're here to help</Text>
+          </View>
+          <View style={{ width: 24 }} />
+        </View>
+      </LinearGradient>
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -143,32 +167,41 @@ export default function HelpSupportScreen() {
       >
         {/* Contact Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Us</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Contact Us</Text>
+          </View>
           <View style={styles.contactContainer}>
             <ContactOption
               icon={Phone}
               title="Call Us"
               subtitle="+91 98765 43210"
               onPress={handleCall}
+              color="#3b82f6"
             />
             <ContactOption
               icon={Mail}
               title="Email Us"
               subtitle="support@sangam.in"
               onPress={handleEmail}
+              color="#f59e0b"
             />
             <ContactOption
               icon={MessageCircle}
               title="WhatsApp"
               subtitle="Chat with us"
               onPress={handleWhatsApp}
+              color="#10b981"
             />
           </View>
         </View>
 
         {/* FAQs */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          </View>
           <View style={styles.faqContainer}>
             {FAQ_DATA.map((item) => (
               <FAQItem key={item.id} item={item} />
@@ -178,11 +211,18 @@ export default function HelpSupportScreen() {
 
         {/* Send Message */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Send Us a Message</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Send Us a Message</Text>
+          </View>
           <View style={styles.messageCard}>
+            <View style={styles.messageWrap}>
+              <Send size={18} color="#3b82f6" />
+              <Text style={styles.messageLabel}>Your Message</Text>
+            </View>
             <TextInput
               style={styles.messageInput}
-              placeholder="Type your message here..."
+              placeholder="Tell us how we can help..."
               placeholderTextColor={colors.text.secondary}
               multiline
               numberOfLines={5}
@@ -193,6 +233,7 @@ export default function HelpSupportScreen() {
             <TouchableOpacity
               style={styles.sendButton}
               onPress={handleSubmitMessage}
+              activeOpacity={0.8}
             >
               <Send size={18} color="#FFF" />
               <Text style={styles.sendButtonText}>Send Message</Text>
@@ -202,20 +243,44 @@ export default function HelpSupportScreen() {
 
         {/* Quick Links */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Resources</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionIndicator} />
+            <Text style={styles.sectionTitle}>Resources</Text>
+          </View>
           <View style={styles.linksContainer}>
-            <TouchableOpacity style={styles.linkItem}>
-              <FileText size={18} color={colors.brand.primary} />
+            <TouchableOpacity style={styles.linkItem} activeOpacity={0.7}>
+              <View
+                style={[
+                  styles.linkIconContainer,
+                  { backgroundColor: "#f0fdf415" },
+                ]}
+              >
+                <FileText size={18} color="#f59e0b" />
+              </View>
               <Text style={styles.linkText}>Terms of Service</Text>
               <ChevronRight size={18} color="#cbd5e1" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
-              <FileText size={18} color={colors.brand.primary} />
+            <TouchableOpacity style={styles.linkItem} activeOpacity={0.7}>
+              <View
+                style={[
+                  styles.linkIconContainer,
+                  { backgroundColor: "#dbeafe15" },
+                ]}
+              >
+                <FileText size={18} color="#3b82f6" />
+              </View>
               <Text style={styles.linkText}>Privacy Policy</Text>
               <ChevronRight size={18} color="#cbd5e1" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.linkItem}>
-              <FileText size={18} color={colors.brand.primary} />
+            <TouchableOpacity style={styles.linkItem} activeOpacity={0.7}>
+              <View
+                style={[
+                  styles.linkIconContainer,
+                  { backgroundColor: "#f0fdfa15" },
+                ]}
+              >
+                <FileText size={18} color="#10b981" />
+              </View>
               <Text style={styles.linkText}>Refund Policy</Text>
               <ChevronRight size={18} color="#cbd5e1" />
             </TouchableOpacity>
@@ -249,22 +314,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
+  gradientHeader: {
+    paddingBottom: spacing.md,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
-    ...shadows.small,
+  },
+  headerContent: {
+    alignItems: "center",
+    flex: 1,
   },
   backButton: {
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "800",
-    color: colors.text.primary,
+    color: "#FFF",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "#cbd5e1",
+    marginTop: 2,
+    fontWeight: "600",
   },
   content: {
     padding: spacing.md,
@@ -272,11 +348,22 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xl,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  sectionIndicator: {
+    width: 4,
+    height: 24,
+    backgroundColor: "#3b82f6",
+    borderRadius: 2,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "800",
     color: colors.text.primary,
-    marginBottom: spacing.md,
   },
   contactContainer: {
     backgroundColor: "#FFF",
@@ -321,6 +408,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
     borderRadius: radius.lg,
     padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderLeftWidth: 4,
+    borderLeftColor: "#3b82f6",
     ...shadows.small,
   },
   faqHeader: {
@@ -329,6 +419,12 @@ const styles = StyleSheet.create({
   },
   faqIconContainer: {
     marginRight: spacing.sm,
+    backgroundColor: "#dbeafe",
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
   faqQuestion: {
     flex: 1,
@@ -341,7 +437,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 20,
     marginTop: spacing.md,
-    paddingLeft: 26,
+    paddingLeft: 40,
   },
   messageCard: {
     backgroundColor: "#FFF",
@@ -349,21 +445,39 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...shadows.small,
   },
+  messageWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  messageLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text.primary,
+    letterSpacing: 0.3,
+  },
   messageInput: {
     fontSize: 15,
     color: colors.text.primary,
     minHeight: 120,
     marginBottom: spacing.md,
     textAlignVertical: "top",
+    backgroundColor: "#f8f9fa",
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   sendButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: colors.brand.primary,
+    backgroundColor: "#3b82f6",
     paddingVertical: spacing.md,
     borderRadius: radius.md,
+    ...shadows.small,
   },
   sendButtonText: {
     fontSize: 16,
@@ -384,6 +498,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
     gap: spacing.md,
+  },
+  linkIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    alignItems: "center",
   },
   linkText: {
     flex: 1,

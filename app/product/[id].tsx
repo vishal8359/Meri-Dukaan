@@ -2,22 +2,22 @@ import { useApp } from "@/src/context/AppContext";
 import { colors, radius } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ChevronLeft,
-    Heart,
-    MapPin,
-    Share2,
-    ShoppingCart
+  ChevronLeft,
+  Heart,
+  MapPin,
+  Share2,
+  ShoppingCart,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -318,7 +318,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 32,
+    paddingVertical: 10,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",

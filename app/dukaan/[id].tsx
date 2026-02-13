@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
+  Animated,
+  Dimensions,
   FlatList,
   Image,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -15,17 +18,20 @@ import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection
 import { colors, radius } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Heart, MapPin, Phone, Share2 } from "lucide-react-native";
+import { Heart, MapPin, Phone, Search, Share2 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { getStoreById } = useApp();
+  const scrollY = useRef(new Animated.Value(0)).current;
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
   );
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const store = getStoreById(id as string);
 
@@ -111,22 +117,9 @@ export default function StoreDetailScreen() {
     );
   }
 
-  const StatCard = ({
-    value,
-    label,
-  }: {
-    value: string | number;
-    label: string;
-  }) => (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
-
   // This renders everything ABOVE the product/service list
   const renderHeader = () => (
-    <View>
+    <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
       {/* Store Header Card */}
       <View style={styles.card}>
         <View style={styles.storeHeaderRow}>
@@ -143,12 +136,18 @@ export default function StoreDetailScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.storeName}>{store.name}</Text>
-            <View style={styles.typeBadge}>
-              <Text style={styles.typeText}>{store.type}</Text>
+            <View style={styles.typeBadgeRow}>
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeText}>{store.type}</Text>
+              </View>
+              <View style={styles.followersBadge}>
+                <Ionicons name="heart" size={11} color="#fff" />
+                <Text style={styles.followersCount}>{store.followers}</Text>
+              </View>
             </View>
             <View style={styles.infoRow}>
               <MapPin size={14} color="#64748b" />
-              <Text style={styles.infoText}>{store.distance} away</Text>
+              <Text style={styles.infoText}>{store.distance}</Text>
             </View>
             <View style={styles.infoRow}>
               <Ionicons name="star" size={14} color="#E9C46A" />
@@ -173,13 +172,6 @@ export default function StoreDetailScreen() {
         </View>
       </View>
 
-      {/* Quick Stats */}
-      <View style={styles.statsGrid}>
-        <StatCard value={store.followers} label="Followers" />
-        <StatCard value={products.length} label="Products" />
-        <StatCard value={services.length} label="Services" />
-      </View>
-
       {/* Custom Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -187,7 +179,10 @@ export default function StoreDetailScreen() {
             styles.tabButton,
             activeTab === "products" && styles.activeTabButton,
           ]}
-          onPress={() => setActiveTab("products")}
+          onPress={() => {
+            setActiveTab("products");
+            setSearchQuery("");
+          }}
         >
           <Text
             style={[
@@ -203,7 +198,10 @@ export default function StoreDetailScreen() {
             styles.tabButton,
             activeTab === "services" && styles.activeTabButton,
           ]}
-          onPress={() => setActiveTab("services")}
+          onPress={() => {
+            setActiveTab("services");
+            setSearchQuery("");
+          }}
         >
           <Text
             style={[
@@ -220,19 +218,47 @@ export default function StoreDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
+      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-      {/* The Fix: Using a FlatList as the main container. 
-        Since ProductsSection/ServicesSection likely contain lists, 
-        we pass them as the only item in the data array or 
-        render them inside the footer/header.
-      */}
+      {/* Sticky Search Bar - Only show when on products tab */}
+      {activeTab === "products" && (
+        <Animated.View
+          style={[
+            styles.stickySearch,
+            {
+              opacity: scrollY.interpolate({
+                inputRange: [0, Dimensions.get("window").height],
+                outputRange: [0, 1],
+                extrapolate: "clamp",
+              }),
+            },
+          ]}
+        >
+          <View style={styles.searchContainer}>
+            <Search size={18} color="#999" style={styles.searchIcon} />
+            <TextInput
+              placeholder="Search products..."
+              style={styles.searchInput}
+              placeholderTextColor="#999"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </Animated.View>
+      )}
+
+      {/* The Main Content: Using a FlatList as the main container. */}
       <FlatList
         data={[1]} // Dummy data to allow the list to render
         renderItem={() => (
           <View style={styles.tabContent}>
             {activeTab === "products" ? (
-              <ProductsSection storeId={id as string} products={products} />
+              <ProductsSection
+                storeId={id as string}
+                products={products}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
             ) : (
               <ServicesSection
                 services={services}
@@ -242,6 +268,11 @@ export default function StoreDetailScreen() {
           </View>
         )}
         ListHeaderComponent={renderHeader}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false },
+        )}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyExtractor={() => "main-content"}
@@ -253,7 +284,7 @@ export default function StoreDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f8fafc",
   },
   scrollContent: {
     padding: 16,
@@ -285,25 +316,26 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 16,
+    shadowColor: "#ef4444",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: "#fce7f3",
   },
   storeHeaderRow: {
     flexDirection: "row",
-    gap: 16,
-    marginBottom: 16,
+    gap: 14,
+    marginBottom: 14,
+    alignItems: "flex-start",
   },
   storeImageContainer: {
-    height: 80,
-    width: 80,
+    height: 100,
+    width: 100,
     borderRadius: radius.md,
     overflow: "hidden",
     backgroundColor: "#f1f5f9",
@@ -312,100 +344,104 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  storeName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#1e293b",
-    marginBottom: 6,
+  typeBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+    flexWrap: "wrap",
   },
-  typeBadge: {
-    backgroundColor: "#B7DEE540",
-    alignSelf: "flex-start",
+  followersBadge: {
+    backgroundColor: "#ef4444",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  followersCount: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  storeName: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0f172a",
     marginBottom: 8,
   },
+  typeBadge: {
+    backgroundColor: "#dcfce7",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#86efac",
+  },
   typeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
-    color: "#143e47",
+    color: "#166534",
     textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    marginBottom: 4,
+    gap: 6,
+    marginBottom: 5,
   },
   infoText: {
     fontSize: 13,
-    color: "#64748b",
+    color: "#475569",
+    fontWeight: "500",
   },
   actionRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: 10,
   },
   outlineBtnSmall: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
+    paddingVertical: 10,
+    borderWidth: 1.5,
     borderColor: "#e2e8f0",
-    borderRadius: 6,
-    gap: 4,
+    borderRadius: 8,
+    gap: 6,
     flex: 1,
     justifyContent: "center",
+    backgroundColor: "#f8fafc",
   },
   btnTextSmall: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: "#334155",
   },
-  statsGrid: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    elevation: 1,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0f172a",
-  },
-  statLabel: {
-    fontSize: 12,
-    color: "#64748b",
-  },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#f1f5f9",
-    borderRadius: 8,
+    backgroundColor: colors.brand.primaryLight,
+    borderRadius: 12,
     padding: 4,
-    marginBottom: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.brand.primaryLight,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: "center",
-    borderRadius: 6,
+    borderRadius: 10,
+    marginHorizontal: 2,
   },
   activeTabButton: {
     backgroundColor: "#fff",
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    elevation: 2,
+    shadowColor: "#3b82f6",
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   tabText: {
     fontSize: 14,
@@ -413,10 +449,42 @@ const styles = StyleSheet.create({
     color: "#64748b",
   },
   activeTabText: {
-    color: "#0f172a",
-    fontWeight: "600",
+    color: "#3b82f6",
+    fontWeight: "700",
+    fontSize: 15,
   },
   tabContent: {
     minHeight: 400,
+    marginBottom: 20,
+  },
+  stickySearch: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    zIndex: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#333",
   },
 });

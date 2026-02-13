@@ -6,12 +6,12 @@
 export const colors = {
   // Brand Identity
   brand: {
-    primaryLight: "#516c96", // Soft Clay
+    primaryLight: "#99bfc1", // Soft Clay
     secondary: "#2E2E2E", // Charcoal
     accent: "#43526b", // Earth Brown
-    primary: "#3a4c69",
+    primary: "#2f5d60",
     // primary: "#005F73",
-    // primaryLight: "#B7DEE5", // Soft Aqua
+    // primaryLight: "#131b1c", // Soft Aqua
     // secondary: "#E9C46A", // Muted Gold
     // accent: "#0A3A40", // Deep Teal
   },

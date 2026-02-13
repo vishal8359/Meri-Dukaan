@@ -4,13 +4,13 @@ import { useRouter } from "expo-router";
 import { Search, ShoppingCart } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface Product {
@@ -27,15 +27,29 @@ interface Product {
 interface ProductsSectionProps {
   storeId: string;
   products: Product[];
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
 }
 
 export const ProductsSection: React.FC<ProductsSectionProps> = ({
   storeId,
   products,
+  searchQuery: externalSearchQuery = "",
+  onSearchChange,
 }) => {
   const router = useRouter();
   const { addToCart } = useApp();
-  const [searchQuery, setSearchQuery] = useState("");
+  // Use external search query if provided, else use local state
+  const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const searchQuery = externalSearchQuery || localSearchQuery;
+
+  const handleSearchChange = (text: string) => {
+    if (onSearchChange) {
+      onSearchChange(text);
+    } else {
+      setLocalSearchQuery(text);
+    }
+  };
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -122,16 +136,19 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <Search size={18} color="#999" style={styles.searchIcon} />
-        <TextInput
-          placeholder="Search products..."
-          style={styles.searchInput}
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+      {/* Search bar shown only when NOT controlled by parent (onSearchChange not provided) */}
+      {!onSearchChange && (
+        <View style={styles.searchContainer}>
+          <Search size={18} color="#999" style={styles.searchIcon} />
+          <TextInput
+            placeholder="Search products..."
+            style={styles.searchInput}
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+          />
+        </View>
+      )}
 
       <FlatList
         data={filteredProducts}
