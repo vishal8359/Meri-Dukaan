@@ -2,7 +2,6 @@
 
 import { useApp } from "@/src/context/AppContext";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -17,7 +16,7 @@ import {
   View,
 } from "react-native";
 import { STORE_TYPES } from "../../../assets/mockData";
-import { radius, spacing } from "../../../theme/colors";
+import { colors, radius, spacing } from "../../../theme/colors";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
@@ -85,7 +84,7 @@ export default function BazarScreen() {
   return (
     <View style={styles.container}>
       {/* Gradient Header */}
-      <LinearGradient
+      {/* <LinearGradient
         colors={["#0f172a", "#143e47"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -100,7 +99,7 @@ export default function BazarScreen() {
             <Ionicons name="storefront-outline" size={24} color="#FFF" />
           </View>
         </View>
-      </LinearGradient>
+      </LinearGradient> */}
 
       {/* Filter Bar */}
       <View style={styles.filterHeader}>
@@ -200,7 +199,7 @@ export default function BazarScreen() {
                     <Ionicons
                       name="checkmark-circle"
                       size={20}
-                      color="#3b82f6"
+                      color={colors.brand.primaryLight}
                     />
                   )}
                 </TouchableOpacity>
@@ -227,7 +226,7 @@ export default function BazarScreen() {
                     <Ionicons
                       name="checkmark-circle"
                       size={20}
-                      color="#3b82f6"
+                      color={colors.brand.primaryLight}
                     />
                   )}
                 </TouchableOpacity>
@@ -262,7 +261,7 @@ export default function BazarScreen() {
           isLoadingMore ? (
             <ActivityIndicator
               size="small"
-              color="#3b82f6"
+              color={colors.brand.primaryLight}
               style={{ marginVertical: 20 }}
             />
           ) : null
@@ -329,14 +328,14 @@ const styles = StyleSheet.create({
   mainFilterBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.brand.primaryLight,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: radius.md,
     gap: 8,
     flex: 1,
     marginRight: 10,
-    shadowColor: "#3b82f6",
+    shadowColor: colors.brand.primaryLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -358,7 +357,7 @@ const styles = StyleSheet.create({
   },
   activeDistBtn: {
     backgroundColor: "#dbeafe",
-    borderColor: "#3b82f6",
+    borderColor: colors.brand.primaryLight,
   },
   distBtnText: {
     fontSize: 11,
@@ -366,7 +365,7 @@ const styles = StyleSheet.create({
     color: "#64748b",
   },
   activeDistBtnText: {
-    color: "#3b82f6",
+    color: colors.brand.primaryLight,
   },
   resultsBar: {
     flexDirection: "row",
@@ -384,7 +383,7 @@ const styles = StyleSheet.create({
   clearFilterText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#3b82f6",
+    color: colors.brand.primaryLight,
   },
 
   // Modal Styles
@@ -428,7 +427,7 @@ const styles = StyleSheet.create({
   },
   categoryItemSelected: {
     backgroundColor: "#f0f9ff",
-    borderColor: "#3b82f6",
+    borderColor: colors.brand.primary,
   },
   categoryItemContent: {
     flexDirection: "row",

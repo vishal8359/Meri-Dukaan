@@ -1,16 +1,16 @@
 import { useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
-import { Search, ShoppingCart } from "lucide-react-native";
-import React, { useState } from "react";
+import { Search, ShoppingCart, Star } from "lucide-react-native";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 interface Product {
@@ -29,6 +29,8 @@ interface ProductsSectionProps {
   products: Product[];
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  storeImage?: string;
+  storeName?: string;
 }
 
 export const ProductsSection: React.FC<ProductsSectionProps> = ({
@@ -36,52 +38,84 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   products,
   searchQuery: externalSearchQuery = "",
   onSearchChange,
+  storeImage,
+  storeName = "Store",
 }) => {
   const router = useRouter();
   const { addToCart } = useApp();
-  // Use external search query if provided, else use local state
   const [localSearchQuery, setLocalSearchQuery] = useState("");
   const searchQuery = externalSearchQuery || localSearchQuery;
 
-  const handleSearchChange = (text: string) => {
-    if (onSearchChange) {
-      onSearchChange(text);
-    } else {
-      setLocalSearchQuery(text);
-    }
-  };
-
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      if (onSearchChange) {
+        onSearchChange(text);
+      } else {
+        setLocalSearchQuery(text);
+      }
+    },
+    [onSearchChange],
   );
 
-  const handleAddToCart = (product: Product) => {
-    addToCart({
-      id: `${storeId}-${product.id}`,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      storeName: "Store Name",
-      storeId: storeId,
-    });
-  };
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((product) =>
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [products, searchQuery],
+  );
 
-  const handleProductPress = (product: Product) => {
-    router.push({
-      pathname: "/product/[id]",
-      params: { id: product.id, storeId: storeId },
-    } as any);
-  };
+  const handleAddToCart = useCallback(
+    (product: Product) => {
+      addToCart({
+        id: `${storeId}-${product.id}`,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        storeName: storeName,
+        storeId: storeId,
+      });
+    },
+    [storeId, addToCart, storeName],
+  );
+
+  const handleProductPress = useCallback(
+    (product: Product) => {
+      router.push({
+        pathname: "/product/[id]",
+        params: { id: product.id, storeId: storeId },
+      } as any);
+    },
+    [router, storeId],
+  );
+
+  const getItemLayout = useCallback(
+    (data: ArrayLike<Product> | null | undefined, index: number) => ({
+      length: 180,
+      offset: 180 * index,
+      index,
+    }),
+    [],
+  );
 
   const ProductCard = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.productCard}
       onPress={() => handleProductPress(item)}
+      activeOpacity={0.7}
     >
       <View style={styles.productRow}>
         <View style={styles.productImageContainer}>
           {item.image.startsWith("http") ? (
-            <Image source={{ uri: item.image }} style={styles.productImage} />
+            <Image
+              source={{ uri: item.image }}
+              style={styles.productImage}
+              progressiveRenderingEnabled
+              resizeMode="cover"
+              defaultSource={{
+                uri: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+              }}
+            />
           ) : (
             <Text style={styles.productEmoji}>{item.image}</Text>
           )}
@@ -108,16 +142,24 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                     : styles.textError,
                 ]}
               >
-                {item.status === "active" ? "Available" : "Out of Stock"}
+                {item.status === "active" ? "✓ In Stock" : "Out of Stock"}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.productCategory}>{item.category}</Text>
+          <View style={styles.categoryRow}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryTag}>{item.category}</Text>
+            </View>
+            <View style={styles.ratingBadge}>
+              <Star size={11} color="#FFB800" fill="#FFB800" />
+              <Text style={styles.rating}>4.5</Text>
+            </View>
+          </View>
 
           <View style={styles.productFooter}>
             <Text style={styles.productPrice}>{item.displayPrice}</Text>
-            <Text style={styles.productStock}>Stock: {item.stock}</Text>
+            <Text style={styles.deliveryBadge}>📦 Free Delivery</Text>
           </View>
         </View>
       </View>
@@ -134,9 +176,29 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
     </TouchableOpacity>
   );
 
+  const StoreBanner = () => (
+    <View style={styles.storeBannerContainer}>
+      {storeImage && (
+        <Image
+          source={{ uri: storeImage }}
+          style={styles.bannerImage}
+          progressiveRenderingEnabled
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.bannerOverlay} />
+      <View style={styles.bannerContent}>
+        <Text style={styles.bannerTitle} numberOfLines={1}>
+          {storeName}
+        </Text>
+        <Text style={styles.bannerSubtitle}>Browse our amazing products</Text>
+      </View>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
-      {/* Search bar shown only when NOT controlled by parent (onSearchChange not provided) */}
+      {/* Search bar shown only when NOT controlled by parent */}
       {!onSearchChange && (
         <View style={styles.searchContainer}>
           <Search size={18} color="#999" style={styles.searchIcon} />
@@ -155,13 +217,15 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ProductCard item={item} />}
         contentContainerStyle={styles.productsList}
-        // --- FIXES ---
-        // 1. Disable inner scrolling so the parent FlatList handles it
+        ListHeaderComponent={<StoreBanner />}
         scrollEnabled={false}
-        // 2. Add visual spacing between cards
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        // -------------
-
+        // Performance optimizations
+        maxToRenderPerBatch={10}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={8}
+        getItemLayout={getItemLayout}
+        removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No products found</Text>
@@ -182,7 +246,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderWidth: 1,
     borderColor: "#e2e8f0",
-    borderRadius: 6,
+    borderRadius: 8,
     paddingHorizontal: 12,
     height: 44,
     marginBottom: 16,
@@ -195,26 +259,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#333",
   },
+  storeBannerContainer: {
+    height: 180,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#f1f5f9",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  bannerImage: {
+    width: "100%",
+    height: "100%",
+    position: "absolute",
+  },
+  bannerOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+  },
+  bannerContent: {
+    flex: 1,
+    justifyContent: "flex-end",
+    padding: 20,
+  },
+  bannerTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#fff",
+    marginBottom: 4,
+  },
+  bannerSubtitle: {
+    fontSize: 13,
+    color: "rgba(255, 255, 255, 0.9)",
+    fontWeight: "500",
+  },
   productsList: {
-    // We use paddingBottom to ensure the last card isn't cut off
     paddingBottom: 20,
   },
   separator: {
-    height: 16, // This creates the 16px gap between cards
+    height: 12,
   },
   productCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: "#e8ecf1",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
-    // Add marginHorizontal if you want them away from the screen edges
-    marginHorizontal: 2,
+    marginHorizontal: 1,
   },
   productRow: {
     flexDirection: "row",
@@ -222,9 +325,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   productImageContainer: {
-    width: 64, // Slightly larger for better look
-    height: 64,
-    borderRadius: 8,
+    width: 68,
+    height: 68,
+    borderRadius: 10,
     backgroundColor: "#f1f5f9",
     justifyContent: "center",
     alignItems: "center",
@@ -244,17 +347,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 4,
+    marginBottom: 6,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: "#1e293b",
     flex: 1,
     marginRight: 8,
   },
   statusBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 12,
   },
@@ -265,7 +368,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fee2e2",
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
   },
   textSuccess: {
@@ -274,10 +377,38 @@ const styles = StyleSheet.create({
   textError: {
     color: "#991b1b",
   },
-  productCategory: {
-    fontSize: 13,
-    color: "#64748b",
-    marginBottom: 6,
+  categoryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  categoryBadge: {
+    backgroundColor: "#f0f4ff",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#c7d2fe",
+  },
+  categoryTag: {
+    fontSize: 11,
+    color: "#4f46e5",
+    fontWeight: "600",
+  },
+  ratingBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#fffbeb",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  rating: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#b45309",
   },
   productFooter: {
     flexDirection: "row",
@@ -285,13 +416,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   productPrice: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: "#0f172a",
   },
-  productStock: {
-    fontSize: 12,
-    color: "#94a3b8",
+  deliveryBadge: {
+    fontSize: 11,
+    color: "#047857",
+    fontWeight: "600",
   },
   addToCartBtn: {
     flexDirection: "row",
@@ -303,7 +435,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addToCartText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     color: "#FFF",
   },

@@ -1,27 +1,28 @@
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Minus,
-  Plus,
-  ShoppingBag,
-  Store,
-  Trash2,
-  Wrench,
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Minus,
+    Plus,
+    ShoppingBag,
+    Square,
+    Store,
+    Trash2,
+    Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 // Extended cart item with booking info
@@ -117,73 +118,78 @@ export default function CartScreen() {
       : null;
 
     return (
-      <View style={styles.cartItem}>
-        <View style={styles.itemHeader}>
-          <View style={styles.imageContainer}>
-            {imageSource ? (
-              <Image source={imageSource} style={styles.productImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <ShoppingBag size={24} color={colors.brand.primary} />
-              </View>
-            )}
+      <TouchableOpacity
+        onPress={() => router.push(`/product/${item.id}`)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.cartItem}>
+          <View style={styles.itemHeader}>
+            <View style={styles.imageContainer}>
+              {imageSource ? (
+                <Image source={imageSource} style={styles.productImage} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <ShoppingBag size={24} color={colors.brand.primary} />
+                </View>
+              )}
+            </View>
+
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName} numberOfLines={2}>
+                {item.name}
+              </Text>
+
+              {item.storeName && (
+                <TouchableOpacity
+                  style={styles.storeTag}
+                  onPress={() =>
+                    item.storeId && router.push(`/dukaan/${item.storeId}`)
+                  }
+                >
+                  <Store size={12} color={colors.brand.primary} />
+                  <Text style={styles.storeText} numberOfLines={1}>
+                    {item.storeName}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <Text style={styles.itemPrice}>₹{item.price}</Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.deleteBtn}
+              onPress={() => removeFromCart(item.id)}
+            >
+              <Trash2 size={18} color={colors.status.error} />
+            </TouchableOpacity>
           </View>
 
-          <View style={styles.itemInfo}>
-            <Text style={styles.itemName} numberOfLines={2}>
-              {item.name}
-            </Text>
-
-            {item.storeName && (
+          <View style={styles.itemFooter}>
+            <View style={styles.quantityContainer}>
               <TouchableOpacity
-                style={styles.storeTag}
-                onPress={() =>
-                  item.storeId && router.push(`/dukaan/${item.storeId}`)
-                }
+                style={styles.quantityBtn}
+                onPress={() => updateQuantity(item, false)}
               >
-                <Store size={12} color={colors.brand.primary} />
-                <Text style={styles.storeText} numberOfLines={1}>
-                  {item.storeName}
-                </Text>
+                <Minus size={14} color={colors.text.primary} />
               </TouchableOpacity>
-            )}
+              <Text style={styles.quantityText}>{item.quantity}</Text>
+              <TouchableOpacity
+                style={styles.quantityBtn}
+                onPress={() => updateQuantity(item, true)}
+              >
+                <Plus size={14} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
 
-            <Text style={styles.itemPrice}>₹{item.price}</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => removeFromCart(item.id)}
-          >
-            <Trash2 size={18} color={colors.status.error} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.itemFooter}>
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity
-              style={styles.quantityBtn}
-              onPress={() => updateQuantity(item, false)}
-            >
-              <Minus size={14} color={colors.text.primary} />
-            </TouchableOpacity>
-            <Text style={styles.quantityText}>{item.quantity}</Text>
-            <TouchableOpacity
-              style={styles.quantityBtn}
-              onPress={() => updateQuantity(item, true)}
-            >
-              <Plus size={14} color={colors.text.primary} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.subtotalContainer}>
-            <Text style={styles.subtotalLabel}>Subtotal:</Text>
-            <Text style={styles.subtotalValue}>
-              ₹{item.price * item.quantity}
-            </Text>
+            <View style={styles.subtotalContainer}>
+              <Text style={styles.subtotalLabel}>Subtotal:</Text>
+              <Text style={styles.subtotalValue}>
+                ₹{item.price * item.quantity}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -191,59 +197,67 @@ export default function CartScreen() {
     const hasImage = item.image && item.image !== "";
 
     return (
-      <View style={styles.serviceItem}>
-        <View style={styles.itemHeader}>
-          <View style={styles.imageContainer}>
-            {hasImage ? (
-              <Image source={{ uri: item.image }} style={styles.productImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Wrench size={24} color={colors.brand.primary} />
-              </View>
-            )}
-          </View>
+      <TouchableOpacity
+        onPress={() => router.push(`/service/${item.id}`)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.serviceItem}>
+          <View style={styles.itemHeader}>
+            <View style={styles.imageContainer}>
+              {hasImage ? (
+                <Image
+                  source={{ uri: item.image }}
+                  style={styles.productImage}
+                />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Wrench size={24} color={colors.brand.primary} />
+                </View>
+              )}
+            </View>
 
-          <View style={styles.itemInfo}>
-            <Text style={styles.itemName} numberOfLines={2}>
-              {item.serviceName}
-            </Text>
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName} numberOfLines={2}>
+                {item.serviceName}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.storeTag}
+                onPress={() => router.push(`/dukaan/${item.storeId}`)}
+              >
+                <Store size={12} color={colors.brand.primary} />
+                <Text style={styles.storeText} numberOfLines={1}>
+                  {item.storeName}
+                </Text>
+              </TouchableOpacity>
+
+              <Text style={styles.itemPrice}>
+                {item.price === 0 ? "FREE" : `₹${item.price}`}
+              </Text>
+            </View>
 
             <TouchableOpacity
-              style={styles.storeTag}
-              onPress={() => router.push(`/dukaan/${item.storeId}`)}
+              style={styles.deleteBtn}
+              onPress={() => removeService(item.id)}
             >
-              <Store size={12} color={colors.brand.primary} />
-              <Text style={styles.storeText} numberOfLines={1}>
-                {item.storeName}
-              </Text>
+              <Trash2 size={18} color={colors.status.error} />
             </TouchableOpacity>
-
-            <Text style={styles.itemPrice}>
-              {item.price === 0 ? "FREE" : `₹${item.price}`}
-            </Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.deleteBtn}
-            onPress={() => removeService(item.id)}
-          >
-            <Trash2 size={18} color={colors.status.error} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bookingDetails}>
-          <View style={styles.bookingInfo}>
-            <Calendar size={14} color={colors.brand.primary} />
-            <Text style={styles.bookingText}>
-              {new Date(item.bookingDate).toLocaleDateString()}
-            </Text>
-          </View>
-          <View style={styles.bookingInfo}>
-            <Clock size={14} color={colors.brand.primary} />
-            <Text style={styles.bookingText}>{item.bookingTime}</Text>
+          <View style={styles.bookingDetails}>
+            <View style={styles.bookingInfo}>
+              <Calendar size={14} color={colors.brand.primary} />
+              <Text style={styles.bookingText}>
+                {new Date(item.bookingDate).toLocaleDateString()}
+              </Text>
+            </View>
+            <View style={styles.bookingInfo}>
+              <Clock size={14} color={colors.brand.primary} />
+              <Text style={styles.bookingText}>{item.bookingTime}</Text>
+            </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -360,17 +374,15 @@ export default function CartScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.selectionLabelGroup}>
-                <Ionicons
-                  name={
-                    selectedCategories.products ? "checkbox" : "square-outline"
-                  }
-                  size={20}
-                  color={
-                    selectedCategories.products
-                      ? colors.brand.primary
-                      : colors.text.secondary
-                  }
-                />
+                {selectedCategories.products ? (
+                  <CheckCircle
+                    size={20}
+                    color={colors.brand.primary}
+                    fill={colors.brand.primary}
+                  />
+                ) : (
+                  <Square size={20} color={colors.text.secondary} />
+                )}
                 <Text
                   style={[
                     styles.summaryLabel,
@@ -402,17 +414,15 @@ export default function CartScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.selectionLabelGroup}>
-                <Ionicons
-                  name={
-                    selectedCategories.services ? "checkbox" : "square-outline"
-                  }
-                  size={20}
-                  color={
-                    selectedCategories.services
-                      ? colors.brand.primary
-                      : colors.text.secondary
-                  }
-                />
+                {selectedCategories.services ? (
+                  <CheckCircle
+                    size={20}
+                    color={colors.brand.primary}
+                    fill={colors.brand.primary}
+                  />
+                ) : (
+                  <Square size={20} color={colors.text.secondary} />
+                )}
                 <Text
                   style={[
                     styles.summaryLabel,
@@ -454,7 +464,7 @@ export default function CartScreen() {
 
             {activeCartTotal > 500 && (
               <View style={styles.savingsRow}>
-                <Ionicons name="checkmark-circle" size={16} color="#22c55e" />
+                <CheckCircle size={16} color="#22c55e" fill="#22c55e" />
                 <Text style={styles.savingsText}>
                   You saved ₹40 on delivery!
                 </Text>
@@ -495,18 +505,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     backgroundColor: "#FFF",
     ...shadows.small,
   },
-  backButton: { padding: 4 },
+  backButton: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+  },
   headerTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: colors.text.primary },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.text.primary,
+  },
   contentContainer: { flex: 1 },
   tabContainer: {
     flexDirection: "row",
@@ -519,9 +536,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
+    gap: spacing.sm,
     paddingVertical: spacing.md,
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: "transparent",
   },
   activeTab: { borderBottomColor: colors.brand.primary },
@@ -531,12 +548,12 @@ const styles = StyleSheet.create({
   listHeader: { marginBottom: spacing.md },
   itemCountText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     color: colors.text.secondary,
   },
   cartItem: {
     backgroundColor: "#FFF",
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.medium,
@@ -545,26 +562,32 @@ const styles = StyleSheet.create({
   },
   serviceItem: {
     backgroundColor: "#FFF",
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.medium,
-    borderWidth: 1,
-    borderColor: "#e0e7ff",
+    borderWidth: 1.5,
+    borderColor: "#ede9fe",
   },
-  itemHeader: { flexDirection: "row", marginBottom: spacing.md },
+  itemHeader: {
+    flexDirection: "row",
+    marginBottom: spacing.md,
+    alignItems: "flex-start",
+  },
   imageContainer: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.md,
+    width: 80,
+    height: 80,
+    borderRadius: radius.lg,
     overflow: "hidden",
     marginRight: spacing.md,
+    backgroundColor: "#f1f5f9",
+    ...shadows.small,
   },
   productImage: { width: "100%", height: "100%" },
   imagePlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#ede9fe",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -573,18 +596,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   storeTag: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#f1f5f9",
-    paddingHorizontal: 8,
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.sm,
     alignSelf: "flex-start",
-    marginBottom: 4,
+    marginBottom: spacing.sm,
   },
   storeText: {
     fontSize: 11,
@@ -592,71 +615,92 @@ const styles = StyleSheet.create({
     color: colors.brand.primary,
     maxWidth: 120,
   },
-  itemPrice: { fontSize: 15, fontWeight: "700", color: colors.brand.primary },
+  itemPrice: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.brand.primary,
+  },
   deleteBtn: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: "#fee2e2",
+    borderWidth: 1.5,
+    borderColor: "#fecaca",
     backgroundColor: "#fef2f2",
   },
   itemFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "#f1f5f9",
   },
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f5f9",
-    borderRadius: radius.md,
-    padding: 4,
+    backgroundColor: "#f8f9fa",
+    borderRadius: radius.lg,
+    padding: spacing.xs,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   quantityBtn: {
-    width: 32,
-    height: 32,
+    width: 36,
+    height: 36,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#FFF",
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   quantityText: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.primary,
     paddingHorizontal: spacing.md,
-    minWidth: 40,
+    minWidth: 45,
     textAlign: "center",
   },
-  subtotalContainer: { flexDirection: "row", alignItems: "center", gap: 6 },
+  subtotalContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
   subtotalLabel: {
     fontSize: 13,
     fontWeight: "600",
     color: colors.text.secondary,
   },
   subtotalValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
-    color: colors.text.primary,
+    color: colors.brand.primary,
   },
   bookingDetails: {
     flexDirection: "row",
     gap: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e7ff",
+    paddingTop: spacing.md,
+    borderTopWidth: 1.5,
+    borderTopColor: "#ede9fe",
   },
-  bookingInfo: { flexDirection: "row", alignItems: "center", gap: 4 },
+  bookingInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: "#f3f0ff",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    flex: 1,
+  },
   bookingText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: colors.text.secondary,
+    fontWeight: "700",
+    color: colors.brand.primary,
   },
   summaryCard: {
     position: "absolute",
@@ -664,60 +708,98 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: "#FFF",
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    ...shadows.medium,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: spacing.md,
+    ...shadows.large,
+    paddingBottom: spacing.lg,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: spacing.sm,
     alignItems: "center",
+    paddingVertical: spacing.xs,
   },
-  selectionLabelGroup: { flexDirection: "row", alignItems: "center", gap: 8 },
+  selectionLabelGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
   summaryLabel: {
     fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.secondary,
+    fontWeight: "700",
+    color: colors.text.primary,
   },
-  summaryValue: { fontSize: 14, fontWeight: "700", color: colors.text.primary },
+  summaryValue: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: colors.text.primary,
+  },
   freeText: { color: colors.status.success, fontWeight: "800" },
   savingsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: spacing.sm,
     backgroundColor: "#dcfce7",
-    padding: spacing.sm,
-    borderRadius: radius.sm,
-    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    marginBottom: spacing.md,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.status.success,
   },
-  savingsText: { fontSize: 12, fontWeight: "700", color: "#166534" },
+  savingsText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#166534",
+    flex: 1,
+  },
   divider: {
-    height: 1,
-    backgroundColor: "#f1f5f9",
+    height: 1.5,
+    backgroundColor: "#e2e8f0",
     marginVertical: spacing.md,
   },
-  totalLabel: { fontSize: 18, fontWeight: "800", color: colors.text.primary },
-  totalValue: { fontSize: 22, fontWeight: "800", color: colors.brand.primary },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.text.primary,
+  },
+  totalValue: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.brand.primary,
+  },
   checkoutBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
+    gap: spacing.md,
     backgroundColor: colors.brand.primary,
     paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
     marginTop: spacing.md,
+    ...shadows.medium,
   },
-  checkoutBtnText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+  checkoutBtnText: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFF",
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
   },
-  emptyIconContainer: { marginBottom: spacing.xl },
+  emptyIconContainer: {
+    marginBottom: spacing.xl,
+    backgroundColor: "#f1f5f9",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   emptyText: {
     fontSize: 22,
     fontWeight: "800",
@@ -732,9 +814,14 @@ const styles = StyleSheet.create({
   },
   shopButton: {
     backgroundColor: colors.brand.primary,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 40,
     paddingVertical: spacing.md,
-    borderRadius: radius.lg,
+    borderRadius: radius.xl,
+    ...shadows.medium,
   },
-  shopButtonText: { fontSize: 16, fontWeight: "700", color: "#FFF" },
+  shopButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFF",
+  },
 });

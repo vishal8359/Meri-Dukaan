@@ -1,24 +1,23 @@
-import { colors, radius } from "@/src/theme/colors";
+import { colors, radius, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ChevronLeft,
-    Clock,
-    Heart,
-    MapPin,
-    Share2,
-    Star,
-    Users,
+  ChevronLeft,
+  Clock,
+  Heart,
+  MapPin,
+  Star,
+  Users
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,6 +35,7 @@ interface Service {
   reviewsCount?: number;
   storeName?: string;
   storeId?: string;
+  delivery?: string;
   features?: string[];
 }
 
@@ -61,6 +61,7 @@ export default function ServiceDetailScreen() {
     ],
     category: "Delivery",
     duration: "24-48 hours",
+    delivery: "24-48 hrs",
     rating: 4.8,
     reviewsCount: 1250,
     storeName: "Sharma Kirana",
@@ -86,6 +87,7 @@ export default function ServiceDetailScreen() {
         "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=300",
       category: "Delivery",
       duration: "Same day",
+      delivery: "4-6 hrs",
       rating: 4.7,
       reviewsCount: 892,
     },
@@ -99,6 +101,7 @@ export default function ServiceDetailScreen() {
         "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=300",
       category: "Special",
       duration: "1-3 days",
+      delivery: "1-3 days",
       rating: 4.6,
       reviewsCount: 456,
     },
@@ -112,6 +115,7 @@ export default function ServiceDetailScreen() {
         "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=300",
       category: "Delivery",
       duration: "2-4 hours",
+      delivery: "2-4 hrs",
       rating: 4.9,
       reviewsCount: 678,
     },
@@ -132,31 +136,56 @@ export default function ServiceDetailScreen() {
     <TouchableOpacity
       style={styles.relatedCard}
       onPress={() => handleNavigateToService(item.id)}
+      activeOpacity={0.75}
     >
-      <Image
-        source={{ uri: item.image || service.image }}
-        style={styles.relatedImage}
-      />
+      {/* Image Container with Badge */}
+      <View style={styles.relatedImageContainer}>
+        <Image
+          source={{ uri: item.image || service.image }}
+          style={styles.relatedImage}
+        />
+
+        {/* Category Badge */}
+        <View style={styles.categoryBadgeRelated}>
+          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+        </View>
+
+        {/* Status Indicator */}
+        {item.active && (
+          <View style={styles.activeBadge}>
+            <Text style={styles.activeBadgeText}>●</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Service Info */}
       <View style={styles.relatedInfo}>
+        {/* Service Name */}
         <Text style={styles.relatedName} numberOfLines={2}>
           {item.name}
         </Text>
-        <View style={styles.ratingRow}>
-          <Star size={12} color="#fbbf24" fill="#fbbf24" />
-          <Text style={styles.rating}>{item.rating?.toFixed(1)}</Text>
-        </View>
-        {item.price > 0 && (
-          <Text style={styles.relatedPrice}>₹{item.price}</Text>
+
+        {/* Rating Section */}
+        {item.rating && (
+          <View style={styles.relatedRatingContainer}>
+            <View style={styles.relatedRating}>
+              <Star size={13} color="#E9C46A" fill="#E9C46A" />
+              <Text style={styles.relatedRatingText}>{item.rating}</Text>
+            </View>
+            {item.reviewsCount && (
+              <Text style={styles.relatedReviews}>{item.reviewsCount}</Text>
+            )}
+          </View>
         )}
-        <View
-          style={[
-            styles.relatedStatus,
-            item.active ? styles.statusActive : styles.statusInactive,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {item.active ? "Available" : "Unavailable"}
+
+        {/* Price & Duration */}
+        <View style={styles.priceDeliveryRow}>
+          <Text style={styles.relatedPrice}>
+            {item.price > 0 ? `₹${item.price}` : "FREE"}
           </Text>
+          {item.delivery && (
+            <Text style={styles.relatedDelivery}>{item.delivery}</Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -213,62 +242,71 @@ export default function ServiceDetailScreen() {
 
         {/* Service Info Card */}
         <View style={styles.infoCard}>
-          {/* Status Badge */}
-          <View
-            style={[
-              styles.statusBadge,
-              service.active ? styles.badgeActive : styles.badgeInactive,
-            ]}
-          >
-            <Text style={styles.badgeText}>
-              {service.active ? "Active" : "Inactive"}
-            </Text>
+          {/* Row 1: Service Name + Wishlist Heart */}
+          <View style={styles.nameAndWishlistRow}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.serviceName}>{service.name}</Text>
+            </View>
+            <TouchableOpacity style={[styles.wishlistButton]}>
+              <Heart size={20} color={colors.brand.primary} fill="none" />
+            </TouchableOpacity>
           </View>
 
-          {/* Service Name */}
-          <Text style={styles.serviceName}>{service.name}</Text>
+          {/* Row 2: Status */}
+          <Text style={styles.statusAvailability}>
+            {service.active ? "Active • Available" : "Inactive"}
+          </Text>
 
-          {/* Category */}
-          {service.category && (
-            <Text style={styles.category}>{service.category}</Text>
-          )}
-
-          {/* Price and Rating Section */}
-          <View style={styles.priceRatingSection}>
-            <View>
-              {service.price > 0 ? (
-                <>
-                  <Text style={styles.price}>₹{service.price}</Text>
-                  <Text style={styles.priceLabel}>Price</Text>
-                </>
-              ) : (
-                <>
-                  <Text style={styles.price}>FREE</Text>
-                  <Text style={styles.priceLabel}>Complimentary</Text>
-                </>
-              )}
-            </View>
+          {/* Row 3: Ratings (Left) + Category (Right) */}
+          <View style={styles.ratingCategoryRow}>
             {service.rating && (
-              <View style={styles.ratingCard}>
+              <View style={styles.ratingSection}>
                 <View style={styles.ratingStars}>
-                  <Star size={14} color="#fbbf24" fill="#fbbf24" />
-                  <Text style={styles.ratingValue}>{service.rating}</Text>
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={14}
+                      color={
+                        i < Math.floor(service.rating!) ? "#E9C46A" : "#cbd5e1"
+                      }
+                      fill={
+                        i < Math.floor(service.rating!) ? "#E9C46A" : "none"
+                      }
+                    />
+                  ))}
                 </View>
-                <Text style={styles.reviewsCount}>
-                  ({service.reviewsCount} reviews)
+                <Text style={styles.ratingText}>
+                  {service.rating} • {service.reviewsCount} reviews
                 </Text>
+              </View>
+            )}
+            {service.category && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryText}>{service.category}</Text>
               </View>
             )}
           </View>
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Heart size={20} color={colors.brand.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Share2 size={20} color={colors.brand.primary} />
-            </TouchableOpacity>
+          {/* Row 4: Price (Left) + Duration & Provider (Right) */}
+          <View style={styles.priceStoreRow}>
+            <View style={styles.priceColumn}>
+              <Text style={styles.price}>
+                {service.price > 0 ? `₹${service.price}` : "FREE"}
+              </Text>
+              <Text style={styles.stockInfo}>
+                {service.price > 0 ? "Price" : "Complimentary"}
+              </Text>
+            </View>
+            <View style={styles.storeDeliveryColumn}>
+              <View style={styles.storeInfo}>
+                <Text style={styles.storeLabel}>Offered by</Text>
+                <Text style={styles.storeName}>{service.storeName}</Text>
+              </View>
+              <View style={styles.deliveryInfo}>
+                <Text style={styles.deliveryLabel}>Duration</Text>
+                <Text style={styles.deliveryTime}>{service.duration}</Text>
+              </View>
+            </View>
           </View>
         </View>
 
@@ -411,10 +449,127 @@ const styles = StyleSheet.create({
   infoCard: {
     backgroundColor: "#fff",
     borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  nameAndWishlistRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  nameContainer: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#1e293b",
+    lineHeight: 28,
+  },
+  statusAvailability: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#16a34a",
+    marginBottom: spacing.md,
+  },
+  ratingCategoryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  ratingSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flex: 1,
+  },
+  ratingStars: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  categoryBadge: {
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  categoryText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  priceStoreRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
+  priceColumn: {
+    flex: 1,
+  },
+  price: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.brand.primary,
+    marginBottom: spacing.xs,
+  },
+  stockInfo: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  storeDeliveryColumn: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  storeInfo: {
+    gap: spacing.xs,
+  },
+  storeLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  storeName: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  deliveryInfo: {
+    gap: spacing.xs,
+  },
+  deliveryLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  deliveryTime: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#16a34a",
+  },
+  wishlistButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -433,66 +588,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#166534",
-  },
-  serviceName: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: "#1e293b",
-    marginBottom: 6,
-  },
-  category: {
-    fontSize: 14,
-    color: "#64748b",
-    marginBottom: 12,
-  },
-  priceRatingSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  price: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: colors.brand.primary,
-    marginBottom: 2,
-  },
-  priceLabel: {
-    fontSize: 12,
-    color: "#64748b",
-  },
-  ratingCard: {
-    alignItems: "flex-end",
-  },
-  ratingStars: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 4,
-  },
-  ratingValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  reviewsCount: {
-    fontSize: 12,
-    color: "#94a3b8",
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  iconBtn: {
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
-    alignItems: "center",
   },
   descriptionCard: {
     backgroundColor: "#fff",
@@ -576,25 +671,111 @@ const styles = StyleSheet.create({
   relatedCard: {
     backgroundColor: "#fff",
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    width: 140,
-    marginRight: 12,
     overflow: "hidden",
+    width: 155,
+    marginRight: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  relatedImageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 130,
+    overflow: "hidden",
+    backgroundColor: "#f1f5f9",
   },
   relatedImage: {
     width: "100%",
-    height: 100,
+    height: "100%",
     backgroundColor: "#f1f5f9",
+  },
+  categoryBadgeRelated: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "rgba(99, 102, 241, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    fontSize: 8,
+    fontWeight: "700",
+    color: "#fff",
+    textTransform: "uppercase",
+  },
+  activeBadge: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#16a34a",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activeBadgeText: {
+    fontSize: 16,
+    color: "#fff",
   },
   relatedInfo: {
     padding: 12,
+    gap: 6,
   },
   relatedName: {
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1e293b",
-    marginBottom: 6,
+    lineHeight: 15,
+  },
+  relatedRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fef3c7",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    alignSelf: "flex-start",
+  },
+  relatedRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  relatedRatingText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#92400e",
+  },
+  relatedReviews: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: "#b45309",
+  },
+  relatedPrice: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.brand.primary,
+  },
+  priceDeliveryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 4,
+  },
+  relatedDelivery: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#16a34a",
+    backgroundColor: "#f0fdf4",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    textAlign: "center",
   },
   ratingRow: {
     flexDirection: "row",
@@ -606,12 +787,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#0f172a",
-  },
-  relatedPrice: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.brand.primary,
-    marginBottom: 6,
   },
   relatedStatus: {
     paddingHorizontal: 6,

@@ -26,14 +26,21 @@ export default function StoreDetailScreen() {
   const { id } = useLocalSearchParams();
   const { getStoreById } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const imageCarouselRef = useRef<FlatList>(null);
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
   );
   const [headerHeight, setHeaderHeight] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const store = getStoreById(id as string);
+  const storeImages =
+    store?.images && store.images.length > 0
+      ? store.images
+      : [store?.image || ""];
 
   // Mock data preserved
   const products = [
@@ -120,54 +127,97 @@ export default function StoreDetailScreen() {
   // This renders everything ABOVE the product/service list
   const renderHeader = () => (
     <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
-      {/* Store Header Card */}
-      <View style={styles.card}>
-        <View style={styles.storeHeaderRow}>
-          <View style={styles.storeImageContainer}>
+      {/* Store Image Carousel */}
+      <View style={styles.storeHeaderBannerContainer}>
+        <FlatList
+          ref={imageCarouselRef}
+          data={storeImages}
+          horizontal
+          pagingEnabled
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            const contentOffsetX = e.nativeEvent.contentOffset.x;
+            const windowWidth = Dimensions.get("window").width;
+            const index = Math.round(contentOffsetX / windowWidth);
+            setCurrentImageIndex(Math.min(index, storeImages.length - 1));
+          }}
+          renderItem={({ item }) => (
             <Image
-              source={
-                typeof store.image === "string"
-                  ? { uri: store.image }
-                  : store.image
-              }
-              style={styles.storeImage}
+              source={{ uri: item }}
+              style={styles.carouselImage}
               resizeMode="cover"
+              progressiveRenderingEnabled
             />
+          )}
+          keyExtractor={(_, idx) => `store-image-${idx}`}
+          showsHorizontalScrollIndicator={false}
+          scrollEnabled={storeImages.length > 1}
+        />
+        <View style={styles.bannerDarkOverlay} />
+
+        {/* Pagination Indicators */}
+        {storeImages.length > 1 && (
+          <View style={styles.paginationContainer}>
+            {storeImages.map((_, idx) => (
+              <View
+                key={`dot-${idx}`}
+                style={[
+                  styles.paginationDot,
+                  idx === currentImageIndex && styles.paginationDotActive,
+                ]}
+              />
+            ))}
           </View>
+        )}
+
+        {/* Rating Badge (Top Right) */}
+        <View style={styles.ratingBadgeHeader}>
+          <Ionicons name="star" size={14} color="#FFB800" />
+          <Text style={styles.ratingTextHeader}>{store?.rating}</Text>
+        </View>
+      </View>
+
+      {/* Store Info Card */}
+      <View style={styles.storeInfoCard}>
+        <View style={styles.storeNameRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.storeName}>{store.name}</Text>
-            <View style={styles.typeBadgeRow}>
+            <Text style={styles.storeNameLarge}>{store?.name}</Text>
+            <View style={styles.badgeContainer}>
               <View style={styles.typeBadge}>
-                <Text style={styles.typeText}>{store.type}</Text>
+                <Text style={styles.typeText}>{store?.type}</Text>
               </View>
               <View style={styles.followersBadge}>
                 <Ionicons name="heart" size={11} color="#fff" />
-                <Text style={styles.followersCount}>{store.followers}</Text>
+                <Text style={styles.followersCount}>{store?.followers}</Text>
               </View>
-            </View>
-            <View style={styles.infoRow}>
-              <MapPin size={14} color="#64748b" />
-              <Text style={styles.infoText}>{store.distance}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="star" size={14} color="#E9C46A" />
-              <Text style={styles.infoText}>{store.rating} rating</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.outlineBtnSmall}>
-            <Heart size={14} color="#ef4444" />
-            <Text style={styles.btnTextSmall}>Save</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineBtnSmall}>
-            <Share2 size={14} color="#333" />
-            <Text style={styles.btnTextSmall}>Share</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.outlineBtnSmall}>
+        <View style={styles.storeMetricsRow}>
+          <View style={styles.metricItem}>
+            <MapPin size={14} color="#64748b" />
+            <Text style={styles.metricText}>{store?.distance}</Text>
+          </View>
+          <View style={styles.metricDivider} />
+          <View style={styles.metricItem}>
             <Phone size={14} color="#22c55e" />
-            <Text style={styles.btnTextSmall}>Call</Text>
+            <Text style={styles.metricText}>Contact</Text>
+          </View>
+        </View>
+
+        <View style={styles.actionRowNew}>
+          <TouchableOpacity style={styles.actionBtnNew}>
+            <Heart size={16} color="#ef4444" />
+            <Text style={styles.actionBtnTextNew}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtnNew}>
+            <Share2 size={16} color="#3b82f6" />
+            <Text style={styles.actionBtnTextNew}>Share</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionBtnNew}>
+            <Phone size={16} color="#22c55e" />
+            <Text style={styles.actionBtnTextNew}>Call</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -220,14 +270,15 @@ export default function StoreDetailScreen() {
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
-      {/* Sticky Search Bar - Only show when on products tab */}
+      {/* Sticky Search Bar - Only show when on products tab after 200vh scroll */}
       {activeTab === "products" && (
         <Animated.View
+          pointerEvents={isSearchVisible ? "auto" : "none"}
           style={[
             styles.stickySearch,
             {
               opacity: scrollY.interpolate({
-                inputRange: [0, Dimensions.get("window").height],
+                inputRange: [0, 2 * Dimensions.get("window").height],
                 outputRange: [0, 1],
                 extrapolate: "clamp",
               }),
@@ -258,20 +309,25 @@ export default function StoreDetailScreen() {
                 products={products}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
+                storeImage={storeImages[0] || ""}
+                storeName={store?.name}
               />
             ) : (
               <ServicesSection
                 services={services}
                 onBookService={handleBookService}
+                storeImage={storeImages[0] || ""}
+                storeName={store?.name}
               />
             )}
           </View>
         )}
         ListHeaderComponent={renderHeader}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false },
-        )}
+        onScroll={(e) => {
+          scrollY.setValue(e.nativeEvent.contentOffset.y);
+          const scrollThreshold = 2 * Dimensions.get("window").height;
+          setIsSearchVisible(e.nativeEvent.contentOffset.y >= scrollThreshold);
+        }}
         scrollEventThrottle={16}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -287,7 +343,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 40,
   },
   errorContainer: {
@@ -314,62 +369,101 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#ef4444",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#fce7f3",
-  },
-  storeHeaderRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginBottom: 14,
-    alignItems: "flex-start",
-  },
-  storeImageContainer: {
-    height: 100,
-    width: 100,
-    borderRadius: radius.md,
-    overflow: "hidden",
+  storeHeaderBannerContainer: {
+    height: 180,
+    width: "100%",
     backgroundColor: "#f1f5f9",
+    overflow: "hidden",
+    position: "relative",
+    marginBottom: 0,
   },
-  storeImage: {
+  carouselImage: {
+    width: Dimensions.get("window").width,
+    height: 180,
+  },
+  paginationContainer: {
+    position: "absolute",
+    bottom: 12,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 6,
+    zIndex: 5,
+  },
+  paginationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
+  paginationDotActive: {
+    backgroundColor: "#fff",
+    width: 24,
+  },
+  storeHeaderBannerImage: {
     width: "100%",
     height: "100%",
+    position: "absolute",
   },
-  typeBadgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 10,
-    flexWrap: "wrap",
+  bannerDarkOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    zIndex: 2,
   },
-  followersBadge: {
-    backgroundColor: "#ef4444",
+  ratingBadgeHeader: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    zIndex: 4,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  followersCount: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "bold",
+  ratingTextHeader: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0f172a",
   },
-  storeName: {
-    fontSize: 22,
+  storeInfoCard: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+    marginBottom: 12,
+  },
+  storeNameRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  storeNameLarge: {
+    fontSize: 24,
     fontWeight: "800",
     color: "#0f172a",
     marginBottom: 8,
+  },
+  badgeContainer: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
   },
   typeBadge: {
     backgroundColor: "#dcfce7",
@@ -386,36 +480,65 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  infoRow: {
+  followersBadge: {
+    backgroundColor: "#ef4444",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  followersCount: {
+    color: "#fff",
+    fontSize: 11,
+    fontWeight: "bold",
+  },
+  storeMetricsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f5f9",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  metricItem: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    marginBottom: 5,
   },
-  infoText: {
+  metricText: {
     fontSize: 13,
     color: "#475569",
     fontWeight: "500",
   },
-  actionRow: {
+  metricDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: "#e2e8f0",
+    marginHorizontal: 12,
+  },
+  actionRowNew: {
     flexDirection: "row",
     gap: 10,
   },
-  outlineBtnSmall: {
+  actionBtnNew: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
+    justifyContent: "center",
     paddingVertical: 10,
     borderWidth: 1.5,
     borderColor: "#e2e8f0",
     borderRadius: 8,
     gap: 6,
-    flex: 1,
-    justifyContent: "center",
     backgroundColor: "#f8fafc",
   },
-  btnTextSmall: {
-    fontSize: 13,
+  actionBtnTextNew: {
+    fontSize: 12,
     fontWeight: "600",
     color: "#334155",
   },
@@ -424,7 +547,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primaryLight,
     borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.brand.primaryLight,
   },
@@ -455,6 +579,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     minHeight: 400,
+    marginHorizontal: 16,
     marginBottom: 20,
   },
   stickySearch: {

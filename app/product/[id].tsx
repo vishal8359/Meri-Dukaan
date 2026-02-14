@@ -1,14 +1,17 @@
 import { useApp } from "@/src/context/AppContext";
-import { colors, radius } from "@/src/theme/colors";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+  Check,
   ChevronLeft,
   Heart,
-  MapPin,
+  Minus,
+  Plus,
   Share2,
   ShoppingCart,
+  Star,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   Image,
@@ -34,13 +37,19 @@ interface Product {
   images?: string[];
   storeId?: string;
   storeName?: string;
+  rating?: number;
+  reviews?: number;
+  delivery?: string;
 }
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { addToCart } = useApp();
+  const { addToCart, cart } = useApp();
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showAddedMessage, setShowAddedMessage] = useState(false);
 
   // Mock product data - in production, fetch from API based on ID
   const product: Product = {
@@ -53,8 +62,10 @@ export default function ProductDetailScreen() {
     image:
       "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=500",
     status: "active",
+    rating: 4.5,
+    reviews: 128,
     description:
-      "Fresh, organic tomatoes sourced directly from local farmers. Rich in lycopene and vitamin C. Perfect for salads, cooking, or making juices. Hand-picked to ensure quality and freshness.",
+      "Fresh, organic tomatoes sourced directly from local farmers. Rich in lycopene and vitamin C. Perfect for salads, cooking, or making juices. Hand-picked to ensure quality and freshness. These premium vegetables are delivered fresh to your doorstep.",
     images: [
       "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=500",
       "https://images.unsplash.com/photo-1649620407859-bfa6aba76e4f?q=80&w=500",
@@ -64,85 +75,211 @@ export default function ProductDetailScreen() {
     storeName: "Sharma Kirana",
   };
 
-  // Related products mock data
-  const relatedProducts: Product[] = [
-    {
-      id: "2",
-      name: "Onions",
-      category: "Vegetables",
-      price: 30,
-      displayPrice: "₹30/kg",
-      stock: "80 kg",
-      image:
-        "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=300",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Green Chilies",
-      category: "Vegetables",
-      price: 60,
-      displayPrice: "₹60/kg",
-      stock: "0 kg",
-      image:
-        "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
-      status: "out-of-stock",
-    },
-    {
-      id: "4",
-      name: "Potatoes",
-      category: "Vegetables",
-      price: 25,
-      displayPrice: "₹25/kg",
-      stock: "100 kg",
-      image:
-        "https://images.unsplash.com/photo-1590841795199-c70b8abb5166?q=80&w=300",
-      status: "active",
-    },
-  ];
+  // Expanded related products mock data with 5+ products
+  const relatedProducts: Product[] = useMemo(
+    () => [
+      {
+        id: "2",
+        name: "Fresh Onions",
+        category: "Vegetables",
+        price: 30,
+        displayPrice: "₹30/kg",
+        stock: "80 kg",
+        image:
+          "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=300",
+        status: "active",
+        rating: 4.3,
+        reviews: 95,
+        delivery: "10-15 min",
+      },
+      {
+        id: "3",
+        name: "Green Chilies",
+        category: "Vegetables",
+        price: 60,
+        displayPrice: "₹60/kg",
+        stock: "0 kg",
+        image:
+          "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
+        status: "out-of-stock",
+        rating: 4.6,
+        reviews: 67,
+        delivery: "8-12 min",
+      },
+      {
+        id: "4",
+        name: "Fresh Potatoes",
+        category: "Vegetables",
+        price: 25,
+        displayPrice: "₹25/kg",
+        stock: "100 kg",
+        image:
+          "https://images.unsplash.com/photo-1590841795199-c70b8abb5166?q=80&w=300",
+        status: "active",
+        rating: 4.4,
+        reviews: 112,
+        delivery: "12-18 min",
+      },
+      {
+        id: "5",
+        name: "Garlic",
+        category: "Vegetables",
+        price: 80,
+        displayPrice: "₹80/kg",
+        stock: "45 kg",
+        image:
+          "https://images.unsplash.com/photo-1599599810694-8eb95bbf08b5?q=80&w=300",
+        status: "active",
+        rating: 4.7,
+        reviews: 143,
+        delivery: "10-15 min",
+      },
+      {
+        id: "6",
+        name: "Bell Peppers",
+        category: "Vegetables",
+        price: 50,
+        displayPrice: "₹50/kg",
+        stock: "60 kg",
+        image:
+          "https://images.unsplash.com/photo-1599599810962-4b706327c735?q=80&w=300",
+        status: "active",
+        rating: 4.5,
+        reviews: 88,
+        delivery: "9-14 min",
+      },
+      {
+        id: "7",
+        name: "Cucumber",
+        category: "Vegetables",
+        price: 20,
+        displayPrice: "₹20/kg",
+        stock: "75 kg",
+        image:
+          "https://images.unsplash.com/photo-1607623488248-da4e0c51c2e4?q=80&w=300",
+        status: "active",
+        rating: 4.2,
+        reviews: 72,
+        delivery: "11-16 min",
+      },
+    ],
+    [],
+  );
 
-  const handleAddToCart = () => {
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      storeName: product.storeName || "Store",
-      storeId: product.storeId,
-    });
-    // Show success message or toast
-    alert("Added to cart");
-  };
+  // Check if item is already in cart
+  const cartItem = useMemo(
+    () => cart.find((item: any) => item.id === product.id),
+    [cart, product.id],
+  );
+
+  // Parse description into bullet points
+  const descriptionBullets = useMemo(() => {
+    if (!product.description) return [];
+    const sentences = product.description.split(". ");
+    return sentences.slice(0, 4).map((s) => s.replace(/\.$/, "") + ".");
+  }, [product.description]);
+
+  const handleAddToCart = useCallback(() => {
+    for (let i = 0; i < quantity; i++) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        storeName: product.storeName || "Store",
+        storeId: product.storeId,
+      });
+    }
+    setShowAddedMessage(true);
+    setTimeout(() => setShowAddedMessage(false), 2000);
+  }, [quantity, addToCart, product]);
+
+  const handleIncreaseQuantity = useCallback(() => {
+    setQuantity((prev) => prev + 1);
+  }, []);
+
+  const handleDecreaseQuantity = useCallback(() => {
+    if (quantity > 1) {
+      setQuantity((prev) => prev - 1);
+    }
+  }, [quantity]);
+
+  const toggleWishlist = useCallback(() => {
+    setIsWishlisted((prev) => !prev);
+  }, []);
 
   const handleNavigateToProduct = (productId: string) => {
+    // Reset quantity when navigating to a new product
+    setQuantity(1);
+    setIsWishlisted(false);
     router.push({
       pathname: "/product/[id]",
       params: { id: productId },
     } as any);
   };
 
+  // Lazy load only first 5 products
+  const visibleRelatedProducts = useMemo(
+    () => relatedProducts.slice(0, 5),
+    [relatedProducts],
+  );
+
   const RelatedProductCard = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.relatedCard}
       onPress={() => handleNavigateToProduct(item.id)}
+      activeOpacity={0.75}
     >
-      <Image source={{ uri: item.image }} style={styles.relatedImage} />
+      {/* Image Container with Badge */}
+      <View style={styles.relatedImageContainer}>
+        <Image source={{ uri: item.image }} style={styles.relatedImage} />
+
+        {/* Category Badge */}
+        <View style={styles.categoryBadgeRelated}>
+          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+        </View>
+
+        {/* Out of Stock Overlay */}
+        {item.status === "out-of-stock" && (
+          <View style={styles.relatedOutOfStock}>
+            <Text style={styles.relatedOutOfStockText}>Out of Stock</Text>
+          </View>
+        )}
+
+        {/* Status Indicator */}
+        {item.status === "active" && (
+          <View style={styles.availableBadge}>
+            <Check size={10} color="#fff" />
+          </View>
+        )}
+      </View>
+
+      {/* Product Info */}
       <View style={styles.relatedInfo}>
+        {/* Product Name */}
         <Text style={styles.relatedName} numberOfLines={2}>
           {item.name}
         </Text>
-        <Text style={styles.relatedPrice}>{item.displayPrice}</Text>
-        <View
-          style={[
-            styles.relatedStatus,
-            item.status === "active"
-              ? styles.statusActive
-              : styles.statusOutOfStock,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {item.status === "active" ? "Available" : "Out of Stock"}
-          </Text>
+
+        {/* Rating Section */}
+        {item.rating && (
+          <View style={styles.relatedRatingContainer}>
+            <View style={styles.relatedRating}>
+              <Star size={13} color="#E9C46A" fill="#E9C46A" />
+              <Text style={styles.relatedRatingText}>{item.rating}</Text>
+            </View>
+            {item.reviews && (
+              <Text style={styles.relatedReviews}>{item.reviews}</Text>
+            )}
+          </View>
+        )}
+
+        {/* Price & Delivery */}
+        <View style={styles.priceDeliveryRow}>
+          <Text style={styles.relatedPrice}>{item.displayPrice}</Text>
+          {item.delivery && (
+            <Text style={styles.relatedDelivery}>{item.delivery}</Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -154,12 +291,26 @@ export default function ProductDetailScreen() {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.back()}
+        >
           <ChevronLeft size={24} color="#1e293b" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Product Details</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={styles.headerButton}>
+          <Share2 size={20} color="#1e293b" />
+        </TouchableOpacity>
       </View>
+
+      {showAddedMessage && (
+        <View style={styles.successpMessage}>
+          <Check size={18} color="#fff" />
+          <Text style={styles.successMessageText}>
+            {quantity} item{quantity > 1 ? "s" : ""} added to cart!
+          </Text>
+        </View>
+      )}
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -167,10 +318,26 @@ export default function ProductDetailScreen() {
       >
         {/* Product Images */}
         <View style={styles.imageSection}>
-          <Image
-            source={{ uri: product.images?.[mainImageIndex] || product.image }}
-            style={styles.mainImage}
-          />
+          <View style={styles.mainImageWrapper}>
+            <Image
+              source={{
+                uri: product.images?.[mainImageIndex] || product.image,
+              }}
+              style={styles.mainImage}
+            />
+            {product.status === "out-of-stock" && (
+              <View style={styles.outOfStockBanner}>
+                <Text style={styles.outOfStockBannerText}>OUT OF STOCK</Text>
+              </View>
+            )}
+            {product.images && product.images.length > 1 && (
+              <View style={styles.imageCountBadge}>
+                <Text style={styles.imageCountText}>
+                  {mainImageIndex + 1}/{product.images.length}
+                </Text>
+              </View>
+            )}
+          </View>
 
           {/* Image Thumbnails */}
           {product.images && product.images.length > 1 && (
@@ -197,57 +364,95 @@ export default function ProductDetailScreen() {
 
         {/* Product Info Card */}
         <View style={styles.infoCard}>
-          {/* Status Badge */}
-          <View
-            style={[
-              styles.statusBadge,
-              product.status === "active"
-                ? styles.badgeSuccess
-                : styles.badgeError,
-            ]}
-          >
-            <Text style={styles.badgeText}>
-              {product.status === "active" ? "Available" : "Out of Stock"}
-            </Text>
-          </View>
-
-          {/* Product Name */}
-          <Text style={styles.productName}>{product.name}</Text>
-
-          {/* Category */}
-          <Text style={styles.category}>{product.category}</Text>
-
-          {/* Price Section */}
-          <View style={styles.priceSection}>
-            <Text style={styles.price}>{product.displayPrice}</Text>
-            <Text style={styles.stock}>Stock: {product.stock}</Text>
-          </View>
-
-          {/* Store Info */}
-          <View style={styles.storeSection}>
-            <MapPin size={16} color={colors.brand.primary} />
-            <Text style={styles.storeName}>{product.storeName}</Text>
-          </View>
-
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Heart size={20} color={colors.brand.primary} />
+          {/* Row 1: Product Name + Wishlist Heart */}
+          <View style={styles.nameAndWishlistRow}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.productName}>{product.name}</Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.wishlistButton,
+                isWishlisted && styles.wishlistButtonActive,
+              ]}
+              onPress={toggleWishlist}
+            >
+              <Heart
+                size={20}
+                color={isWishlisted ? "#ef4444" : colors.brand.primary}
+                fill={isWishlisted ? "#ef4444" : "none"}
+              />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn}>
-              <Share2 size={20} color={colors.brand.primary} />
-            </TouchableOpacity>
+          </View>
+
+          {/* Row 2: Stock Availability */}
+          <Text style={styles.stockAvailability}>
+            {product.status === "active"
+              ? `${product.stock} • In Stock`
+              : "Out of Stock"}
+          </Text>
+
+          {/* Row 3: Ratings (Left) + Category (Right) */}
+          <View style={styles.ratingCategoryRow}>
+            {product.rating && (
+              <View style={styles.ratingSection}>
+                <View style={styles.ratingStars}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={14}
+                      color={
+                        i < Math.floor(product.rating!) ? "#E9C46A" : "#cbd5e1"
+                      }
+                      fill={
+                        i < Math.floor(product.rating!) ? "#E9C46A" : "none"
+                      }
+                    />
+                  ))}
+                </View>
+                <Text style={styles.ratingText}>
+                  {product.rating} • {product.reviews} reviews
+                </Text>
+              </View>
+            )}
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{product.category}</Text>
+            </View>
+          </View>
+
+          {/* Row 4: Price (Left) + Store & Delivery (Right) */}
+          <View style={styles.priceStoreRow}>
+            <View style={styles.priceColumn}>
+              <Text style={styles.price}>{product.displayPrice}</Text>
+              <Text style={styles.stockInfo}>Stock: {product.stock}</Text>
+            </View>
+            <View style={styles.storeDeliveryColumn}>
+              <View style={styles.storeInfo}>
+                <Text style={styles.storeLabel}>Sold by</Text>
+                <Text style={styles.storeName}>{product.storeName}</Text>
+              </View>
+              <View style={styles.deliveryInfo}>
+                <Text style={styles.deliveryLabel}>Delivery</Text>
+                <Text style={styles.deliveryTime}>10-15 min </Text>
+              </View>
+            </View>
           </View>
         </View>
 
         {/* Description */}
-        <View style={styles.descriptionCard}>
-          <Text style={styles.sectionTitle}>Description</Text>
-          <Text style={styles.descriptionText}>{product.description}</Text>
-        </View>
+        {descriptionBullets.length > 0 && (
+          <View style={styles.descriptionCard}>
+            <Text style={styles.sectionTitle}>About This Product</Text>
+            {descriptionBullets.map((bullet, index) => (
+              <View key={index} style={styles.bulletPoint}>
+                <Text style={styles.bulletDot}>•</Text>
+                <Text style={styles.bulletText}>{bullet}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Product Details */}
-        <View style={styles.detailsCard}>
+        {/* <View style={styles.detailsCard}>
           <Text style={styles.sectionTitle}>Product Details</Text>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Category:</Text>
@@ -270,37 +475,78 @@ export default function ProductDetailScreen() {
               {product.status === "active" ? "In Stock" : "Out of Stock"}
             </Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Related Products */}
-        <View style={styles.relatedSection}>
-          <Text style={styles.sectionTitle}>Related Products</Text>
-          <FlatList
-            horizontal
-            data={relatedProducts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <RelatedProductCard item={item} />}
-            contentContainerStyle={styles.relatedList}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
+        {visibleRelatedProducts.length > 0 && (
+          <View style={styles.relatedSection}>
+            <Text style={styles.sectionTitle}>Related Products</Text>
+            <Text style={styles.relatedSubtitle}>
+              More from {product.category}
+            </Text>
+            <FlatList
+              horizontal
+              data={visibleRelatedProducts}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <RelatedProductCard item={item} />}
+              contentContainerStyle={styles.relatedList}
+              showsHorizontalScrollIndicator={false}
+              scrollEventThrottle={16}
+              decelerationRate="fast"
+            />
+          </View>
+        )}
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Add to Cart Button */}
-      <View style={styles.bottomButton}>
+      {/* Add to Cart Section */}
+      <View style={styles.bottomCard}>
         {product.status === "active" ? (
-          <TouchableOpacity
-            style={styles.addToCartButton}
-            onPress={handleAddToCart}
-          >
-            <ShoppingCart size={20} color="#fff" />
-            <Text style={styles.addToCartText}>Add to Cart</Text>
-          </TouchableOpacity>
+          <>
+            {/* Quantity Control */}
+            <View style={styles.quantitySection}>
+              <Text style={styles.quantityLabel}>Quantity</Text>
+              <View style={styles.quantityControl}>
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={handleDecreaseQuantity}
+                >
+                  <Minus size={18} color={colors.brand.primary} />
+                </TouchableOpacity>
+
+                <View style={styles.quantityDisplay}>
+                  <Text style={styles.quantityValue}>{quantity}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.quantityButton}
+                  onPress={handleIncreaseQuantity}
+                >
+                  <Plus size={18} color={colors.brand.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Add to Cart Button */}
+            <TouchableOpacity
+              style={styles.addToCartButton}
+              onPress={handleAddToCart}
+              activeOpacity={0.85}
+            >
+              <ShoppingCart size={20} color="#fff" />
+              <Text style={styles.addToCartText}>Add {quantity}x to Cart</Text>
+              <Text style={styles.addToCartPrice}>
+                ₹{(product.price * quantity).toLocaleString()}
+              </Text>
+            </TouchableOpacity>
+          </>
         ) : (
           <View style={styles.outOfStockButton}>
             <Text style={styles.outOfStockText}>Out of Stock</Text>
+            <Text style={styles.outOfStockSubtext}>
+              Notify me when available
+            </Text>
           </View>
         )}
       </View>
@@ -317,47 +563,104 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 32,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
+    ...shadows.small,
+  },
+  headerButton: {
+    padding: spacing.sm,
+    borderRadius: radius.sm,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#1e293b",
   },
+  successpMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    backgroundColor: "#22c55e",
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  successMessageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#fff",
+  },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   imageSection: {
-    marginBottom: 16,
+    marginBottom: spacing.lg,
+  },
+  mainImageWrapper: {
+    position: "relative",
+    marginBottom: spacing.md,
   },
   mainImage: {
     width: "100%",
-    height: 300,
-    borderRadius: radius.md,
+    height: 360,
+    borderRadius: radius.lg,
     backgroundColor: "#f1f5f9",
-    marginBottom: 12,
+  },
+  outOfStockBanner: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.lg,
+  },
+  outOfStockBannerText: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 2,
+  },
+  imageCountBadge: {
+    position: "absolute",
+    bottom: spacing.md,
+    right: spacing.md,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  imageCountText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "700",
   },
   thumbnailContainer: {
-    paddingBottom: 8,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   thumbnail: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.sm,
-    marginRight: 8,
+    width: 80,
+    height: 80,
+    borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: "transparent",
+    borderColor: "#e2e8f0",
     overflow: "hidden",
+    marginRight: spacing.sm,
   },
   activeThumbnail: {
     borderColor: colors.brand.primary,
+    borderWidth: 3,
   },
   thumbnailImage: {
     width: "100%",
@@ -365,114 +668,181 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     backgroundColor: "#fff",
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    ...shadows.medium,
   },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
+  nameAndWishlistRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  badgeSuccess: {
-    backgroundColor: "#dcfce7",
-  },
-  badgeError: {
-    backgroundColor: "#fee2e2",
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#166534",
+  nameContainer: {
+    flex: 1,
   },
   productName: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "800",
     color: "#1e293b",
-    marginBottom: 6,
+    lineHeight: 28,
   },
-  category: {
-    fontSize: 14,
-    color: "#64748b",
-    marginBottom: 12,
+  stockAvailability: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#16a34a",
+    marginBottom: spacing.md,
   },
-  priceSection: {
+  ratingCategoryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
   },
-  price: {
-    fontSize: 22,
+  ratingSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flex: 1,
+  },
+  ratingStars: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  ratingText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  categoryBadge: {
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  categoryText: {
+    fontSize: 11,
     fontWeight: "700",
     color: colors.brand.primary,
   },
-  stock: {
-    fontSize: 13,
+  priceStoreRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md,
+  },
+  priceColumn: {
+    flex: 1,
+  },
+  price: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.brand.primary,
+    marginBottom: spacing.xs,
+  },
+  stockInfo: {
+    fontSize: 11,
+    fontWeight: "600",
     color: "#64748b",
   },
-  storeSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
+  storeDeliveryColumn: {
+    flex: 1,
+    gap: spacing.sm,
+  },
+  storeInfo: {
+    gap: spacing.xs,
+  },
+  storeLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#64748b",
   },
   storeName: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  deliveryInfo: {
+    gap: spacing.xs,
+  },
+  deliveryLabel: {
+    fontSize: 10,
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#64748b",
   },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 12,
+  deliveryTime: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#16a34a",
   },
-  iconBtn: {
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 10,
-    borderRadius: 8,
-    flex: 1,
+  wishlistButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
     alignItems: "center",
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+  },
+  wishlistButtonActive: {
+    borderColor: "#fecaca",
+    backgroundColor: "#fef2f2",
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: spacing.md,
+  },
+  relatedSubtitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
   },
   descriptionCard: {
     backgroundColor: "#fff",
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.medium,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: 12,
+  bulletPoint: {
+    flexDirection: "row",
+    marginBottom: spacing.sm,
+    alignItems: "flex-start",
   },
-  descriptionText: {
+  bulletDot: {
     fontSize: 14,
+    fontWeight: "700",
+    color: colors.brand.primary,
+    marginRight: spacing.sm,
+    lineHeight: 20,
+  },
+  bulletText: {
+    flex: 1,
+    fontSize: 13,
     color: "#475569",
-    lineHeight: 21,
+    lineHeight: 20,
+    fontWeight: "500",
   },
   detailsCard: {
     backgroundColor: "#fff",
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+    ...shadows.medium,
   },
   detailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
@@ -483,7 +853,7 @@ const styles = StyleSheet.create({
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
     color: "#0f172a",
   },
   statusSuccess: {
@@ -493,87 +863,230 @@ const styles = StyleSheet.create({
     color: "#991b1b",
   },
   relatedSection: {
-    marginBottom: 24,
+    marginBottom: spacing.lg,
   },
   relatedList: {
-    paddingRight: 8,
+    paddingRight: spacing.sm,
+    gap: spacing.md,
   },
   relatedCard: {
     backgroundColor: "#fff",
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: "#f1f5f9",
-    width: 140,
-    marginRight: 12,
+    borderRadius: radius.lg,
     overflow: "hidden",
+    width: 155,
+    ...shadows.medium,
+  },
+  relatedImageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 130,
+    overflow: "hidden",
+    backgroundColor: "#f1f5f9",
   },
   relatedImage: {
     width: "100%",
-    height: 100,
+    height: "100%",
     backgroundColor: "#f1f5f9",
   },
+  categoryBadgeRelated: {
+    position: "absolute",
+    top: spacing.sm,
+    left: spacing.sm,
+    backgroundColor: "rgba(99, 102, 241, 0.9)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  categoryBadgeText: {
+    fontSize: 8,
+    fontWeight: "700",
+    color: "#fff",
+    textTransform: "uppercase",
+  },
+  availableBadge: {
+    position: "absolute",
+    bottom: spacing.sm,
+    right: spacing.sm,
+    width: 22,
+    height: 22,
+    borderRadius: radius.full,
+    backgroundColor: "#16a34a",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  relatedOutOfStock: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  relatedOutOfStockText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#fff",
+    textAlign: "center",
+  },
   relatedInfo: {
-    padding: 12,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   relatedName: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#1e293b",
-    marginBottom: 6,
-  },
-  relatedPrice: {
-    fontSize: 13,
     fontWeight: "700",
-    color: colors.brand.primary,
-    marginBottom: 6,
+    color: "#1e293b",
+    lineHeight: 15,
   },
-  relatedStatus: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  relatedRatingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    backgroundColor: "#fef3c7",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
     alignSelf: "flex-start",
   },
-  statusActive: {
-    backgroundColor: "#dcfce7",
+  relatedRating: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
-  statusOutOfStock: {
-    backgroundColor: "#fee2e2",
+  relatedRatingText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#92400e",
   },
-  statusText: {
-    fontSize: 10,
+  relatedReviews: {
+    fontSize: 9,
     fontWeight: "600",
-    color: "#166534",
+    color: "#b45309",
   },
-  bottomButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+  relatedPrice: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.brand.primary,
+  },
+  priceDeliveryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  relatedDelivery: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#16a34a",
+    backgroundColor: "#f0fdf4",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    textAlign: "center",
+  },
+  bottomCard: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#f1f5f9",
+    ...shadows.large,
   },
-  addToCartButton: {
-    backgroundColor: colors.brand.primaryLight,
+  quantitySection: {
+    marginBottom: spacing.md,
+  },
+  quantityLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: spacing.sm,
+  },
+  quantityControl: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: radius.lg,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  quantityButton: {
+    width: 40,
+    height: 40,
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
+    alignItems: "center",
     borderRadius: radius.md,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  quantityDisplay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quantityValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1e293b",
+  },
+  cartSummary: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#ede9fe",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+  },
+  cartSummaryLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748b",
+  },
+  cartSummaryValue: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  addToCartButton: {
+    backgroundColor: colors.brand.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.medium,
   },
   addToCartText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
   },
+  addToCartPrice: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#fff",
+  },
   outOfStockButton: {
     backgroundColor: "#cbd5e1",
-    paddingVertical: 14,
-    borderRadius: radius.md,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
     alignItems: "center",
+    justifyContent: "center",
   },
   outOfStockText: {
     fontSize: 16,
     fontWeight: "700",
     color: "#fff",
+    marginBottom: spacing.xs,
+  },
+  outOfStockSubtext: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.8)",
   },
 });
