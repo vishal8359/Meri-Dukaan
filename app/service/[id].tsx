@@ -1,3 +1,4 @@
+import { useApp } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -6,7 +7,7 @@ import {
   Heart,
   MapPin,
   Star,
-  Users
+  Users,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -42,6 +43,7 @@ interface Service {
 export default function ServiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useApp();
   const [mainImageIndex, setMainImageIndex] = useState(0);
 
   // Mock service data - in production, fetch from API based on ID
@@ -123,6 +125,21 @@ export default function ServiceDetailScreen() {
 
   const handleBookService = () => {
     alert(`Booked: ${service.name}`);
+  };
+
+  const handleWishlistToggle = () => {
+    if (isInWishlist(service.id)) {
+      removeFromWishlist(service.id);
+    } else {
+      addToWishlist({
+        id: service.id,
+        name: service.name,
+        price: service.price,
+        description: service.description,
+        image: service.image,
+        rating: service.rating,
+      });
+    }
   };
 
   const handleNavigateToService = (serviceId: string) => {
@@ -247,8 +264,17 @@ export default function ServiceDetailScreen() {
             <View style={styles.nameContainer}>
               <Text style={styles.serviceName}>{service.name}</Text>
             </View>
-            <TouchableOpacity style={[styles.wishlistButton]}>
-              <Heart size={20} color={colors.brand.primary} fill="none" />
+            <TouchableOpacity
+              style={styles.wishlistButton}
+              onPress={handleWishlistToggle}
+            >
+              <Heart
+                size={20}
+                color={
+                  isInWishlist(service.id) ? "#ef4444" : colors.brand.primary
+                }
+                fill={isInWishlist(service.id) ? "#ef4444" : "none"}
+              />
             </TouchableOpacity>
           </View>
 

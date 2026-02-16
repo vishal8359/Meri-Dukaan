@@ -45,10 +45,10 @@ interface Product {
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { addToCart, cart } = useApp();
+  const { addToCart, cart, addToWishlist, removeFromWishlist, isInWishlist } =
+    useApp();
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
 
   // Mock product data - in production, fetch from API based on ID
@@ -205,13 +205,33 @@ export default function ProductDetailScreen() {
   }, [quantity]);
 
   const toggleWishlist = useCallback(() => {
-    setIsWishlisted((prev) => !prev);
-  }, []);
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        description: product.description,
+        rating: product.rating,
+      });
+    }
+  }, [
+    product.id,
+    product.name,
+    product.price,
+    product.image,
+    product.description,
+    product.rating,
+    isInWishlist,
+    addToWishlist,
+    removeFromWishlist,
+  ]);
 
   const handleNavigateToProduct = (productId: string) => {
     // Reset quantity when navigating to a new product
     setQuantity(1);
-    setIsWishlisted(false);
     router.push({
       pathname: "/product/[id]",
       params: { id: productId },
@@ -372,14 +392,16 @@ export default function ProductDetailScreen() {
             <TouchableOpacity
               style={[
                 styles.wishlistButton,
-                isWishlisted && styles.wishlistButtonActive,
+                isInWishlist(product.id) && styles.wishlistButtonActive,
               ]}
               onPress={toggleWishlist}
             >
               <Heart
                 size={20}
-                color={isWishlisted ? "#ef4444" : colors.brand.primary}
-                fill={isWishlisted ? "#ef4444" : "none"}
+                color={
+                  isInWishlist(product.id) ? "#ef4444" : colors.brand.primary
+                }
+                fill={isInWishlist(product.id) ? "#ef4444" : "none"}
               />
             </TouchableOpacity>
           </View>

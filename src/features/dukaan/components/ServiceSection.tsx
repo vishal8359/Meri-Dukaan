@@ -1,6 +1,7 @@
+import { useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
-import { Clock, Plus, Star, Store } from "lucide-react-native";
+import { Clock, Heart, Plus, Star, Store } from "lucide-react-native";
 import React, { useCallback } from "react";
 import {
   FlatList,
@@ -36,6 +37,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   storeName = "Store",
 }) => {
   const router = useRouter();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useApp();
 
   const handleServicePress = useCallback(
     (service: Service) => {
@@ -52,6 +54,26 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       onBookService?.(service);
     },
     [onBookService],
+  );
+
+  const handleWishlistToggle = useCallback(
+    (service: Service, e: any) => {
+      e.stopPropagation();
+
+      if (isInWishlist(service.id)) {
+        removeFromWishlist(service.id);
+      } else {
+        addToWishlist({
+          id: service.id,
+          name: service.name,
+          price: service.price,
+          description: service.description,
+          image: service.image,
+          rating: service.rating,
+        });
+      }
+    },
+    [isInWishlist, addToWishlist, removeFromWishlist],
   );
 
   const getItemLayout = useCallback(
@@ -98,15 +120,27 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             )}
           </View>
 
-          <View
-            style={[
-              styles.statusBadge,
-              item.active ? styles.badgeActive : styles.badgeInactive,
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {item.active ? "Available" : "Unavailable"}
-            </Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.wishlistBtn}
+              onPress={(e) => handleWishlistToggle(item, e)}
+            >
+              <Heart
+                size={20}
+                color={isInWishlist(item.id) ? "#ef4444" : "#94a3b8"}
+                fill={isInWishlist(item.id) ? "#ef4444" : "none"}
+              />
+            </TouchableOpacity>
+            <View
+              style={[
+                styles.statusBadge,
+                item.active ? styles.badgeActive : styles.badgeInactive,
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {item.active ? "Available" : "Unavailable"}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -261,6 +295,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: 12,
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  wishlistBtn: {
+    padding: 6,
+    justifyContent: "center",
+    alignItems: "center",
   },
   serviceInfo: {
     flex: 1,

@@ -4,7 +4,7 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Heart, ShoppingCart, Trash2 } from "lucide-react-native";
-import React, { useState } from "react";
+import React from "react";
 import {
     FlatList,
     Image,
@@ -15,91 +15,12 @@ import {
     View,
 } from "react-native";
 
-// Mock wishlist data
-interface WishlistItem {
-  id: string;
-  name: string;
-  storeName: string;
-  storeId: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  inStock: boolean;
-  addedDate: string;
-}
-
-const INITIAL_WISHLIST: WishlistItem[] = [
-  {
-    id: "1",
-    name: "Fresh Organic Tomatoes",
-    storeName: "Sharma Kirana",
-    storeId: "1",
-    price: 40,
-    originalPrice: 50,
-    image:
-      "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
-    category: "Vegetables",
-    rating: 4.5,
-    inStock: true,
-    addedDate: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Wooden Coffee Table",
-    storeName: "Modern Furniture",
-    storeId: "2",
-    price: 4500,
-    originalPrice: 6000,
-    image:
-      "https://images.unsplash.com/photo-1565183928294-7d22ca469d9a?q=80&w=300",
-    category: "Furniture",
-    rating: 4.8,
-    inStock: true,
-    addedDate: "2024-01-18",
-  },
-  {
-    id: "3",
-    name: "Basmati Rice (5kg)",
-    storeName: "Organic Farms",
-    storeId: "3",
-    price: 450,
-    image:
-      "https://images.unsplash.com/photo-1586201375761-83865001e31c?q=80&w=300",
-    category: "Grocery",
-    rating: 4.6,
-    inStock: false,
-    addedDate: "2024-01-10",
-  },
-  {
-    id: "4",
-    name: "LED Desk Lamp",
-    storeName: "Electronics Hub",
-    storeId: "4",
-    price: 899,
-    originalPrice: 1200,
-    image:
-      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=300",
-    category: "Electronics",
-    rating: 4.3,
-    inStock: true,
-    addedDate: "2024-01-20",
-  },
-];
-
 export default function WishlistScreen() {
   const router = useRouter();
-  const { addToCart } = useApp();
-  const [wishlistItems, setWishlistItems] =
-    useState<WishlistItem[]>(INITIAL_WISHLIST);
+  const { addToCart, wishlist, removeFromWishlist } = useApp();
 
-  const removeFromWishlist = (itemId: string) => {
-    setWishlistItems((prev) => prev.filter((item) => item.id !== itemId));
-  };
-
-  const handleAddToCart = (item: WishlistItem) => {
-    if (item.inStock) {
+  const handleAddToCart = (item: any) => {
+    if (item.inStock !== false) {
       addToCart({
         id: item.id,
         name: item.name,
@@ -113,7 +34,7 @@ export default function WishlistScreen() {
     router.push(`/dukaan/${storeId}`);
   };
 
-  const WishlistCard = ({ item }: { item: WishlistItem }) => {
+  const WishlistCard = ({ item }: { item: any }) => {
     const discount = item.originalPrice
       ? Math.round(
           ((item.originalPrice - item.price) / item.originalPrice) * 100,
@@ -124,12 +45,14 @@ export default function WishlistScreen() {
       <View style={styles.card}>
         <TouchableOpacity
           style={styles.cardContent}
-          onPress={() => navigateToStore(item.storeId)}
+          onPress={() => item.storeId && navigateToStore(item.storeId)}
           activeOpacity={0.7}
         >
           {/* Image Section */}
           <View style={styles.imageContainer}>
-            <Image source={{ uri: item.image }} style={styles.image} />
+            {item.image && (
+              <Image source={{ uri: item.image }} style={styles.image} />
+            )}
             {!item.inStock && (
               <View style={styles.outOfStockOverlay}>
                 <Text style={styles.outOfStockText}>Out of Stock</Text>
@@ -148,17 +71,25 @@ export default function WishlistScreen() {
               {item.name}
             </Text>
 
-            <TouchableOpacity onPress={() => navigateToStore(item.storeId)}>
-              <Text style={styles.storeName}>{item.storeName}</Text>
-            </TouchableOpacity>
+            {item.storeName && (
+              <TouchableOpacity
+                onPress={() => item.storeId && navigateToStore(item.storeId)}
+              >
+                <Text style={styles.storeName}>{item.storeName}</Text>
+              </TouchableOpacity>
+            )}
 
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color="#E9C46A" />
-              <Text style={styles.ratingText}>{item.rating}</Text>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{item.category}</Text>
+            {item.rating && (
+              <View style={styles.ratingRow}>
+                <Ionicons name="star" size={14} color="#E9C46A" />
+                <Text style={styles.ratingText}>{item.rating}</Text>
+                {item.category && (
+                  <View style={styles.categoryBadge}>
+                    <Text style={styles.categoryText}>{item.category}</Text>
+                  </View>
+                )}
               </View>
-            </View>
+            )}
 
             <View style={styles.priceRow}>
               <View>
@@ -176,13 +107,16 @@ export default function WishlistScreen() {
         {/* Action Buttons */}
         <View style={styles.actionRow}>
           <TouchableOpacity
-            style={[styles.cartButton, !item.inStock && styles.disabledButton]}
+            style={[
+              styles.cartButton,
+              item.inStock === false && styles.disabledButton,
+            ]}
             onPress={() => handleAddToCart(item)}
-            disabled={!item.inStock}
+            disabled={item.inStock === false}
           >
             <ShoppingCart size={16} color="#FFF" />
             <Text style={styles.cartButtonText}>
-              {item.inStock ? "Add to Cart" : "Out of Stock"}
+              {item.inStock !== false ? "Add to Cart" : "Out of Stock"}
             </Text>
           </TouchableOpacity>
 
@@ -221,10 +155,9 @@ export default function WishlistScreen() {
       {/* Stats Bar */}
       <View style={styles.statsBar}>
         <Text style={styles.statsText}>
-          {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"}{" "}
-          saved
+          {wishlist.length} {wishlist.length === 1 ? "item" : "items"} saved
         </Text>
-        {wishlistItems.length > 0 && (
+        {wishlist.length > 0 && (
           <TouchableOpacity>
             <Text style={styles.clearAllText}>Clear All</Text>
           </TouchableOpacity>
@@ -233,7 +166,7 @@ export default function WishlistScreen() {
 
       {/* Wishlist Items */}
       <FlatList
-        data={wishlistItems}
+        data={wishlist}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <WishlistCard item={item} />}
         contentContainerStyle={styles.listContent}

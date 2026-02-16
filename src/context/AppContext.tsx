@@ -1,11 +1,11 @@
 // src/context/AppContext.tsx
 
 import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useMemo,
-  useState,
+    createContext,
+    ReactNode,
+    useContext,
+    useMemo,
+    useState,
 } from "react";
 import { mockReels, mockStores, Store } from "../assets/mockData";
 
@@ -15,6 +15,15 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+}
+
+interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  image?: string;
+  rating?: number;
 }
 
 export interface Reel {
@@ -48,6 +57,13 @@ interface AppContextType {
   clearCart: () => void;
   cartTotal: number;
 
+  // Wishlist Management
+  wishlist: WishlistItem[];
+  addToWishlist: (item: WishlistItem) => void;
+  removeFromWishlist: (itemId: string) => void;
+  isInWishlist: (itemId: string) => boolean;
+  clearWishlist: () => void;
+
   // Store Management (Centralized)
   allStores: Store[];
   getStoreById: (id: string) => Store | undefined;
@@ -61,6 +77,22 @@ interface AppContextType {
   toggleLikeReel: (reelId: string) => void;
 }
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+interface WishlistItem {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  image?: string;
+  rating?: number;
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
@@ -72,6 +104,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   } | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allStores] = useState<Store[]>(mockStores);
   const [reels, setReels] = useState<Reel[]>(mockReels);
 
@@ -80,6 +113,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     setCart([]); // Clear cart on logout
+    setWishlist([]); // Clear wishlist on logout
   };
 
   // --- Cart Functions ---
@@ -121,6 +155,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     () => cart.reduce((total, item) => total + item.price * item.quantity, 0),
     [cart],
   );
+
+  // --- Wishlist Functions ---
+  const addToWishlist = (item: WishlistItem) => {
+    setWishlist((prevWishlist) => {
+      const exists = prevWishlist.find((wishItem) => wishItem.id === item.id);
+      if (exists) {
+        return prevWishlist; // Item already in wishlist
+      }
+      return [...prevWishlist, item];
+    });
+  };
+
+  const removeFromWishlist = (itemId: string) => {
+    setWishlist((prevWishlist) =>
+      prevWishlist.filter((item) => item.id !== itemId),
+    );
+  };
+
+  const isInWishlist = (itemId: string): boolean => {
+    return wishlist.some((item) => item.id === itemId);
+  };
+
+  const clearWishlist = () => {
+    setWishlist([]);
+  };
 
   // --- Store Functions (Centralized & Reusable) ---
 
@@ -206,6 +265,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       clearCart,
       cartTotal,
 
+      // Wishlist
+      wishlist,
+      addToWishlist,
+      removeFromWishlist,
+      isInWishlist,
+      clearWishlist,
+
       // Stores
       allStores,
       getStoreById,
@@ -218,7 +284,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       reels,
       toggleLikeReel,
     }),
-    [user, cart, cartTotal, allStores, reels],
+    [user, cart, cartTotal, allStores, reels, wishlist],
   );
 
   return (
