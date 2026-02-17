@@ -1,6 +1,10 @@
 // src/features/dhindora/screens/DhindoraScreen.tsx
 import { useApp } from "@/src/context/AppContext";
+import { useReelSession } from "@/src/context/ReelContext";
+import { reelCache } from "@/src/utils/reelCacheManager";
+import { preloadNextReel } from "@/src/utils/videoLoadingOptimizer";
 import * as NavigationBar from "expo-navigation-bar";
+import { useFocusEffect } from "expo-router";
 import { useVideoPlayer, VideoView } from "expo-video";
 import {
   BadgeCheck,
@@ -10,8 +14,9 @@ import {
   MoreVertical,
   Send,
 } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -23,7 +28,9 @@ import {
   View,
 } from "react-native";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
+const REELS_PER_PAGE = 3; // Fetch 3 reels at a time for low latency
+const VIDEO_LOAD_CHUNK = 0.5; // Load video in 0.5-second chunks (faster loading)
 
 interface Reel {
   _id: string;
@@ -40,26 +47,57 @@ interface Reel {
   saves?: number;
 }
 
-const ReelItem = ({ item, isVisible }: { item: Reel; isVisible: boolean }) => {
+const ReelItem = ({
+  item,
+  isVisible,
+  isPaused: parentPaused,
+  itemHeight,
+}: {
+  item: Reel;
+  isVisible: boolean;
+  isPaused: boolean;
+  itemHeight: number;
+}) => {
   const { toggleLikeReel } = useApp();
   const [isLiked, setIsLiked] = useState(item.liked || false);
   const [likesCount, setLikesCount] = useState(item.likesCount);
   const [isSaved, setIsSaved] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const playerRef = useRef<any>(null);
 
-  // Initialize the video player
+  // Initialize the video player with chunked loading
   const player = useVideoPlayer(item.videoUrl, (player) => {
     player.loop = true;
     player.muted = false;
+    playerRef.current = player;
   });
 
-  // Handle Play/Pause based on visibility
+  // Handle Play/Pause based on visibility and parent pause state
   useEffect(() => {
-    if (isVisible) {
-      player.play();
+    if (!playerRef.current) return;
+
+    if (isVisible && !parentPaused) {
+      // Start playing immediately with minimal delay
+      const timer = setTimeout(() => {
+        try {
+          playerRef.current.play();
+          setIsLoading(false);
+        } catch (err) {
+          console.log("Playback error:", err);
+          setIsLoading(false);
+        }
+      }, VIDEO_LOAD_CHUNK * 1000);
+      return () => clearTimeout(timer);
     } else {
-      player.pause();
+      try {
+        playerRef.current.pause();
+      } catch (err) {
+        console.log("Pause error:", err);
+      }
+      // Release memory when not visible
+      setIsLoading(true);
     }
-  }, [isVisible]);
+  }, [isVisible, parentPaused]);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -82,14 +120,21 @@ const ReelItem = ({ item, isVisible }: { item: Reel; isVisible: boolean }) => {
   };
 
   return (
-    <View style={styles.videoContainer}>
+    <View style={[styles.videoContainer, { height: itemHeight, width: width }]}>
       {/* Video Player */}
       <VideoView
         player={player}
-        style={styles.fullVideo}
+        style={[styles.fullVideo, { height: itemHeight }]}
         contentFit="cover"
         nativeControls={false}
       />
+
+      {/* Loading Indicator */}
+      {isLoading && isVisible && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+        </View>
+      )}
 
       {/* Right Sidebar Actions */}
       <View style={styles.rightSidebar}>
@@ -183,17 +228,50 @@ const ReelItem = ({ item, isVisible }: { item: Reel; isVisible: boolean }) => {
           </Text>
         </View>
       </View>
-
-      {/* Top Gradient for better text visibility */}
-      <View style={styles.topGradient} />
-      <View style={styles.bottomGradient} />
     </View>
   );
 };
 
 export default function DhindoraScreen() {
-  const { reels } = useApp();
+  const { reels: initialReels } = useApp();
+  const { reelState, setReelState, pauseSession, resumeSession } =
+    useReelSession();
+
+  const screenHeight = Dimensions.get("screen").height;
+
   const [viewableItem, setViewableItem] = useState<string | null>(null);
+  const [reels, setReels] = useState<Reel[]>(
+    initialReels.slice(0, REELS_PER_PAGE),
+  );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreReels, setHasMoreReels] = useState(
+    initialReels.length > REELS_PER_PAGE,
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isPaused, setIsPaused] = useState(reelState.isPaused);
+
+  const flatListRef = useRef<FlatList>(null);
+
+  // Handle focus/blur events to pause/resume
+  useFocusEffect(
+    useCallback(() => {
+      // Properly hide status bar
+      StatusBar.setHidden(true, "none");
+
+      // Resume when screen is focused
+      resumeSession();
+      setIsPaused(false);
+
+      return () => {
+        // Show status bar when leaving
+        StatusBar.setHidden(false, "none");
+
+        // Pause when screen is unfocused
+        pauseSession();
+        setIsPaused(true);
+      };
+    }, [pauseSession, resumeSession]),
+  );
 
   useEffect(() => {
     // Hide navigation bar on Android for full-screen experience
@@ -209,50 +287,137 @@ export default function DhindoraScreen() {
     };
   }, []);
 
+  // Restore scroll position if available
+  useEffect(() => {
+    if (
+      reelState.currentReelIndex > 0 &&
+      flatListRef.current &&
+      reels.length > 0
+    ) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToIndex({
+          index: reelState.currentReelIndex,
+          animated: false,
+        });
+      }, 100);
+    }
+  }, []);
+
+  // Dynamic fetching of reels with caching - simulates API call
+  const fetchMoreReels = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+
+    // Simulate network delay for realistic chunk loading
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const startIdx = currentPage * REELS_PER_PAGE;
+    const endIdx = startIdx + REELS_PER_PAGE;
+    const newReels = initialReels.slice(startIdx, endIdx);
+
+    if (newReels.length > 0) {
+      // Add newly fetched reels to cache
+      newReels.forEach((reel) => {
+        if (!reelCache.isCached(reel._id)) {
+          reelCache.addToCache(reel._id, reel);
+        }
+      });
+
+      setReels((prev) => [...prev, ...newReels]);
+      setCurrentPage((prev) => prev + 1);
+
+      // Check if there are more reels to fetch
+      if (endIdx >= initialReels.length) {
+        setHasMoreReels(false);
+      }
+    } else {
+      setHasMoreReels(false);
+    }
+
+    setIsLoadingMore(false);
+  }, [currentPage, isLoadingMore, initialReels]);
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
-      setViewableItem(viewableItems[0].key);
+      const visibleItem = viewableItems[0];
+      setViewableItem(visibleItem.key);
+
+      // Find current reel index
+      const visibleIndex = reels.findIndex((r) => r._id === visibleItem.key);
+      if (visibleIndex >= 0) {
+        // Update session state with current reel index
+        setReelState({
+          currentReelIndex: visibleIndex,
+          reelId: visibleItem.key,
+        });
+
+        // Add current reel to cache
+        const currentReel = reels[visibleIndex];
+        if (!reelCache.isCached(currentReel._id)) {
+          reelCache.addToCache(currentReel._id, currentReel);
+        }
+
+        // Predictive preloading: queue next 3 reels for preload
+        reelCache.queueForPreload(reels, visibleIndex);
+
+        // Start preloading the next reel immediately
+        if (visibleIndex < reels.length - 1) {
+          const nextReel = reels[visibleIndex + 1];
+          preloadNextReel(nextReel.videoUrl).catch((err) =>
+            console.log("Preload failed:", err),
+          );
+        }
+      }
     }
   }).current;
 
-  return (
-    <View style={styles.container}>
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle="light-content"
-        hidden
-      />
+  // Trigger loading more when user is near the end
+  const onEndReached = useCallback(() => {
+    if (hasMoreReels && !isLoadingMore) {
+      fetchMoreReels();
+    }
+  }, [hasMoreReels, isLoadingMore, fetchMoreReels]);
 
+  return (
+    <View style={styles.reelPage}>
       <FlatList
+        ref={flatListRef}
         data={reels}
         renderItem={({ item }) => (
-          <ReelItem item={item} isVisible={viewableItem === item._id} />
+          <ReelItem
+            item={item}
+            isVisible={viewableItem === item._id}
+            isPaused={isPaused}
+            itemHeight={screenHeight}
+          />
         )}
         keyExtractor={(item) => item._id}
         pagingEnabled
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
+        snapToInterval={screenHeight}
         snapToAlignment="start"
-        snapToInterval={height}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
+        disableIntervalMomentum
+        decelerationRate="fast"
+        removeClippedSubviews
+        windowSize={3}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
+        updateCellsBatchingPeriod={50}
+        showsVerticalScrollIndicator={false}
         getItemLayout={(_, index) => ({
-          length: height,
-          offset: height * index,
+          length: screenHeight,
+          offset: screenHeight * index,
           index,
         })}
+        viewabilityConfig={{
+          itemVisiblePercentThreshold: 95,
+        }}
+        onViewableItemsChanged={onViewableItemsChanged}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.5}
+        scrollEventThrottle={16}
       />
-
-      {/* Top Tab Bar (like Instagram) */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.topTab}>
-          <Text style={[styles.topTabText, styles.activeTopTab]}>For You</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.topTab}>
-          <Text style={styles.topTabText}>Following</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -264,37 +429,29 @@ const styles = StyleSheet.create({
   },
   videoContainer: {
     width: width,
-    height: height,
     position: "relative",
   },
   fullVideo: {
     flex: 1,
     width: width,
-    height: height,
   },
-  topBar: {
+  loadingContainer: {
     position: "absolute",
-    top: 50,
+    top: 0,
     left: 0,
     right: 0,
-    flexDirection: "row",
+    bottom: 0,
     justifyContent: "center",
-    gap: 30,
-    zIndex: 10,
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    zIndex: 20,
   },
-  topTab: {
-    paddingVertical: 8,
+  loadingFooter: {
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#000",
   },
-  topTabText: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  activeTopTab: {
-    color: "#fff",
-    borderBottomWidth: 2,
-    borderBottomColor: "#fff",
-  },
+
   rightSidebar: {
     position: "absolute",
     right: 12,
@@ -420,24 +577,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  topGradient: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 150,
-    backgroundColor:
-      "linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)",
-    zIndex: 1,
-  },
-  bottomGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 250,
-    backgroundColor:
-      "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)",
-    zIndex: 1,
+  reelPage: {
+    height: Dimensions.get("screen").height,
+    width: Dimensions.get("screen").width,
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "#000",
   },
 });

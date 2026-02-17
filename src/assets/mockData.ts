@@ -363,7 +363,7 @@ export const STORE_TYPES = [
 export const mockReels: Reel[] = [
   {
     _id: "1",
-    videoUrl: require("./videos/video2.mp4"),
+    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
     description:
       "Fresh organic veggies arrived at Green Store! 🥦 #SangamDeals",
     likesCount: 120,
@@ -385,5 +385,83 @@ export const mockReels: Reel[] = [
       },
     ],
   },
-  // Add more reels here...
+  {
+    _id: "2",
+    videoUrl:
+      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ForBiggerBlazes.mp4",
+    description:
+      "Exclusive fashion collection drops tonight! 👗 Don't miss out #StyleHub",
+    likesCount: 340,
+    liked: false,
+    user: {
+      name: "Fashion Forward",
+      avatar: "https://i.pravatar.cc/150?u=fashion",
+    },
+    comments: [
+      {
+        user: { name: "Priya", avatar: "" },
+        text: "Love these designs!",
+        isReview: true,
+      },
+    ],
+  },
+  {
+    _id: "3",
+    videoUrl:
+      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ForBiggerJoyrides.mp4",
+    description:
+      "Hot deals on kitchen appliances ⚡ Limited stock available #MustBuy",
+    likesCount: 215,
+    liked: false,
+    user: {
+      name: "TechHub Store",
+      avatar: "https://i.pravatar.cc/150?u=tech",
+    },
+    comments: [
+      {
+        user: { name: "Amit", avatar: "" },
+        text: "Great prices!",
+        isReview: true,
+      },
+    ],
+  },
+  {
+    _id: "4",
+    videoUrl:
+      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ElephantsDream.mp4",
+    description:
+      "New beauty and skincare products ✨ Get 30% off on first order #GlowUp",
+    likesCount: 450,
+    liked: false,
+    user: {
+      name: "Beauty Bliss",
+      avatar: "https://i.pravatar.cc/150?u=beauty",
+    },
+    comments: [
+      {
+        user: { name: "Neha", avatar: "" },
+        text: "Amazing quality products!",
+        isReview: true,
+      },
+    ],
+  },
+  {
+    _id: "5",
+    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
+    description:
+      "Premium coffee beans just arrived ☕ Perfect for coffee lovers #CoffeeAddict",
+    likesCount: 180,
+    liked: false,
+    user: {
+      name: "Coffee Corner",
+      avatar: "https://i.pravatar.cc/150?u=coffee",
+    },
+    comments: [
+      {
+        user: { name: "Raj", avatar: "" },
+        text: "Best coffee in town!",
+        isReview: true,
+      },
+    ],
+  },
 ];
