@@ -17,7 +17,6 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Dimensions,
   FlatList,
   Image,
   Platform,
@@ -25,12 +24,13 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const { width } = Dimensions.get("window");
-const REELS_PER_PAGE = 3; // Fetch 3 reels at a time for low latency
-const VIDEO_LOAD_CHUNK = 0.5; // Load video in 0.5-second chunks (faster loading)
+const REELS_PER_PAGE = 3;
+const VIDEO_LOAD_CHUNK = 0.5;
 
 interface Reel {
   _id: string;
@@ -52,11 +52,13 @@ const ReelItem = ({
   isVisible,
   isPaused: parentPaused,
   itemHeight,
+  itemWidth,
 }: {
   item: Reel;
   isVisible: boolean;
   isPaused: boolean;
   itemHeight: number;
+  itemWidth: number;
 }) => {
   const { toggleLikeReel } = useApp();
   const [isLiked, setIsLiked] = useState(item.liked || false);
@@ -65,19 +67,16 @@ const ReelItem = ({
   const [isLoading, setIsLoading] = useState(true);
   const playerRef = useRef<any>(null);
 
-  // Initialize the video player with chunked loading
   const player = useVideoPlayer(item.videoUrl, (player) => {
     player.loop = true;
     player.muted = false;
     playerRef.current = player;
   });
 
-  // Handle Play/Pause based on visibility and parent pause state
   useEffect(() => {
     if (!playerRef.current) return;
 
     if (isVisible && !parentPaused) {
-      // Start playing immediately with minimal delay
       const timer = setTimeout(() => {
         try {
           playerRef.current.play();
@@ -94,7 +93,6 @@ const ReelItem = ({
       } catch (err) {
         console.log("Pause error:", err);
       }
-      // Release memory when not visible
       setIsLoading(true);
     }
   }, [isVisible, parentPaused]);
@@ -105,40 +103,32 @@ const ReelItem = ({
     toggleLikeReel(item._id);
   };
 
-  const handleSave = () => {
-    setIsSaved(!isSaved);
-  };
+  const handleSave = () => setIsSaved(!isSaved);
 
   const formatCount = (count: number) => {
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + "M";
-    }
-    if (count >= 1000) {
-      return (count / 1000).toFixed(1) + "K";
-    }
+    if (count >= 1000000) return (count / 1000000).toFixed(1) + "M";
+    if (count >= 1000) return (count / 1000).toFixed(1) + "K";
     return count.toString();
   };
 
   return (
-    <View style={[styles.videoContainer, { height: itemHeight, width: width }]}>
-      {/* Video Player */}
+    <View
+      style={[styles.videoContainer, { height: itemHeight, width: itemWidth }]}
+    >
       <VideoView
         player={player}
-        style={[styles.fullVideo, { height: itemHeight }]}
+        style={StyleSheet.absoluteFill}
         contentFit="cover"
         nativeControls={false}
       />
 
-      {/* Loading Indicator */}
       {isLoading && isVisible && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
       )}
 
-      {/* Right Sidebar Actions */}
       <View style={styles.rightSidebar}>
-        {/* Profile Picture */}
         <View style={styles.profileContainer}>
           <Image
             source={{ uri: item.user?.avatar }}
@@ -149,7 +139,6 @@ const ReelItem = ({
           </View>
         </View>
 
-        {/* Like Button */}
         <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
           <Heart
             size={32}
@@ -160,7 +149,6 @@ const ReelItem = ({
           <Text style={styles.actionCount}>{formatCount(likesCount)}</Text>
         </TouchableOpacity>
 
-        {/* Comments Button */}
         <TouchableOpacity style={styles.actionBtn}>
           <MessageCircle size={32} color="#fff" strokeWidth={2} />
           <Text style={styles.actionCount}>
@@ -168,7 +156,6 @@ const ReelItem = ({
           </Text>
         </TouchableOpacity>
 
-        {/* Share Button */}
         <TouchableOpacity style={styles.actionBtn}>
           <Send size={32} color="#fff" strokeWidth={2} />
           <Text style={styles.actionCount}>
@@ -176,7 +163,6 @@ const ReelItem = ({
           </Text>
         </TouchableOpacity>
 
-        {/* Save Button */}
         <TouchableOpacity style={styles.actionBtn} onPress={handleSave}>
           <Bookmark
             size={30}
@@ -186,12 +172,10 @@ const ReelItem = ({
           />
         </TouchableOpacity>
 
-        {/* More Options */}
         <TouchableOpacity style={styles.actionBtn}>
           <MoreVertical size={28} color="#fff" strokeWidth={2} />
         </TouchableOpacity>
 
-        {/* Creator's Product/Store Image (for promotion) */}
         <View style={styles.promotionThumbnail}>
           <Image
             source={{ uri: item.user?.avatar }}
@@ -200,7 +184,6 @@ const ReelItem = ({
         </View>
       </View>
 
-      {/* Bottom Overlay Info */}
       <View style={styles.bottomOverlay}>
         <View style={styles.userRow}>
           <TouchableOpacity style={styles.userInfo}>
@@ -220,7 +203,6 @@ const ReelItem = ({
           {item.description}
         </Text>
 
-        {/* Music/Audio Track */}
         <View style={styles.audioRow}>
           <Text style={styles.audioIcon}>🎵</Text>
           <Text style={styles.audioText} numberOfLines={1}>
@@ -237,7 +219,13 @@ export default function DhindoraScreen() {
   const { reelState, setReelState, pauseSession, resumeSession } =
     useReelSession();
 
-  const screenHeight = Dimensions.get("screen").height;
+  // FIXED: Using hooks for reactive dimensions
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+
+  // Calculate screen height precisely (excluding safe areas if not handled by StatusBar hidden)
+  // If you are using Tab Navigation, subtract your Tab Bar height here as well.
+  const screenHeight = windowHeight;
 
   const [viewableItem, setViewableItem] = useState<string | null>(null);
   const [reels, setReels] = useState<Reel[]>(
@@ -252,21 +240,13 @@ export default function DhindoraScreen() {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Handle focus/blur events to pause/resume
   useFocusEffect(
     useCallback(() => {
-      // Properly hide status bar
-      StatusBar.setHidden(true, "none");
-
-      // Resume when screen is focused
+      StatusBar.setHidden(true, "fade");
       resumeSession();
       setIsPaused(false);
-
       return () => {
-        // Show status bar when leaving
-        StatusBar.setHidden(false, "none");
-
-        // Pause when screen is unfocused
+        StatusBar.setHidden(false, "fade");
         pauseSession();
         setIsPaused(true);
       };
@@ -274,12 +254,10 @@ export default function DhindoraScreen() {
   );
 
   useEffect(() => {
-    // Hide navigation bar on Android for full-screen experience
     if (Platform.OS === "android") {
       NavigationBar.setVisibilityAsync("hidden");
       NavigationBar.setBehaviorAsync("overlay-swipe");
     }
-
     return () => {
       if (Platform.OS === "android") {
         NavigationBar.setVisibilityAsync("visible");
@@ -287,7 +265,6 @@ export default function DhindoraScreen() {
     };
   }, []);
 
-  // Restore scroll position if available
   useEffect(() => {
     if (
       reelState.currentReelIndex > 0 &&
@@ -303,39 +280,24 @@ export default function DhindoraScreen() {
     }
   }, []);
 
-  // Dynamic fetching of reels with caching - simulates API call
   const fetchMoreReels = useCallback(async () => {
-    // Prevent multiple simultaneous requests
     if (isLoadingMore) return;
-
     setIsLoadingMore(true);
-
-    // Simulate network delay for realistic chunk loading
     await new Promise((resolve) => setTimeout(resolve, 500));
-
     const startIdx = currentPage * REELS_PER_PAGE;
     const endIdx = startIdx + REELS_PER_PAGE;
     const newReels = initialReels.slice(startIdx, endIdx);
 
     if (newReels.length > 0) {
-      // Add newly fetched reels to cache
       newReels.forEach((reel) => {
-        if (!reelCache.isCached(reel._id)) {
-          reelCache.addToCache(reel._id, reel);
-        }
+        if (!reelCache.isCached(reel._id)) reelCache.addToCache(reel._id, reel);
       });
-
       setReels((prev) => [...prev, ...newReels]);
       setCurrentPage((prev) => prev + 1);
-
-      // Check if there are more reels to fetch
-      if (endIdx >= initialReels.length) {
-        setHasMoreReels(false);
-      }
+      if (endIdx >= initialReels.length) setHasMoreReels(false);
     } else {
       setHasMoreReels(false);
     }
-
     setIsLoadingMore(false);
   }, [currentPage, isLoadingMore, initialReels]);
 
@@ -343,45 +305,31 @@ export default function DhindoraScreen() {
     if (viewableItems.length > 0) {
       const visibleItem = viewableItems[0];
       setViewableItem(visibleItem.key);
-
-      // Find current reel index
       const visibleIndex = reels.findIndex((r) => r._id === visibleItem.key);
       if (visibleIndex >= 0) {
-        // Update session state with current reel index
         setReelState({
           currentReelIndex: visibleIndex,
           reelId: visibleItem.key,
         });
-
-        // Add current reel to cache
         const currentReel = reels[visibleIndex];
-        if (!reelCache.isCached(currentReel._id)) {
+        if (!reelCache.isCached(currentReel._id))
           reelCache.addToCache(currentReel._id, currentReel);
-        }
-
-        // Predictive preloading: queue next 3 reels for preload
         reelCache.queueForPreload(reels, visibleIndex);
-
-        // Start preloading the next reel immediately
         if (visibleIndex < reels.length - 1) {
-          const nextReel = reels[visibleIndex + 1];
-          preloadNextReel(nextReel.videoUrl).catch((err) =>
-            console.log("Preload failed:", err),
-          );
+          preloadNextReel(reels[visibleIndex + 1].videoUrl).catch(() => {});
         }
       }
     }
   }).current;
 
-  // Trigger loading more when user is near the end
   const onEndReached = useCallback(() => {
-    if (hasMoreReels && !isLoadingMore) {
-      fetchMoreReels();
-    }
+    if (hasMoreReels && !isLoadingMore) fetchMoreReels();
   }, [hasMoreReels, isLoadingMore, fetchMoreReels]);
 
   return (
-    <View style={styles.reelPage}>
+    <View
+      style={[styles.container, { height: screenHeight, width: windowWidth }]}
+    >
       <FlatList
         ref={flatListRef}
         data={reels}
@@ -391,28 +339,26 @@ export default function DhindoraScreen() {
             isVisible={viewableItem === item._id}
             isPaused={isPaused}
             itemHeight={screenHeight}
+            itemWidth={windowWidth}
           />
         )}
         keyExtractor={(item) => item._id}
         pagingEnabled
+        // FIXED: Explicitly set snap interval to match the height
         snapToInterval={screenHeight}
         snapToAlignment="start"
-        disableIntervalMomentum
         decelerationRate="fast"
-        removeClippedSubviews
-        windowSize={3}
+        removeClippedSubviews={true}
+        windowSize={5}
         initialNumToRender={3}
         maxToRenderPerBatch={3}
-        updateCellsBatchingPeriod={50}
         showsVerticalScrollIndicator={false}
         getItemLayout={(_, index) => ({
           length: screenHeight,
           offset: screenHeight * index,
           index,
         })}
-        viewabilityConfig={{
-          itemVisiblePercentThreshold: 95,
-        }}
+        viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
         onViewableItemsChanged={onViewableItemsChanged}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
@@ -428,34 +374,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   videoContainer: {
-    width: width,
+    overflow: "hidden",
     position: "relative",
   },
-  fullVideo: {
-    flex: 1,
-    width: width,
-  },
   loadingContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     zIndex: 20,
   },
-  loadingFooter: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#000",
-  },
-
   rightSidebar: {
     position: "absolute",
     right: 12,
-    bottom: 100,
+    bottom: 90, // Slightly adjusted for modern gesture bars
     alignItems: "center",
     zIndex: 10,
   },
@@ -488,7 +420,7 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   actionCount: {
     color: "#fff",
@@ -514,11 +446,11 @@ const styles = StyleSheet.create({
   },
   bottomOverlay: {
     position: "absolute",
-    bottom: 0,
+    bottom: 60, // Adjust this based on your bottom nav bar presence
     left: 0,
     right: 0,
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === "ios" ? 20 : 10,
     zIndex: 5,
   },
   userRow: {
@@ -576,12 +508,5 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(0,0,0,0.8)",
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
-  },
-  reelPage: {
-    height: Dimensions.get("screen").height,
-    width: Dimensions.get("screen").width,
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#000",
   },
 });
