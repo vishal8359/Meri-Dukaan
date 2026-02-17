@@ -344,10 +344,13 @@ export default function DhindoraScreen() {
         )}
         keyExtractor={(item) => item._id}
         pagingEnabled
-        // FIXED: Explicitly set snap interval to match the height
+        // --- CRITICAL FIXES FOR ONE-BY-ONE SCROLLING ---
         snapToInterval={screenHeight}
         snapToAlignment="start"
         decelerationRate="fast"
+        disableIntervalMomentum={true} // Forces it to stop at the next item
+        // ----------------------------------------------
+
         removeClippedSubviews={true}
         windowSize={5}
         initialNumToRender={3}
