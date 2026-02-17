@@ -65,6 +65,7 @@ const ReelItem = ({
   const [likesCount, setLikesCount] = useState(item.likesCount);
   const [isSaved, setIsSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClickedPaused, setIsClickedPaused] = useState(false);
   const playerRef = useRef<any>(null);
 
   const player = useVideoPlayer(item.videoUrl, (player) => {
@@ -73,29 +74,56 @@ const ReelItem = ({
     playerRef.current = player;
   });
 
+  // Handle play/pause when visibility or player changes
   useEffect(() => {
-    if (!playerRef.current) return;
+    if (!player || !playerRef.current) {
+      console.log("Player not ready for reel:", item._id);
+      return;
+    }
 
-    if (isVisible && !parentPaused) {
+    if (isVisible && !parentPaused && !isClickedPaused) {
+      // Should be playing
+      setIsLoading(true);
       const timer = setTimeout(() => {
         try {
-          playerRef.current.play();
-          setIsLoading(false);
+          if (playerRef.current?.play) {
+            playerRef.current.play();
+            setIsLoading(false);
+          }
         } catch (err) {
-          console.log("Playback error:", err);
+          console.log("Playback error for reel", item._id, ":", err);
           setIsLoading(false);
         }
       }, VIDEO_LOAD_CHUNK * 1000);
-      return () => clearTimeout(timer);
+
+      return () => {
+        clearTimeout(timer);
+      };
     } else {
+      // Should be paused
       try {
-        playerRef.current.pause();
+        if (playerRef.current?.pause) {
+          playerRef.current.pause();
+        }
       } catch (err) {
         console.log("Pause error:", err);
       }
-      setIsLoading(true);
+      setIsLoading(false);
     }
-  }, [isVisible, parentPaused]);
+  }, [isVisible, parentPaused, player, item._id, isClickedPaused]);
+
+  // Cleanup player when component unmounts or when new video loads
+  useEffect(() => {
+    return () => {
+      try {
+        if (playerRef.current?.pause) {
+          playerRef.current.pause();
+        }
+      } catch (err) {
+        // Silently fail on cleanup
+      }
+    };
+  }, [item._id]);
 
   const handleLike = () => {
     setIsLiked(!isLiked);
@@ -104,6 +132,26 @@ const ReelItem = ({
   };
 
   const handleSave = () => setIsSaved(!isSaved);
+
+  const handleVideoPress = () => {
+    try {
+      if (isClickedPaused) {
+        // Currently paused, so resume
+        if (playerRef.current?.play) {
+          playerRef.current.play();
+          setIsLoading(false);
+        }
+      } else {
+        // Currently playing, so pause
+        if (playerRef.current?.pause) {
+          playerRef.current.pause();
+        }
+      }
+    } catch (err) {
+      console.log("Error toggling video play/pause:", err);
+    }
+    setIsClickedPaused(!isClickedPaused);
+  };
 
   const formatCount = (count: number) => {
     if (count >= 1000000) return (count / 1000000).toFixed(1) + "M";
@@ -121,6 +169,18 @@ const ReelItem = ({
         contentFit="cover"
         nativeControls={false}
       />
+
+      <TouchableOpacity
+        style={styles.videoOverlay}
+        activeOpacity={1}
+        onPress={handleVideoPress}
+      >
+        {isClickedPaused && (
+          <View style={styles.pauseIndicator}>
+            <Text style={styles.pauseText}>⏸</Text>
+          </View>
+        )}
+      </TouchableOpacity>
 
       {isLoading && isVisible && (
         <View style={styles.loadingContainer}>
@@ -379,6 +439,24 @@ const styles = StyleSheet.create({
   videoContainer: {
     overflow: "hidden",
     position: "relative",
+  },
+  videoOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pauseIndicator: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  pauseText: {
+    fontSize: 40,
+    color: "#fff",
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
