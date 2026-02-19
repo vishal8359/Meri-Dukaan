@@ -64,19 +64,29 @@ const ReelItem = ({
   const [isLiked, setIsLiked] = useState(item.liked || false);
   const [likesCount, setLikesCount] = useState(item.likesCount);
   const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(isVisible);
   const [isClickedPaused, setIsClickedPaused] = useState(false);
+  const [playerReady, setPlayerReady] = useState(false);
   const playerRef = useRef<any>(null);
+  const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  );
 
   const player = useVideoPlayer(item.videoUrl, (player) => {
     player.loop = true;
     player.muted = false;
     playerRef.current = player;
+    setPlayerReady(true);
   });
 
   // Handle play/pause when visibility or player changes
   useEffect(() => {
-    if (!player || !playerRef.current) {
+    // Clear any pending timeouts
+    if (playTimeoutRef.current) {
+      clearTimeout(playTimeoutRef.current);
+    }
+
+    if (!playerReady || !player) {
       console.log("Player not ready for reel:", item._id);
       return;
     }
@@ -84,21 +94,19 @@ const ReelItem = ({
     if (isVisible && !parentPaused && !isClickedPaused) {
       // Should be playing
       setIsLoading(true);
-      const timer = setTimeout(() => {
+      // Reduce delay significantly - player should be ready almost immediately
+      playTimeoutRef.current = setTimeout(() => {
         try {
           if (playerRef.current?.play) {
             playerRef.current.play();
+            console.log("Playing reel:", item._id);
             setIsLoading(false);
           }
         } catch (err) {
           console.log("Playback error for reel", item._id, ":", err);
           setIsLoading(false);
         }
-      }, VIDEO_LOAD_CHUNK * 1000);
-
-      return () => {
-        clearTimeout(timer);
-      };
+      }, 100); // Reduced from VIDEO_LOAD_CHUNK * 1000
     } else {
       // Should be paused
       try {
@@ -110,11 +118,20 @@ const ReelItem = ({
       }
       setIsLoading(false);
     }
-  }, [isVisible, parentPaused, player, item._id, isClickedPaused]);
+
+    return () => {
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+      }
+    };
+  }, [isVisible, parentPaused, playerReady, item._id, isClickedPaused, player]);
 
   // Cleanup player when component unmounts or when new video loads
   useEffect(() => {
     return () => {
+      if (playTimeoutRef.current) {
+        clearTimeout(playTimeoutRef.current);
+      }
       try {
         if (playerRef.current?.pause) {
           playerRef.current.pause();
@@ -182,7 +199,7 @@ const ReelItem = ({
         )}
       </TouchableOpacity>
 
-      {isLoading && isVisible && (
+      {isLoading && isVisible && !isClickedPaused && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
@@ -412,9 +429,10 @@ export default function DhindoraScreen() {
         // ----------------------------------------------
 
         removeClippedSubviews={true}
-        windowSize={5}
-        initialNumToRender={3}
-        maxToRenderPerBatch={3}
+        windowSize={3}
+        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        updateCellsBatchingPeriod={50}
         showsVerticalScrollIndicator={false}
         getItemLayout={(_, index) => ({
           length: screenHeight,
