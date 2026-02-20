@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   deliveryLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     color: colors.text.secondary,
   },
