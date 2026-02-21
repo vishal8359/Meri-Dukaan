@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   addressText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.text.primary,
   },
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "800",
     color: colors.text.primary,
   },
