@@ -382,7 +382,7 @@ const styles = StyleSheet.create({
   quickPickItem: {
     alignItems: "center",
     marginHorizontal: spacing.xs,
-    width: 70,
+    width: 68,
   },
   quickPickIcon: {
     width: 64,
