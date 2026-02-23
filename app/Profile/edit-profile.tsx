@@ -385,7 +385,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#e2e8f0",
     paddingHorizontal: spacing.md,
-    transition: "all 0.3s ease",
   },
   inputWrapperFocused: {
     borderColor: "#3b82f6",
