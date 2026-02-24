@@ -1,20 +1,20 @@
-import React from 'react';
+import React from "react";
 import {
-    ActivityIndicator,
-    StyleProp,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    ViewStyle,
-} from 'react-native';
+  ActivityIndicator,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
 
-import { colors, radius, spacing } from '../../theme/colors';
+import { colors, radius, spacing } from "../../theme/colors";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: "primary" | "secondary" | "outline";
   loading?: boolean;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -24,7 +24,7 @@ interface ButtonProps {
 export const Button = ({
   title,
   onPress,
-  variant = 'primary',
+  variant = "primary",
   loading = false,
   disabled = false,
   style,
@@ -33,9 +33,9 @@ export const Button = ({
   const getButtonStyle = () => {
     if (disabled) return styles.disabled;
     switch (variant) {
-      case 'outline':
+      case "outline":
         return styles.outline;
-      case 'secondary':
+      case "secondary":
         return styles.secondary;
       default:
         return styles.primary;
@@ -44,7 +44,7 @@ export const Button = ({
 
   const getTextColor = () => {
     if (disabled) return { color: colors.text.secondary };
-    if (variant === 'outline') return { color: colors.brand.primary };
+    if (variant === "outline") return { color: colors.brand.primary };
     return { color: colors.text.inverse };
   };
 
@@ -58,15 +58,11 @@ export const Button = ({
       {loading ? (
         <ActivityIndicator
           color={
-            variant === 'outline'
-              ? colors.brand.primary
-              : colors.text.inverse
+            variant === "outline" ? colors.brand.primary : colors.text.inverse
           }
         />
       ) : (
-        <Text style={[styles.text, getTextColor(), textStyle]}>
-          {title}
-        </Text>
+        <Text style={[styles.text, getTextColor(), textStyle]}>{title}</Text>
       )}
     </TouchableOpacity>
   );
@@ -77,9 +73,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
   },
 
   primary: {
@@ -91,7 +87,7 @@ const styles = StyleSheet.create({
   },
 
   outline: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 1.5,
     borderColor: colors.brand.primary,
   },
@@ -102,7 +98,7 @@ const styles = StyleSheet.create({
 
   text: {
     fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'System',
+    fontWeight: "700",
+    fontFamily: "System",
   },
 });

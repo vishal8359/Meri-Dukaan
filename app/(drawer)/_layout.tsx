@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
   },
   avatarLetter: {
     color: colors.text.light,
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
   },
   onlineIndicator: {
