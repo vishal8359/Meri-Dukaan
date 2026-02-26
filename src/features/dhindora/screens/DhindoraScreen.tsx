@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pauseText: {
-    fontSize: 38,
+    fontSize: 40,
     color: "#fff",
   },
   loadingContainer: {
