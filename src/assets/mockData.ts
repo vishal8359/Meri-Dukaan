@@ -388,7 +388,7 @@ export const mockReels: Reel[] = [
   {
     _id: "2",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ForBiggerBlazes.mp4",
+      "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4",
     description:
       "Exclusive fashion collection drops tonight! 👗 Don't miss out #StyleHub",
     likesCount: 340,
@@ -408,7 +408,7 @@ export const mockReels: Reel[] = [
   {
     _id: "3",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ForBiggerJoyrides.mp4",
+      "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     description:
       "Hot deals on kitchen appliances ⚡ Limited stock available #MustBuy",
     likesCount: 215,
@@ -428,7 +428,7 @@ export const mockReels: Reel[] = [
   {
     _id: "4",
     videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-library/sample/ElephantsDream.mp4",
+      "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     description:
       "New beauty and skincare products ✨ Get 30% off on first order #GlowUp",
     likesCount: 450,
@@ -447,7 +447,8 @@ export const mockReels: Reel[] = [
   },
   {
     _id: "5",
-    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
+    videoUrl:
+      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
     description:
       "Premium coffee beans just arrived ☕ Perfect for coffee lovers #CoffeeAddict",
     likesCount: 180,

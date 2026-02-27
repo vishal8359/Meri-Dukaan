@@ -27,10 +27,8 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const REELS_PER_PAGE = 3;
-const VIDEO_LOAD_CHUNK = 0.5;
 
 interface Reel {
   _id: string;
@@ -64,81 +62,58 @@ const ReelItem = ({
   const [isLiked, setIsLiked] = useState(item.liked || false);
   const [likesCount, setLikesCount] = useState(item.likesCount);
   const [isSaved, setIsSaved] = useState(false);
-  const [isLoading, setIsLoading] = useState(isVisible);
   const [isClickedPaused, setIsClickedPaused] = useState(false);
-  const [playerReady, setPlayerReady] = useState(false);
-  const playerRef = useRef<any>(null);
-  const playTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
 
-  const player = useVideoPlayer(item.videoUrl, (player) => {
-    player.loop = true;
-    player.muted = false;
-    playerRef.current = player;
-    setPlayerReady(true);
+  // ─── FIX: Create player and track real status via addListener ──────────────
+  const player = useVideoPlayer(item.videoUrl, (p) => {
+    p.loop = true;
+    p.muted = false;
   });
 
-  // Handle play/pause when visibility or player changes
+  // Track the real buffered-ready status using player.addListener.
+  // 'status' values: 'idle' | 'loading' | 'readyToPlay' | 'error'
+  // This fires only when the video has actually buffered enough to play,
+  // unlike the useVideoPlayer callback which fires as soon as the JS object exists.
+  const [playerStatus, setPlayerStatus] = useState<string>(
+    player.status ?? "idle",
+  );
+
   useEffect(() => {
-    // Clear any pending timeouts
-    if (playTimeoutRef.current) {
-      clearTimeout(playTimeoutRef.current);
-    }
+    const subscription = player.addListener(
+      "statusChange",
+      ({ status }: { status: string }) => {
+        setPlayerStatus(status);
+      },
+    );
+    return () => subscription.remove();
+  }, [player]);
 
-    if (!playerReady || !player) {
-      console.log("Player not ready for reel:", item._id);
-      return;
-    }
+  const isReadyToPlay = playerStatus === "readyToPlay";
+  const isLoading = isVisible && !isClickedPaused && !isReadyToPlay;
+  // ───────────────────────────────────────────────────────────────────────────
 
-    if (isVisible && !parentPaused && !isClickedPaused) {
-      // Should be playing
-      setIsLoading(true);
-      // Reduce delay significantly - player should be ready almost immediately
-      playTimeoutRef.current = setTimeout(() => {
-        try {
-          if (playerRef.current?.play) {
-            playerRef.current.play();
-            console.log("Playing reel:", item._id);
-            setIsLoading(false);
-          }
-        } catch (err) {
-          console.log("Playback error for reel", item._id, ":", err);
-          setIsLoading(false);
-        }
-      }, 100); // Reduced from VIDEO_LOAD_CHUNK * 1000
-    } else {
-      // Should be paused
-      try {
-        if (playerRef.current?.pause) {
-          playerRef.current.pause();
-        }
-      } catch (err) {
-        console.log("Pause error:", err);
+  // ─── FIX: Play / pause only when the player is truly ready ─────────────────
+  useEffect(() => {
+    if (!isReadyToPlay) return; // wait for real readiness
+
+    try {
+      if (isVisible && !parentPaused && !isClickedPaused) {
+        player.play();
+      } else {
+        player.pause();
       }
-      setIsLoading(false);
+    } catch (err) {
+      console.log("Playback toggle error for reel", item._id, ":", err);
     }
+  }, [isVisible, parentPaused, isClickedPaused, isReadyToPlay, item._id]);
+  // ───────────────────────────────────────────────────────────────────────────
 
-    return () => {
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current);
-      }
-    };
-  }, [isVisible, parentPaused, playerReady, item._id, isClickedPaused, player]);
-
-  // Cleanup player when component unmounts or when new video loads
+  // Cleanup when this item unmounts / reel changes
   useEffect(() => {
     return () => {
-      if (playTimeoutRef.current) {
-        clearTimeout(playTimeoutRef.current);
-      }
       try {
-        if (playerRef.current?.pause) {
-          playerRef.current.pause();
-        }
-      } catch (err) {
-        // Silently fail on cleanup
-      }
+        player.pause();
+      } catch (_) {}
     };
   }, [item._id]);
 
@@ -153,16 +128,9 @@ const ReelItem = ({
   const handleVideoPress = () => {
     try {
       if (isClickedPaused) {
-        // Currently paused, so resume
-        if (playerRef.current?.play) {
-          playerRef.current.play();
-          setIsLoading(false);
-        }
+        player.play();
       } else {
-        // Currently playing, so pause
-        if (playerRef.current?.pause) {
-          playerRef.current.pause();
-        }
+        player.pause();
       }
     } catch (err) {
       console.log("Error toggling video play/pause:", err);
@@ -199,7 +167,7 @@ const ReelItem = ({
         )}
       </TouchableOpacity>
 
-      {isLoading && isVisible && !isClickedPaused && (
+      {isLoading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#fff" />
         </View>
@@ -296,12 +264,7 @@ export default function DhindoraScreen() {
   const { reelState, setReelState, pauseSession, resumeSession } =
     useReelSession();
 
-  // FIXED: Using hooks for reactive dimensions
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
-
-  // Calculate screen height precisely (excluding safe areas if not handled by StatusBar hidden)
-  // If you are using Tab Navigation, subtract your Tab Bar height here as well.
   const screenHeight = windowHeight;
 
   const [viewableItem, setViewableItem] = useState<string | null>(null);
@@ -378,26 +341,40 @@ export default function DhindoraScreen() {
     setIsLoadingMore(false);
   }, [currentPage, isLoadingMore, initialReels]);
 
+  // ─── FIX: Use a stable ref callback that always reads latest `reels` ────────
+  const reelsRef = useRef(reels);
+  useEffect(() => {
+    reelsRef.current = reels;
+  }, [reels]);
+
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
       const visibleItem = viewableItems[0];
       setViewableItem(visibleItem.key);
-      const visibleIndex = reels.findIndex((r) => r._id === visibleItem.key);
+
+      // Use reelsRef.current so we always have the latest list (avoids stale closure)
+      const latestReels = reelsRef.current;
+      const visibleIndex = latestReels.findIndex(
+        (r) => r._id === visibleItem.key,
+      );
       if (visibleIndex >= 0) {
         setReelState({
           currentReelIndex: visibleIndex,
           reelId: visibleItem.key,
         });
-        const currentReel = reels[visibleIndex];
+        const currentReel = latestReels[visibleIndex];
         if (!reelCache.isCached(currentReel._id))
           reelCache.addToCache(currentReel._id, currentReel);
-        reelCache.queueForPreload(reels, visibleIndex);
-        if (visibleIndex < reels.length - 1) {
-          preloadNextReel(reels[visibleIndex + 1].videoUrl).catch(() => {});
+        reelCache.queueForPreload(latestReels, visibleIndex);
+        if (visibleIndex < latestReels.length - 1) {
+          preloadNextReel(latestReels[visibleIndex + 1].videoUrl).catch(
+            () => {},
+          );
         }
       }
     }
   }).current;
+  // ───────────────────────────────────────────────────────────────────────────
 
   const onEndReached = useCallback(() => {
     if (hasMoreReels && !isLoadingMore) fetchMoreReels();
@@ -421,13 +398,10 @@ export default function DhindoraScreen() {
         )}
         keyExtractor={(item) => item._id}
         pagingEnabled
-        // --- CRITICAL FIXES FOR ONE-BY-ONE SCROLLING ---
         snapToInterval={screenHeight}
         snapToAlignment="start"
         decelerationRate="fast"
-        disableIntervalMomentum={true} // Forces it to stop at the next item
-        // ----------------------------------------------
-
+        disableIntervalMomentum={true}
         removeClippedSubviews={true}
         windowSize={3}
         initialNumToRender={2}
@@ -486,7 +460,7 @@ const styles = StyleSheet.create({
   rightSidebar: {
     position: "absolute",
     right: 12,
-    bottom: 90, // Slightly adjusted for modern gesture bars
+    bottom: 90,
     alignItems: "center",
     zIndex: 10,
   },
@@ -545,7 +519,7 @@ const styles = StyleSheet.create({
   },
   bottomOverlay: {
     position: "absolute",
-    bottom: 60, // Adjust this based on your bottom nav bar presence
+    bottom: 60,
     left: 0,
     right: 0,
     paddingHorizontal: 16,
