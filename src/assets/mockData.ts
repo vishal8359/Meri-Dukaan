@@ -410,7 +410,8 @@ export interface EnhancedReel {
 export const mockReels: EnhancedReel[] = [
   {
     _id: "1",
-    videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
+    videoUrl:
+      "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4",
     description:
       "Fresh organic veggies arrived at Green Store! 🥦 Best quality tomatoes, straight from the farm. Limited stock, grab yours now! #SangamDeals #FreshVeggies #OrganicFood",
     likesCount: 120,
