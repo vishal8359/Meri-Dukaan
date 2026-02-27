@@ -1,5 +1,4 @@
 // src/assets/mockData.ts
-import { Reel } from "../context/AppContext";
 export interface Store {
   id: string;
   name: string;
@@ -360,28 +359,126 @@ export const STORE_TYPES = [
   "Gym",
 ];
 
-export const mockReels: Reel[] = [
+// Enhanced Reel interface with store and product/service data
+export interface EnhancedReel {
+  _id: string;
+  videoUrl: string;
+  description: string;
+  likesCount: number;
+  liked: boolean;
+  shares: number;
+  saves: number;
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+    isVerified?: boolean;
+  };
+  store: {
+    id: string;
+    name: string;
+    logo: string;
+    type: string;
+    isVerified?: boolean;
+  };
+  item: {
+    id: string;
+    name: string;
+    price: number;
+    image: string;
+    type: "product" | "service";
+  };
+  comments: Array<{
+    id: string;
+    user: { id: string; name: string; avatar: string; isVerified?: boolean };
+    text: string;
+    likesCount: number;
+    liked: boolean;
+    createdAt: string;
+    isReview?: boolean;
+    replies: Array<{
+      id: string;
+      user: { id: string; name: string; avatar: string };
+      text: string;
+      likesCount: number;
+      liked: boolean;
+      createdAt: string;
+    }>;
+  }>;
+}
+
+export const mockReels: EnhancedReel[] = [
   {
     _id: "1",
     videoUrl: "https://media.w3.org/2010/05/sintel/trailer.mp4",
     description:
-      "Fresh organic veggies arrived at Green Store! 🥦 #SangamDeals",
+      "Fresh organic veggies arrived at Green Store! 🥦 Best quality tomatoes, straight from the farm. Limited stock, grab yours now! #SangamDeals #FreshVeggies #OrganicFood",
     likesCount: 120,
     liked: false,
+    shares: 45,
+    saves: 23,
     user: {
+      id: "user1",
       name: "Green Grocery Store",
       avatar: "https://i.pravatar.cc/150?u=green",
+      isVerified: true,
+    },
+    store: {
+      id: "1",
+      name: "Organic Farms",
+      logo: "https://picsum.photos/seed/shop1/100/100",
+      type: "Grocery",
+      isVerified: true,
+    },
+    item: {
+      id: "prod1",
+      name: "Fresh Tomatoes",
+      price: 40,
+      image:
+        "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
+      type: "product",
     },
     comments: [
       {
-        user: { name: "Rahul", avatar: "" },
-        text: "The tomatoes were very fresh!",
+        id: "c1",
+        user: {
+          id: "u1",
+          name: "Rahul Kumar",
+          avatar: "https://i.pravatar.cc/150?u=rahul",
+        },
+        text: "The tomatoes were very fresh! Loved the quality.",
+        likesCount: 12,
+        liked: false,
+        createdAt: "2026-02-28T10:30:00Z",
         isReview: true,
+        replies: [
+          {
+            id: "r1",
+            user: {
+              id: "user1",
+              name: "Green Grocery Store",
+              avatar: "https://i.pravatar.cc/150?u=green",
+            },
+            text: "Thank you for your feedback! 🙏",
+            likesCount: 3,
+            liked: false,
+            createdAt: "2026-02-28T11:00:00Z",
+          },
+        ],
       },
       {
-        user: { name: "Sita", avatar: "" },
-        text: "Do you have avocados?",
+        id: "c2",
+        user: {
+          id: "u2",
+          name: "Sita Sharma",
+          avatar: "https://i.pravatar.cc/150?u=sita",
+        },
+        text: "Do you have avocados available?",
+        likesCount: 5,
+        liked: false,
+        createdAt: "2026-02-28T09:15:00Z",
         isReview: false,
+        replies: [],
       },
     ],
   },
@@ -390,18 +487,59 @@ export const mockReels: Reel[] = [
     videoUrl:
       "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4",
     description:
-      "Exclusive fashion collection drops tonight! 👗 Don't miss out #StyleHub",
+      "Exclusive fashion collection drops tonight! 👗 Designer sarees at unbeatable prices. Visit our store for the complete collection. Don't miss out! #StyleHub #Fashion #DesignerSarees",
     likesCount: 340,
     liked: false,
+    shares: 89,
+    saves: 156,
     user: {
+      id: "user2",
       name: "Fashion Forward",
       avatar: "https://i.pravatar.cc/150?u=fashion",
+      isVerified: true,
+    },
+    store: {
+      id: "11",
+      name: "Modern Sari House",
+      logo: "https://picsum.photos/seed/shop11/100/100",
+      type: "Sari",
+      isVerified: true,
+    },
+    item: {
+      id: "prod2",
+      name: "Designer Banarasi Saree",
+      price: 4500,
+      image:
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?q=80&w=300",
+      type: "product",
     },
     comments: [
       {
-        user: { name: "Priya", avatar: "" },
-        text: "Love these designs!",
+        id: "c3",
+        user: {
+          id: "u3",
+          name: "Priya Patel",
+          avatar: "https://i.pravatar.cc/150?u=priya",
+        },
+        text: "Love these designs! Can I get home delivery?",
+        likesCount: 28,
+        liked: false,
+        createdAt: "2026-02-27T18:30:00Z",
         isReview: true,
+        replies: [
+          {
+            id: "r2",
+            user: {
+              id: "user2",
+              name: "Fashion Forward",
+              avatar: "https://i.pravatar.cc/150?u=fashion",
+            },
+            text: "Yes, we deliver all over the city! DM us for details.",
+            likesCount: 8,
+            liked: false,
+            createdAt: "2026-02-27T19:00:00Z",
+          },
+        ],
       },
     ],
   },
@@ -410,18 +548,46 @@ export const mockReels: Reel[] = [
     videoUrl:
       "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     description:
-      "Hot deals on kitchen appliances ⚡ Limited stock available #MustBuy",
+      "Hot deals on kitchen appliances ⚡ Professional-grade mixers and blenders at wholesale prices. Limited stock available! #MustBuy #KitchenAppliances #Deals",
     likesCount: 215,
     liked: false,
+    shares: 67,
+    saves: 89,
     user: {
+      id: "user3",
       name: "TechHub Store",
       avatar: "https://i.pravatar.cc/150?u=tech",
+      isVerified: false,
+    },
+    store: {
+      id: "5",
+      name: "Auto Masters",
+      logo: "https://picsum.photos/seed/shop5/100/100",
+      type: "Mechanical",
+      isVerified: false,
+    },
+    item: {
+      id: "serv1",
+      name: "AC Repair Service",
+      price: 500,
+      image:
+        "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=300",
+      type: "service",
     },
     comments: [
       {
-        user: { name: "Amit", avatar: "" },
-        text: "Great prices!",
+        id: "c4",
+        user: {
+          id: "u4",
+          name: "Amit Singh",
+          avatar: "https://i.pravatar.cc/150?u=amit",
+        },
+        text: "Great prices for the quality offered!",
+        likesCount: 15,
+        liked: false,
+        createdAt: "2026-02-26T14:20:00Z",
         isReview: true,
+        replies: [],
       },
     ],
   },
@@ -430,18 +596,71 @@ export const mockReels: Reel[] = [
     videoUrl:
       "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
     description:
-      "New beauty and skincare products ✨ Get 30% off on first order #GlowUp",
+      "New beauty and skincare products ✨ Bridal makeup packages starting from ₹5000. Get 30% off on first order! Book your appointment now. #GlowUp #BridalMakeup #Beauty",
     likesCount: 450,
     liked: false,
+    shares: 234,
+    saves: 312,
     user: {
+      id: "user4",
       name: "Beauty Bliss",
       avatar: "https://i.pravatar.cc/150?u=beauty",
+      isVerified: true,
+    },
+    store: {
+      id: "6",
+      name: "Glow Up Studio",
+      logo: "https://picsum.photos/seed/shop6/100/100",
+      type: "Makeup",
+      isVerified: true,
+    },
+    item: {
+      id: "serv2",
+      name: "Bridal Makeup Package",
+      price: 5000,
+      image:
+        "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=300",
+      type: "service",
     },
     comments: [
       {
-        user: { name: "Neha", avatar: "" },
-        text: "Amazing quality products!",
+        id: "c5",
+        user: {
+          id: "u5",
+          name: "Neha Verma",
+          avatar: "https://i.pravatar.cc/150?u=neha",
+        },
+        text: "Amazing quality products! Booked for my sister's wedding.",
+        likesCount: 45,
+        liked: false,
+        createdAt: "2026-02-25T16:45:00Z",
         isReview: true,
+        replies: [
+          {
+            id: "r3",
+            user: {
+              id: "user4",
+              name: "Beauty Bliss",
+              avatar: "https://i.pravatar.cc/150?u=beauty",
+            },
+            text: "Thank you! We'll make sure she looks stunning! 💄✨",
+            likesCount: 12,
+            liked: false,
+            createdAt: "2026-02-25T17:00:00Z",
+          },
+          {
+            id: "r4",
+            user: {
+              id: "u6",
+              name: "Ananya",
+              avatar: "https://i.pravatar.cc/150?u=ananya",
+            },
+            text: "I want to book too! What's the number?",
+            likesCount: 3,
+            liked: false,
+            createdAt: "2026-02-25T18:30:00Z",
+          },
+        ],
       },
     ],
   },
@@ -450,18 +669,46 @@ export const mockReels: Reel[] = [
     videoUrl:
       "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
     description:
-      "Premium coffee beans just arrived ☕ Perfect for coffee lovers #CoffeeAddict",
+      "Premium coffee beans just arrived ☕ Arabica and Robusta blends from the hills of Coorg. Perfect for coffee lovers! Visit us for a free tasting session. #CoffeeAddict #PremiumCoffee #Coorg",
     likesCount: 180,
     liked: false,
+    shares: 56,
+    saves: 78,
     user: {
+      id: "user5",
       name: "Coffee Corner",
       avatar: "https://i.pravatar.cc/150?u=coffee",
+      isVerified: false,
+    },
+    store: {
+      id: "15",
+      name: "Dhaba Express",
+      logo: "https://picsum.photos/seed/shop15/100/100",
+      type: "Dhaba",
+      isVerified: false,
+    },
+    item: {
+      id: "prod3",
+      name: "Premium Arabica Coffee",
+      price: 450,
+      image:
+        "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?q=80&w=300",
+      type: "product",
     },
     comments: [
       {
-        user: { name: "Raj", avatar: "" },
-        text: "Best coffee in town!",
+        id: "c6",
+        user: {
+          id: "u7",
+          name: "Raj Malhotra",
+          avatar: "https://i.pravatar.cc/150?u=raj",
+        },
+        text: "Best coffee in town! The aroma is incredible.",
+        likesCount: 22,
+        liked: false,
+        createdAt: "2026-02-24T08:00:00Z",
         isReview: true,
+        replies: [],
       },
     ],
   },

@@ -1,13 +1,13 @@
 // src/context/AppContext.tsx
 
 import React, {
-    createContext,
-    ReactNode,
-    useContext,
-    useMemo,
-    useState,
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
 } from "react";
-import { mockReels, mockStores, Store } from "../assets/mockData";
+import { EnhancedReel, mockReels, mockStores, Store } from "../assets/mockData";
 
 // --- Interfaces ---
 interface CartItem {
@@ -26,22 +26,8 @@ interface WishlistItem {
   rating?: number;
 }
 
-export interface Reel {
-  _id: string;
-  videoUrl: any;
-  description: string;
-  likesCount: number;
-  liked: boolean;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  comments: Array<{
-    user: { name: string; avatar: string };
-    text: string;
-    isReview: boolean;
-  }>;
-}
+// Re-export EnhancedReel as Reel for backward compatibility
+export type Reel = EnhancedReel;
 
 interface AppContextType {
   // User Management
@@ -73,8 +59,12 @@ interface AppContextType {
   searchStores: (query: string) => Store[];
 
   // Reel Management
-  reels: Reel[];
+  reels: EnhancedReel[];
   toggleLikeReel: (reelId: string) => void;
+  updateReelComments: (
+    reelId: string,
+    comments: EnhancedReel["comments"],
+  ) => void;
 }
 
 interface CartItem {
@@ -106,7 +96,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [allStores] = useState<Store[]>(mockStores);
-  const [reels, setReels] = useState<Reel[]>(mockReels);
+  const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
 
   // --- User Functions ---
   const login = (name: string) => setUser({ name, isLoggedIn: true });
@@ -249,6 +239,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  const updateReelComments = (
+    reelId: string,
+    comments: EnhancedReel["comments"],
+  ) => {
+    setReels((prev) =>
+      prev.map((r) => (r._id === reelId ? { ...r, comments } : r)),
+    );
+  };
+
   // --- Context Value ---
   const contextValue = useMemo(
     () => ({
@@ -283,6 +282,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       // Reels
       reels,
       toggleLikeReel,
+      updateReelComments,
     }),
     [user, cart, cartTotal, allStores, reels, wishlist],
   );

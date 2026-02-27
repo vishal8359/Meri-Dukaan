@@ -1,266 +1,26 @@
 // src/features/dhindora/screens/DhindoraScreen.tsx
+import { EnhancedReel } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { useReelSession } from "@/src/context/ReelContext";
 import { reelCache } from "@/src/utils/reelCacheManager";
 import { preloadNextReel } from "@/src/utils/videoLoadingOptimizer";
 import * as NavigationBar from "expo-navigation-bar";
 import { useFocusEffect } from "expo-router";
-import { useVideoPlayer, VideoView } from "expo-video";
-import {
-  BadgeCheck,
-  Bookmark,
-  Heart,
-  MessageCircle,
-  MoreVertical,
-  Send,
-} from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
-  Image,
   Platform,
   StatusBar,
   StyleSheet,
-  Text,
-  TouchableOpacity,
   useWindowDimensions,
   View,
 } from "react-native";
+import { ReelItem } from "../components/ReelItem";
 
 const REELS_PER_PAGE = 3;
 
-interface Reel {
-  _id: string;
-  videoUrl: string;
-  liked?: boolean;
-  likesCount: number;
-  description: string;
-  user: {
-    name: string;
-    avatar: string;
-  };
-  comments: any[];
-  shares?: number;
-  saves?: number;
-}
-
-const ReelItem = ({
-  item,
-  isVisible,
-  isPaused: parentPaused,
-  itemHeight,
-  itemWidth,
-}: {
-  item: Reel;
-  isVisible: boolean;
-  isPaused: boolean;
-  itemHeight: number;
-  itemWidth: number;
-}) => {
-  const { toggleLikeReel } = useApp();
-  const [isLiked, setIsLiked] = useState(item.liked || false);
-  const [likesCount, setLikesCount] = useState(item.likesCount);
-  const [isSaved, setIsSaved] = useState(false);
-  const [isClickedPaused, setIsClickedPaused] = useState(false);
-
-  // ─── FIX: Create player and track real status via addListener ──────────────
-  const player = useVideoPlayer(item.videoUrl, (p) => {
-    p.loop = true;
-    p.muted = false;
-  });
-
-  // Track the real buffered-ready status using player.addListener.
-  // 'status' values: 'idle' | 'loading' | 'readyToPlay' | 'error'
-  // This fires only when the video has actually buffered enough to play,
-  // unlike the useVideoPlayer callback which fires as soon as the JS object exists.
-  const [playerStatus, setPlayerStatus] = useState<string>(
-    player.status ?? "idle",
-  );
-
-  useEffect(() => {
-    const subscription = player.addListener(
-      "statusChange",
-      ({ status }: { status: string }) => {
-        setPlayerStatus(status);
-      },
-    );
-    return () => subscription.remove();
-  }, [player]);
-
-  const isReadyToPlay = playerStatus === "readyToPlay";
-  const isLoading = isVisible && !isClickedPaused && !isReadyToPlay;
-  // ───────────────────────────────────────────────────────────────────────────
-
-  // ─── FIX: Play / pause only when the player is truly ready ─────────────────
-  useEffect(() => {
-    if (!isReadyToPlay) return; // wait for real readiness
-
-    try {
-      if (isVisible && !parentPaused && !isClickedPaused) {
-        player.play();
-      } else {
-        player.pause();
-      }
-    } catch (err) {
-      console.log("Playback toggle error for reel", item._id, ":", err);
-    }
-  }, [isVisible, parentPaused, isClickedPaused, isReadyToPlay, item._id]);
-  // ───────────────────────────────────────────────────────────────────────────
-
-  // Cleanup when this item unmounts / reel changes
-  useEffect(() => {
-    return () => {
-      try {
-        player.pause();
-      } catch (_) {}
-    };
-  }, [item._id]);
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
-    setLikesCount(isLiked ? likesCount - 1 : likesCount + 1);
-    toggleLikeReel(item._id);
-  };
-
-  const handleSave = () => setIsSaved(!isSaved);
-
-  const handleVideoPress = () => {
-    try {
-      if (isClickedPaused) {
-        player.play();
-      } else {
-        player.pause();
-      }
-    } catch (err) {
-      console.log("Error toggling video play/pause:", err);
-    }
-    setIsClickedPaused(!isClickedPaused);
-  };
-
-  const formatCount = (count: number) => {
-    if (count >= 1000000) return (count / 1000000).toFixed(1) + "M";
-    if (count >= 1000) return (count / 1000).toFixed(1) + "K";
-    return count.toString();
-  };
-
-  return (
-    <View
-      style={[styles.videoContainer, { height: itemHeight, width: itemWidth }]}
-    >
-      <VideoView
-        player={player}
-        style={StyleSheet.absoluteFill}
-        contentFit="cover"
-        nativeControls={false}
-      />
-
-      <TouchableOpacity
-        style={styles.videoOverlay}
-        activeOpacity={1}
-        onPress={handleVideoPress}
-      >
-        {isClickedPaused && (
-          <View style={styles.pauseIndicator}>
-            <Text style={styles.pauseText}>⏸</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#fff" />
-        </View>
-      )}
-
-      <View style={styles.rightSidebar}>
-        <View style={styles.profileContainer}>
-          <Image
-            source={{ uri: item.user?.avatar }}
-            style={styles.profilePic}
-          />
-          <View style={styles.followBtn}>
-            <Text style={styles.followBtnText}>+</Text>
-          </View>
-        </View>
-
-        <TouchableOpacity style={styles.actionBtn} onPress={handleLike}>
-          <Heart
-            size={32}
-            color="#fff"
-            fill={isLiked ? "#ff4081" : "none"}
-            strokeWidth={isLiked ? 0 : 2}
-          />
-          <Text style={styles.actionCount}>{formatCount(likesCount)}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <MessageCircle size={32} color="#fff" strokeWidth={2} />
-          <Text style={styles.actionCount}>
-            {formatCount(item.comments?.length || 0)}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <Send size={32} color="#fff" strokeWidth={2} />
-          <Text style={styles.actionCount}>
-            {formatCount(item.shares || 0)}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn} onPress={handleSave}>
-          <Bookmark
-            size={30}
-            color="#fff"
-            fill={isSaved ? "#fff" : "none"}
-            strokeWidth={2}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionBtn}>
-          <MoreVertical size={28} color="#fff" strokeWidth={2} />
-        </TouchableOpacity>
-
-        <View style={styles.promotionThumbnail}>
-          <Image
-            source={{ uri: item.user?.avatar }}
-            style={styles.thumbnailImage}
-          />
-        </View>
-      </View>
-
-      <View style={styles.bottomOverlay}>
-        <View style={styles.userRow}>
-          <TouchableOpacity style={styles.userInfo}>
-            <Text style={styles.username}>
-              @{item.user?.name.toLowerCase().replace(" ", "_")}
-            </Text>
-            {item.user?.name && (
-              <BadgeCheck size={16} color="#00BAFF" fill="#00BAFF" />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.followTextBtn}>
-            <Text style={styles.followText}>• Follow</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.description} numberOfLines={2}>
-          {item.description}
-        </Text>
-
-        <View style={styles.audioRow}>
-          <Text style={styles.audioIcon}>🎵</Text>
-          <Text style={styles.audioText} numberOfLines={1}>
-            Original Audio • {item.user?.name}
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
-};
-
 export default function DhindoraScreen() {
-  const { reels: initialReels } = useApp();
+  const { reels: initialReels, toggleLikeReel } = useApp();
   const { reelState, setReelState, pauseSession, resumeSession } =
     useReelSession();
 
@@ -268,7 +28,7 @@ export default function DhindoraScreen() {
   const screenHeight = windowHeight;
 
   const [viewableItem, setViewableItem] = useState<string | null>(null);
-  const [reels, setReels] = useState<Reel[]>(
+  const [reels, setReels] = useState<EnhancedReel[]>(
     initialReels.slice(0, REELS_PER_PAGE),
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -394,6 +154,7 @@ export default function DhindoraScreen() {
             isPaused={isPaused}
             itemHeight={screenHeight}
             itemWidth={windowWidth}
+            onLikeToggle={toggleLikeReel}
           />
         )}
         keyExtractor={(item) => item._id}
@@ -427,159 +188,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000",
-  },
-  videoContainer: {
-    overflow: "hidden",
-    position: "relative",
-  },
-  videoOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 15,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pauseIndicator: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pauseText: {
-    fontSize: 40,
-    color: "#fff",
-  },
-  loadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    zIndex: 20,
-  },
-  rightSidebar: {
-    position: "absolute",
-    right: 12,
-    bottom: 90,
-    alignItems: "center",
-    zIndex: 10,
-  },
-  profileContainer: {
-    marginBottom: 20,
-    position: "relative",
-  },
-  profilePic: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-  followBtn: {
-    position: "absolute",
-    bottom: -8,
-    alignSelf: "center",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#ff4081",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  followBtnText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  actionBtn: {
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  actionCount: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "700",
-    marginTop: 4,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  promotionThumbnail: {
-    width: 36,
-    height: 36,
-    borderRadius: 6,
-    overflow: "hidden",
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: "#fff",
-  },
-  thumbnailImage: {
-    width: "100%",
-    height: "100%",
-  },
-  bottomOverlay: {
-    position: "absolute",
-    bottom: 60,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: Platform.OS === "ios" ? 20 : 10,
-    zIndex: 5,
-  },
-  userRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  username: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  followTextBtn: {
-    marginLeft: 8,
-  },
-  followText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  description: {
-    color: "#fff",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 8,
-    paddingRight: 60,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
-  },
-  audioRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  audioIcon: {
-    fontSize: 12,
-  },
-  audioText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "600",
-    flex: 1,
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
   },
 });
