@@ -88,7 +88,7 @@ export const StickyHeader = () => {
         <View style={styles.topRow}>
           {/* Logo */}
           <Image
-            source={require("../../assets/mybusz_logo.png")}
+            source={require("../../assets/header_logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -368,9 +368,9 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   logo: {
-    width: 120,
-    height: 36,
-    marginLeft: -30,
+    width: 140,
+    height: 42,
+    marginLeft: 0,
   },
   actionsRow: {
     flexDirection: "row",
