@@ -1,27 +1,27 @@
 // app/edit-profile.tsx
 import { useApp } from "@/src/context/AppContext";
-import { spacing } from "@/src/theme/colors";
+import { colors, radius, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Camera,
-  Check,
-  Mail,
-  MapPin,
-  Phone,
-  User,
+    ArrowLeft,
+    Camera,
+    Check,
+    Mail,
+    MapPin,
+    Phone,
+    User,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function EditProfileScreen() {
@@ -59,7 +59,9 @@ export default function EditProfileScreen() {
     <View style={styles.inputContainer}>
       <View style={styles.labelRow}>
         <Text style={styles.label}>{label}</Text>
-        {focusedField === fieldName && <Check size={14} color="#10b981" />}
+        {focusedField === fieldName && (
+          <Check size={14} color={colors.tint.green} />
+        )}
       </View>
       <View
         style={[
@@ -69,7 +71,9 @@ export default function EditProfileScreen() {
       >
         <Icon
           size={18}
-          color={focusedField === fieldName ? "#3b82f6" : "#94a3b8"}
+          color={
+            focusedField === fieldName ? colors.status.info : colors.ui.muted
+          }
           style={styles.inputIcon}
         />
         <TextInput
@@ -77,7 +81,7 @@ export default function EditProfileScreen() {
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#cbd5e1"
+          placeholderTextColor={colors.ui.disabled}
           keyboardType={keyboardType}
           multiline={multiline}
           numberOfLines={multiline ? 3 : 1}
@@ -96,7 +100,7 @@ export default function EditProfileScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={24} color="#0f172a" />
+          <ArrowLeft size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={{ width: 24 }} />
@@ -108,7 +112,7 @@ export default function EditProfileScreen() {
       >
         {/* Profile Picture Section */}
         <LinearGradient
-          colors={["#f0f9ff", "#f8fafc"]}
+          colors={[colors.tint.blueLight, colors.ui.surfaceHover]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.profileSection}
@@ -118,7 +122,7 @@ export default function EditProfileScreen() {
               <Text style={styles.avatarText}>{formData.name.charAt(0)}</Text>
             </View>
             <TouchableOpacity style={styles.cameraButton}>
-              <Camera size={18} color="#FFF" />
+              <Camera size={14} color={colors.text.inverse} />
             </TouchableOpacity>
           </View>
           <Text style={styles.changePhotoText}>Change Profile Photo</Text>
@@ -231,7 +235,7 @@ export default function EditProfileScreen() {
         {/* Action Buttons */}
         <View style={styles.buttonSection}>
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Check size={20} color="#FFF" />
+            <Check size={20} color={colors.text.inverse} />
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </TouchableOpacity>
 
@@ -252,7 +256,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.ui.surfaceHover,
   },
   header: {
     flexDirection: "row",
@@ -260,9 +264,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   backButton: {
     padding: 4,
@@ -273,7 +277,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
     letterSpacing: -0.5,
   },
   content: {
@@ -295,11 +299,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 4,
-    borderColor: "#FFF",
+    borderColor: colors.ui.surface,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -309,21 +313,21 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 36,
     fontWeight: "800",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   cameraButton: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.status.error,
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
-    borderColor: "#FFF",
-    shadowColor: "#ef4444",
+    borderColor: colors.ui.surface,
+    shadowColor: colors.status.error,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -332,12 +336,12 @@ const styles = StyleSheet.create({
   changePhotoText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginTop: spacing.sm,
   },
   photoSubText: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: colors.ui.muted,
     marginTop: 2,
   },
   section: {
@@ -354,12 +358,12 @@ const styles = StyleSheet.create({
     width: 4,
     height: 20,
     borderRadius: 2,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   inputContainer: {
     marginBottom: spacing.lg,
@@ -373,22 +377,22 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
-    borderRadius: 12,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     paddingHorizontal: spacing.md,
   },
   inputWrapperFocused: {
-    borderColor: "#3b82f6",
-    backgroundColor: "#f0f9ff",
+    borderColor: colors.status.info,
+    backgroundColor: colors.tint.blueLight,
   },
   inputIcon: {
     marginRight: spacing.sm,
@@ -397,7 +401,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: spacing.md,
     fontSize: 15,
-    color: "#0f172a",
+    color: colors.text.primary,
     fontWeight: "500",
   },
   multilineInput: {
@@ -422,10 +426,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     paddingVertical: spacing.lg,
-    borderRadius: 12,
-    shadowColor: "#3b82f6",
+    borderRadius: radius.md,
+    shadowColor: colors.status.info,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -434,20 +438,20 @@ const styles = StyleSheet.create({
   saveButtonText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#FFF",
+    color: colors.text.inverse,
     letterSpacing: 0.5,
   },
   cancelButton: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     paddingVertical: spacing.lg,
-    borderRadius: 12,
+    borderRadius: radius.md,
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
 });

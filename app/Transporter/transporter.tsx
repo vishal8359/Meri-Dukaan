@@ -59,10 +59,10 @@ export default function TransporterScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#fff" />
+          <ChevronLeft size={24} color={colors.text.inverse} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Join Sangam Delivery</Text>
-        <Truck size={24} color="#fff" style={{ opacity: 0.8 }} />
+        <Truck size={24} color={colors.text.inverse} style={{ opacity: 0.8 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -134,7 +134,7 @@ export default function TransporterScreen() {
                   ]}
                 >
                   {form.aadhaar ? (
-                    <CheckCircle2 size={20} color="#fff" />
+                    <CheckCircle2 size={20} color={colors.text.inverse} />
                   ) : (
                     <FileText size={20} color={colors.brand.primary} />
                   )}
@@ -166,7 +166,7 @@ export default function TransporterScreen() {
                   ]}
                 >
                   {form.pan ? (
-                    <CheckCircle2 size={20} color="#fff" />
+                    <CheckCircle2 size={20} color={colors.text.inverse} />
                   ) : (
                     <FileText size={20} color={colors.brand.primary} />
                   )}
@@ -194,7 +194,7 @@ export default function TransporterScreen() {
               1. I verify that all submitted documents are genuine.
             </Text>
             <View style={styles.warningBox}>
-              <AlertTriangle size={18} color="#b91c1c" />
+              <AlertTriangle size={18} color={colors.status.errorDark} />
               <Text style={styles.warningText}>
                 STRICT POLICY: Theft, tampering with packages, or any fraudulent
                 activity will lead to immediate permanent ban and legal action
@@ -209,7 +209,9 @@ export default function TransporterScreen() {
               activeOpacity={0.8}
             >
               <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
-                {agreed && <CheckCircle2 size={16} color="#fff" />}
+                {agreed && (
+                  <CheckCircle2 size={16} color={colors.text.inverse} />
+                )}
               </View>
               <Text style={styles.checkboxText}>
                 I agree to the Terms & Conditions and understand the legal
@@ -234,7 +236,7 @@ export default function TransporterScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   header: {
     backgroundColor: colors.brand.primary,
     paddingHorizontal: 20,
@@ -244,12 +246,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  headerTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  headerTitle: { color: colors.text.inverse, fontSize: 20, fontWeight: "700" },
   backBtn: { padding: 4 },
   content: { padding: 16, paddingBottom: 100 },
 
   introCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     padding: 16,
     borderRadius: radius.md,
     marginBottom: 20,
@@ -280,9 +282,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     padding: 12,
     fontSize: 16,
@@ -294,11 +296,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     padding: 16,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderStyle: "dashed",
     marginBottom: 12,
   },
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: "#e0f2fe",
+    backgroundColor: colors.tint.blueLight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -317,11 +319,11 @@ const styles = StyleSheet.create({
 
   // Terms Styles
   termsBox: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     padding: 16,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   termsHeader: {
     flexDirection: "row",
@@ -334,17 +336,17 @@ const styles = StyleSheet.create({
   warningBox: {
     flexDirection: "row",
     gap: 10,
-    backgroundColor: "#fef2f2",
+    backgroundColor: colors.status.errorLight,
     padding: 12,
     borderRadius: radius.sm,
     borderWidth: 1,
-    borderColor: "#fecaca",
+    borderColor: colors.status.errorBorder,
     marginBottom: 16,
   },
   warningText: {
     flex: 1,
     fontSize: 13,
-    color: "#991b1b",
+    color: colors.status.errorDark,
     fontWeight: "600",
     lineHeight: 18,
   },
@@ -376,7 +378,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.ui.border,
@@ -387,6 +389,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: "center",
   },
-  submitBtnDisabled: { backgroundColor: "#cbd5e1" },
-  submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  submitBtnDisabled: { backgroundColor: colors.ui.disabled },
+  submitText: { color: colors.text.inverse, fontSize: 16, fontWeight: "700" },
 });

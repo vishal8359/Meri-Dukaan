@@ -1,4 +1,5 @@
 // src/features/dhindora/components/ReelSidebar.tsx
+import { colors } from "@/src/theme/colors";
 import {
     Bookmark,
     Briefcase,
@@ -68,7 +69,7 @@ export const ReelSidebar: React.FC<ReelSidebarProps> = ({
         <View style={styles.itemImageWrapper}>
           <Image source={{ uri: item.image }} style={styles.itemImage} />
           <View style={styles.itemIconBadge}>
-            <ItemIcon size={10} color="#fff" />
+            <ItemIcon size={10} color={colors.text.inverse} />
           </View>
         </View>
         <Text style={styles.itemLabel} numberOfLines={1}>
@@ -80,8 +81,8 @@ export const ReelSidebar: React.FC<ReelSidebarProps> = ({
       <TouchableOpacity style={styles.actionBtn} onPress={onLike}>
         <Heart
           size={32}
-          color="#fff"
-          fill={isLiked ? "#ff4081" : "none"}
+          color={colors.text.inverse}
+          fill={isLiked ? colors.brand.dhindoraAccent : "none"}
           strokeWidth={isLiked ? 0 : 2}
         />
         <Text style={styles.actionCount}>{formatCount(likesCount)}</Text>
@@ -89,13 +90,13 @@ export const ReelSidebar: React.FC<ReelSidebarProps> = ({
 
       {/* Comment Button */}
       <TouchableOpacity style={styles.actionBtn} onPress={onComment}>
-        <MessageCircle size={32} color="#fff" strokeWidth={2} />
+        <MessageCircle size={32} color={colors.text.inverse} strokeWidth={2} />
         <Text style={styles.actionCount}>{formatCount(commentsCount)}</Text>
       </TouchableOpacity>
 
       {/* Share Button */}
       <TouchableOpacity style={styles.actionBtn} onPress={onShare}>
-        <Send size={32} color="#fff" strokeWidth={2} />
+        <Send size={32} color={colors.text.inverse} strokeWidth={2} />
         <Text style={styles.actionCount}>{formatCount(sharesCount)}</Text>
       </TouchableOpacity>
 
@@ -103,15 +104,15 @@ export const ReelSidebar: React.FC<ReelSidebarProps> = ({
       <TouchableOpacity style={styles.actionBtn} onPress={onSave}>
         <Bookmark
           size={30}
-          color="#fff"
-          fill={isSaved ? "#fff" : "none"}
+          color={colors.text.inverse}
+          fill={isSaved ? colors.text.inverse : "none"}
           strokeWidth={2}
         />
       </TouchableOpacity>
 
       {/* More Options */}
       <TouchableOpacity style={styles.actionBtn} onPress={onMoreOptions}>
-        <MoreVertical size={28} color="#fff" strokeWidth={2} />
+        <MoreVertical size={28} color={colors.text.inverse} strokeWidth={2} />
       </TouchableOpacity>
     </View>
   );
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: colors.text.inverse,
   },
   itemIconBadge: {
     position: "absolute",
@@ -146,14 +147,14 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#ff4081",
+    backgroundColor: colors.brand.dhindoraAccent,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: colors.text.inverse,
   },
   itemLabel: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "600",
     marginTop: 4,
@@ -166,7 +167,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   actionCount: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "700",
     marginTop: 4,

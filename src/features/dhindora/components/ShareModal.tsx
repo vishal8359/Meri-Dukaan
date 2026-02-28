@@ -1,4 +1,5 @@
 // src/features/dhindora/components/ShareModal.tsx
+import { colors } from "@/src/theme/colors";
 import {
     Copy,
     Link,
@@ -15,7 +16,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View
+    View,
 } from "react-native";
 
 interface ShareModalProps {
@@ -80,30 +81,30 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const shareOptions: ShareOption[] = [
     {
       id: "native",
-      icon: <Share2 size={24} color="#fff" />,
+      icon: <Share2 size={24} color={colors.text.inverse} />,
       label: "Share via...",
-      color: "#ff4081",
+      color: colors.brand.dhindoraAccent,
       onPress: handleNativeShare,
     },
     {
       id: "copy",
-      icon: <Link size={24} color="#fff" />,
+      icon: <Link size={24} color={colors.text.inverse} />,
       label: "Copy Link",
       color: "#757575",
       onPress: handleCopyLink,
     },
     {
       id: "whatsapp",
-      icon: <MessageCircle size={24} color="#fff" />,
+      icon: <MessageCircle size={24} color={colors.text.inverse} />,
       label: "WhatsApp",
-      color: "#25D366",
+      color: colors.brand.whatsapp,
       onPress: handleNativeShare, // Will open WhatsApp via native share
     },
     {
       id: "message",
-      icon: <Send size={24} color="#fff" />,
+      icon: <Send size={24} color={colors.text.inverse} />,
       label: "Message",
-      color: "#0084FF",
+      color: colors.brand.messenger,
       onPress: handleNativeShare,
     },
   ];
@@ -130,7 +131,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <View style={styles.headerHandle} />
             <Text style={styles.headerTitle}>Share</Text>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={24} color="#333" />
+              <X size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
 
@@ -168,7 +169,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
               style={styles.quickActionBtn}
               onPress={handleCopyLink}
             >
-              <Copy size={18} color="#666" />
+              <Copy size={18} color={colors.text.secondary} />
               <Text style={styles.quickActionText}>Copy Link</Text>
             </TouchableOpacity>
           </View>
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: Platform.OS === "ios" ? 34 : 16,
@@ -194,19 +195,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.ui.borderLight,
   },
   headerHandle: {
     width: 40,
     height: 4,
-    backgroundColor: "#ddd",
+    backgroundColor: colors.ui.disabled,
     borderRadius: 2,
     marginBottom: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
   },
   closeBtn: {
     position: "absolute",
@@ -215,7 +216,7 @@ const styles = StyleSheet.create({
   },
   previewContainer: {
     padding: 16,
-    backgroundColor: "#f8f8f8",
+    backgroundColor: colors.ui.background,
     margin: 16,
     marginBottom: 8,
     borderRadius: 12,
@@ -223,12 +224,12 @@ const styles = StyleSheet.create({
   previewTitle: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
     marginBottom: 4,
   },
   previewDesc: {
     fontSize: 13,
-    color: "#666",
+    color: colors.text.secondary,
     lineHeight: 18,
   },
   optionsGrid: {
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     fontSize: 12,
-    color: "#333",
+    color: colors.text.primary,
     textAlign: "center",
   },
   quickActions: {
@@ -261,14 +262,14 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: colors.ui.borderLight,
     marginTop: 8,
     marginHorizontal: 16,
   },
   quickActionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.ui.backgroundAlt,
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 24,
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
   quickActionText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text.primary,
   },
 });
 

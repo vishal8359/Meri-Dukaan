@@ -2,33 +2,33 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  Award,
-  ChevronRight,
-  Edit3,
-  Heart,
-  HelpCircle,
-  LogOut,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Settings,
-  Star,
-  Users,
+    Award,
+    ChevronRight,
+    Edit3,
+    Heart,
+    HelpCircle,
+    LogOut,
+    Mail,
+    MapPin,
+    Package,
+    Phone,
+    Settings,
+    Star,
+    Users,
 } from "lucide-react-native";
 import React from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from "react-native";
 import { Card } from "../../../components/common/Card";
 import { useApp } from "../../../context/AppContext";
-import { colors, spacing } from "../../../theme/colors";
+import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -62,7 +62,11 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Enhanced Header Section with Gradient Background */}
       <LinearGradient
-        colors={["#0f172a", "#143e47", "#1e5a62"]}
+        colors={[
+          colors.gradient.navyStart,
+          colors.gradient.navyEnd,
+          colors.brand.primaryLight,
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientHeader}
@@ -86,7 +90,11 @@ export default function ProfileScreen() {
           <Text style={styles.memberSince}>Premium Member since Jan 2024</Text>
 
           <View style={styles.ratingRow}>
-            <Star size={14} color="#FFD700" fill="#FFD700" />
+            <Star
+              size={14}
+              color={colors.brand.star}
+              fill={colors.brand.star}
+            />
             <Text style={styles.ratingText}>4.8 • Verified Member</Text>
           </View>
 
@@ -158,25 +166,25 @@ export default function ProfileScreen() {
         >
           <TouchableOpacity style={styles.quickActionCard}>
             <View style={styles.qaIconBg}>
-              <Package size={24} color="#3b82f6" />
+              <Package size={24} color={colors.status.info} />
             </View>
             <Text style={styles.qaLabel}>My Orders</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickActionCard}>
             <View style={styles.qaIconBg}>
-              <Heart size={24} color="#ef4444" />
+              <Heart size={24} color={colors.status.error} />
             </View>
             <Text style={styles.qaLabel}>Wishlist</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickActionCard}>
             <View style={styles.qaIconBg}>
-              <MapPin size={24} color="#10b981" />
+              <MapPin size={24} color={colors.tint.green} />
             </View>
             <Text style={styles.qaLabel}>Addresses</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.quickActionCard}>
             <View style={styles.qaIconBg}>
-              <Settings size={24} color="#f59e0b" />
+              <Settings size={24} color={colors.status.warning} />
             </View>
             <Text style={styles.qaLabel}>Preferences</Text>
           </TouchableOpacity>
@@ -193,16 +201,19 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[styles.menuIconWrapper, { backgroundColor: "#fef3c7" }]}
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: colors.status.warningLight },
+                ]}
               >
-                <Settings size={18} color="#f59e0b" />
+                <Settings size={18} color={colors.status.warning} />
               </View>
               <View>
                 <Text style={styles.menuItemText}>Settings</Text>
                 <Text style={styles.menuItemDesc}>Manage preferences</Text>
               </View>
             </View>
-            <ChevronRight size={20} color="#cbd5e1" />
+            <ChevronRight size={20} color={colors.ui.disabled} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -211,16 +222,19 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[styles.menuIconWrapper, { backgroundColor: "#dbeafe" }]}
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: colors.status.infoLight },
+                ]}
               >
-                <HelpCircle size={18} color="#3b82f6" />
+                <HelpCircle size={18} color={colors.status.info} />
               </View>
               <View>
                 <Text style={styles.menuItemText}>Help & Support</Text>
                 <Text style={styles.menuItemDesc}>Get help anytime</Text>
               </View>
             </View>
-            <ChevronRight size={20} color="#cbd5e1" />
+            <ChevronRight size={20} color={colors.ui.disabled} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -229,12 +243,17 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[styles.menuIconWrapper, { backgroundColor: "#fee2e2" }]}
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: colors.status.errorBorder },
+                ]}
               >
-                <LogOut size={18} color="#ef4444" />
+                <LogOut size={18} color={colors.status.error} />
               </View>
               <View>
-                <Text style={[styles.menuItemText, { color: "#ef4444" }]}>
+                <Text
+                  style={[styles.menuItemText, { color: colors.status.error }]}
+                >
                   Logout
                 </Text>
                 <Text style={styles.menuItemDesc}>Sign out from app</Text>
@@ -252,7 +271,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.ui.background,
   } as ViewStyle,
   gradientHeader: {
     paddingTop: 20,
@@ -271,41 +290,37 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 4,
-    borderColor: "#FFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderColor: colors.ui.surface,
+    ...shadows.medium,
   } as ViewStyle,
   avatarText: {
     fontSize: 36,
     fontWeight: "800",
-    color: "#143e47",
+    color: colors.brand.primary,
   } as TextStyle,
   editBadge: {
     position: "absolute",
     bottom: 0,
     right: 0,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     padding: 8,
     borderRadius: 20,
     borderWidth: 3,
-    borderColor: "#FFF",
+    borderColor: colors.ui.surface,
   } as ViewStyle,
   userName: {
     fontSize: 24,
     fontWeight: "900",
-    color: "#FFF",
+    color: colors.text.inverse,
     marginBottom: 4,
   } as TextStyle,
   memberSince: {
     fontSize: 14,
-    color: "#cbd5e1",
+    color: colors.ui.disabled,
     marginBottom: 10,
     fontWeight: "500",
   } as TextStyle,
@@ -317,7 +332,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   ratingText: {
     fontSize: 12,
-    color: "#fef3c7",
+    color: colors.status.warningLight,
     fontWeight: "600",
   } as TextStyle,
   editBtn: {
@@ -326,13 +341,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 25,
     borderWidth: 2,
-    borderColor: "#FFF",
+    borderColor: colors.text.inverse,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   } as ViewStyle,
   editBtnText: {
-    color: "#FFF",
+    color: colors.text.inverse,
     fontWeight: "700",
     fontSize: 15,
   } as TextStyle,
@@ -340,17 +355,13 @@ const styles = StyleSheet.create({
   // Enhanced Stats
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     marginHorizontal: spacing.md,
     marginTop: -20,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.small,
   } as ViewStyle,
   enhancedStatBox: {
     flex: 1,
@@ -368,12 +379,12 @@ const styles = StyleSheet.create({
   enhancedStatNumber: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 2,
   } as TextStyle,
   enhancedStatLabel: {
     fontSize: 11,
-    color: "#64748b",
+    color: colors.text.secondary,
     fontWeight: "600",
   } as TextStyle,
 
@@ -385,7 +396,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: spacing.md,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -394,7 +405,7 @@ const styles = StyleSheet.create({
   // Details Card
   detailsCard: {
     padding: spacing.lg,
-    borderRadius: 16,
+    borderRadius: radius.lg,
   } as ViewStyle,
   infoRow: {
     flexDirection: "row",
@@ -402,14 +413,14 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   divider: {
     height: 1,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.borderLight,
     marginVertical: spacing.md,
   } as ViewStyle,
   iconWrapper: {
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "#f0f9ff",
+    backgroundColor: colors.tint.blueLight,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -419,14 +430,14 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   infoLabel: {
     fontSize: 11,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: 0.5,
   } as TextStyle,
   infoValue: {
     fontSize: 14,
-    color: "#334155",
+    color: colors.text.caption,
     fontWeight: "600",
     marginTop: 2,
   } as TextStyle,
@@ -440,21 +451,17 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   quickActionCard: {
     width: 120,
-    backgroundColor: "#FFF",
-    borderRadius: 14,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
     padding: spacing.md,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    ...shadows.small,
   } as ViewStyle,
   qaIconBg: {
     width: 50,
     height: 50,
     borderRadius: 12,
-    backgroundColor: "#f0f9ff",
+    backgroundColor: colors.tint.blueLight,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: spacing.sm,
@@ -462,7 +469,7 @@ const styles = StyleSheet.create({
   qaLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#334155",
+    color: colors.text.caption,
   } as TextStyle,
 
   // Menu List
@@ -473,19 +480,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     padding: spacing.md,
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderRadius: radius.md,
+    ...shadows.small,
   } as ViewStyle,
   logoutBtnMenu: {
     marginTop: spacing.md,
     borderWidth: 1.5,
-    borderColor: "#fee2e2",
+    borderColor: colors.status.errorBorder,
   } as ViewStyle,
   menuItemLeft: {
     flexDirection: "row",
@@ -503,11 +506,11 @@ const styles = StyleSheet.create({
   menuItemText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
   } as TextStyle,
   menuItemDesc: {
     fontSize: 12,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
     marginTop: 2,
   } as TextStyle,
 });

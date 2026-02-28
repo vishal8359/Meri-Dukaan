@@ -81,7 +81,7 @@ export default function WishlistScreen() {
 
             {item.rating && (
               <View style={styles.ratingRow}>
-                <Ionicons name="star" size={14} color="#E9C46A" />
+                <Ionicons name="star" size={14} color={colors.brand.star} />
                 <Text style={styles.ratingText}>{item.rating}</Text>
                 {item.category && (
                   <View style={styles.categoryBadge}>
@@ -114,7 +114,7 @@ export default function WishlistScreen() {
             onPress={() => handleAddToCart(item)}
             disabled={item.inStock === false}
           >
-            <ShoppingCart size={16} color="#FFF" />
+            <ShoppingCart size={16} color={colors.text.inverse} />
             <Text style={styles.cartButtonText}>
               {item.inStock !== false ? "Add to Cart" : "Out of Stock"}
             </Text>
@@ -173,7 +173,7 @@ export default function WishlistScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Heart size={64} color="#cbd5e1" />
+            <Heart size={64} color={colors.ui.disabled} />
             <Text style={styles.emptyText}>Your wishlist is empty</Text>
             <Text style={styles.emptySubtext}>
               Save items you love to buy them later
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   container: {
     marginTop: 5,
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -225,9 +225,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   statsText: {
     fontSize: 14,
@@ -244,12 +244,12 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     marginBottom: spacing.md,
     ...shadows.medium,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
     overflow: "hidden",
   },
   cardContent: {
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: radius.md,
     overflow: "hidden",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     position: "relative",
   },
   image: {
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   outOfStockText: {
-    color: "#FFF",
+    color: colors.text.inverse,
     fontSize: 11,
     fontWeight: "800",
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   discountText: {
-    color: "#FFF",
+    color: colors.text.inverse,
     fontSize: 10,
     fontWeight: "800",
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   categoryBadge: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -371,12 +371,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   disabledButton: {
-    backgroundColor: "#cbd5e1",
+    backgroundColor: colors.ui.disabled,
   },
   cartButtonText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   deleteButton: {
     width: 44,
@@ -385,8 +385,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#fee2e2",
-    backgroundColor: "#fef2f2",
+    borderColor: colors.status.errorBorder,
+    backgroundColor: colors.status.errorLight,
   },
   emptyContainer: {
     flex: 1,
@@ -415,6 +415,6 @@ const styles = StyleSheet.create({
   shopButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
 });

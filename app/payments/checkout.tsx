@@ -3,22 +3,22 @@ import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  AlertCircle,
-  ArrowLeft,
-  CheckCircle2,
-  CreditCard,
-  MapPin,
-  Wallet,
+    AlertCircle,
+    ArrowLeft,
+    CheckCircle2,
+    CreditCard,
+    MapPin,
+    Wallet,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function CheckoutScreen() {
@@ -268,7 +268,7 @@ export default function CheckoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -311,12 +311,12 @@ const styles = StyleSheet.create({
     color: colors.brand.primary,
   },
   addressCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 2,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   selectedCard: {
     borderColor: colors.brand.primary,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   summaryCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
   },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     marginVertical: spacing.sm,
   },
   totalLabel: {
@@ -402,12 +402,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 2,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   paymentLeft: {
     flexDirection: "row",
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -443,16 +443,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#dbeafe",
+    backgroundColor: colors.status.infoLight,
     padding: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#93c5fd",
+    borderColor: colors.status.infoBorder,
   },
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: "#1e40af",
+    color: colors.status.infoDark,
     fontWeight: "600",
   },
   bottomBar: {
@@ -460,13 +460,13 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     padding: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
+    borderTopColor: colors.ui.borderLight,
     ...shadows.medium,
   },
   bottomLeft: {
@@ -489,11 +489,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   disabledBtn: {
-    backgroundColor: "#cbd5e1",
+    backgroundColor: colors.ui.disabled,
   },
   placeOrderText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
 });

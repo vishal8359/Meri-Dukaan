@@ -1,5 +1,5 @@
 import { useApp } from "@/src/context/AppContext";
-import { colors, radius, spacing } from "@/src/theme/colors";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ChevronLeft,
@@ -186,7 +186,11 @@ export default function ServiceDetailScreen() {
         {item.rating && (
           <View style={styles.relatedRatingContainer}>
             <View style={styles.relatedRating}>
-              <Star size={13} color="#E9C46A" fill="#E9C46A" />
+              <Star
+                size={13}
+                color={colors.brand.star}
+                fill={colors.brand.star}
+              />
               <Text style={styles.relatedRatingText}>{item.rating}</Text>
             </View>
             {item.reviewsCount && (
@@ -210,12 +214,12 @@ export default function ServiceDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.ui.surface} />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ChevronLeft size={24} color="#1e293b" />
+          <ChevronLeft size={24} color={colors.text.heading} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Service Details</Text>
         <View style={{ width: 24 }} />
@@ -271,9 +275,11 @@ export default function ServiceDetailScreen() {
               <Heart
                 size={20}
                 color={
-                  isInWishlist(service.id) ? "#ef4444" : colors.brand.primary
+                  isInWishlist(service.id)
+                    ? colors.status.error
+                    : colors.brand.primary
                 }
-                fill={isInWishlist(service.id) ? "#ef4444" : "none"}
+                fill={isInWishlist(service.id) ? colors.status.error : "none"}
               />
             </TouchableOpacity>
           </View>
@@ -293,10 +299,14 @@ export default function ServiceDetailScreen() {
                       key={i}
                       size={14}
                       color={
-                        i < Math.floor(service.rating!) ? "#E9C46A" : "#cbd5e1"
+                        i < Math.floor(service.rating!)
+                          ? colors.brand.star
+                          : colors.ui.disabled
                       }
                       fill={
-                        i < Math.floor(service.rating!) ? "#E9C46A" : "none"
+                        i < Math.floor(service.rating!)
+                          ? colors.brand.star
+                          : "none"
                       }
                     />
                   ))}
@@ -421,7 +431,7 @@ export default function ServiceDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -429,14 +439,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1e293b",
+    color: colors.text.heading,
   },
   scrollContent: {
     paddingHorizontal: 16,
@@ -450,7 +460,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 300,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     marginBottom: 12,
   },
   thumbnailContainer: {
@@ -473,14 +483,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   infoCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
+    ...shadows.medium,
   },
   nameAndWishlistRow: {
     flexDirection: "row",
@@ -495,13 +502,13 @@ const styles = StyleSheet.create({
   serviceName: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#1e293b",
+    color: colors.text.heading,
     lineHeight: 28,
   },
   statusAvailability: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#16a34a",
+    color: colors.status.successDark,
     marginBottom: spacing.md,
   },
   ratingCategoryRow: {
@@ -524,10 +531,10 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   categoryBadge: {
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
@@ -555,7 +562,7 @@ const styles = StyleSheet.create({
   stockInfo: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   storeDeliveryColumn: {
     flex: 1,
@@ -567,7 +574,7 @@ const styles = StyleSheet.create({
   storeLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   storeName: {
     fontSize: 12,
@@ -580,12 +587,12 @@ const styles = StyleSheet.create({
   deliveryLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   deliveryTime: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#16a34a",
+    color: colors.status.successDark,
   },
   wishlistButton: {
     width: 40,
@@ -594,8 +601,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff",
+    borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -605,42 +612,42 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   badgeActive: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
   },
   badgeInactive: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: colors.status.errorLight,
   },
   badgeText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#166534",
+    color: colors.status.successDark,
   },
   descriptionCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     marginBottom: 12,
   },
   descriptionText: {
     fontSize: 14,
-    color: "#475569",
+    color: colors.text.caption,
     lineHeight: 21,
   },
   detailsCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   detailRow: {
     flexDirection: "row",
@@ -648,26 +655,26 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   detailLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginTop: 2,
   },
   featuresCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   featureItem: {
     flexDirection: "row",
@@ -684,7 +691,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     fontSize: 14,
-    color: "#475569",
+    color: colors.text.caption,
     flex: 1,
     lineHeight: 20,
   },
@@ -695,27 +702,24 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   relatedCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     overflow: "hidden",
     width: 155,
     marginRight: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
+    ...shadows.medium,
   },
   relatedImageContainer: {
     position: "relative",
     width: "100%",
     height: 130,
     overflow: "hidden",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   relatedImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   categoryBadgeRelated: {
     position: "absolute",
@@ -729,7 +733,7 @@ const styles = StyleSheet.create({
   categoryBadgeText: {
     fontSize: 8,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
     textTransform: "uppercase",
   },
   activeBadge: {
@@ -739,13 +743,13 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: "#16a34a",
+    backgroundColor: colors.status.successDark,
     justifyContent: "center",
     alignItems: "center",
   },
   activeBadgeText: {
     fontSize: 16,
-    color: "#fff",
+    color: colors.text.inverse,
   },
   relatedInfo: {
     padding: 12,
@@ -754,14 +758,14 @@ const styles = StyleSheet.create({
   relatedName: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     lineHeight: 15,
   },
   relatedRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#fef3c7",
+    backgroundColor: colors.status.warningLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -775,12 +779,12 @@ const styles = StyleSheet.create({
   relatedRatingText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#92400e",
+    color: colors.status.warningDark,
   },
   relatedReviews: {
     fontSize: 9,
     fontWeight: "600",
-    color: "#b45309",
+    color: colors.status.warningDark,
   },
   relatedPrice: {
     fontSize: 13,
@@ -796,8 +800,8 @@ const styles = StyleSheet.create({
   relatedDelivery: {
     fontSize: 9,
     fontWeight: "700",
-    color: "#16a34a",
-    backgroundColor: "#f0fdf4",
+    color: colors.status.successDark,
+    backgroundColor: colors.tint.greenLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: radius.sm,
@@ -812,7 +816,7 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   relatedStatus: {
     paddingHorizontal: 6,
@@ -821,22 +825,22 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   statusActive: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
   },
   statusInactive: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: colors.status.errorLight,
   },
   statusText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#166534",
+    color: colors.status.successDark,
   },
   bottomButton: {
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
+    borderTopColor: colors.ui.borderLight,
   },
   bookButton: {
     backgroundColor: colors.brand.primaryLight,
@@ -847,10 +851,10 @@ const styles = StyleSheet.create({
   bookButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   unavailableButton: {
-    backgroundColor: "#cbd5e1",
+    backgroundColor: colors.ui.disabled,
     paddingVertical: 14,
     borderRadius: radius.md,
     alignItems: "center",
@@ -858,6 +862,6 @@ const styles = StyleSheet.create({
   unavailableText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
 });

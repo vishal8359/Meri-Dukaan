@@ -263,7 +263,7 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-              <Save size={18} color="#FFF" />
+              <Save size={18} color={colors.text.inverse} />
               <Text style={styles.saveBtnText}>Save Changes</Text>
             </TouchableOpacity>
           </View>
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: spacing.lg,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     padding: spacing.md,
     fontSize: 15,
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.borderLight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     alignItems: "center",
   },
   activeStatusBtn: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   activeStatusText: {
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   actionButtons: {
     flexDirection: "row",
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#fee2e2",
-    backgroundColor: "#fef2f2",
+    borderColor: colors.status.errorBorder,
+    backgroundColor: colors.status.errorLight,
   },
   deleteBtnText: {
     fontSize: 16,
@@ -393,6 +393,6 @@ const styles = StyleSheet.create({
   saveBtnText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
 });

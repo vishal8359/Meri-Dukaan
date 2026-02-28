@@ -177,7 +177,7 @@ export default function ChangePasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -200,14 +200,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   infoBox: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: colors.status.infoLight,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.lg,
   },
   infoText: {
     fontSize: 13,
-    color: "#1e40af",
+    color: colors.status.infoDark,
     lineHeight: 18,
   },
   inputGroup: {
@@ -222,9 +222,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   requirementsBox: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.borderLight,
     padding: spacing.md,
     borderRadius: radius.md,
     marginTop: spacing.lg,
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
   changeButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   forgotButton: {
     alignItems: "center",

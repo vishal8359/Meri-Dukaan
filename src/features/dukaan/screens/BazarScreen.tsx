@@ -159,23 +159,31 @@ export default function BazarScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Categories</Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons name="close-circle" size={28} color="#ef4444" />
+                <Ionicons
+                  name="close-circle"
+                  size={28}
+                  color={colors.status.error}
+                />
               </TouchableOpacity>
             </View>
 
             {/* SEARCH INPUT */}
             <View style={styles.searchBox}>
-              <Ionicons name="search" size={20} color="#94a3b8" />
+              <Ionicons name="search" size={20} color={colors.ui.muted} />
               <TextInput
                 placeholder="Search category (e.g. Pizza, Gym)"
                 style={styles.searchInput}
                 value={categorySearch}
                 onChangeText={setCategorySearch}
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.ui.muted}
               />
               {categorySearch !== "" && (
                 <TouchableOpacity onPress={() => setCategorySearch("")}>
-                  <Ionicons name="close-outline" size={20} color="#94a3b8" />
+                  <Ionicons
+                    name="close-outline"
+                    size={20}
+                    color={colors.ui.muted}
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -192,7 +200,11 @@ export default function BazarScreen() {
                   onPress={() => selectCategory("All")}
                 >
                   <View style={styles.categoryItemContent}>
-                    <Ionicons name="apps-outline" size={20} color="#0f172a" />
+                    <Ionicons
+                      name="apps-outline"
+                      size={20}
+                      color={colors.text.primary}
+                    />
                     <Text style={styles.categoryLabel}>All Stores</Text>
                   </View>
                   {selectedType === "All" && (
@@ -218,7 +230,7 @@ export default function BazarScreen() {
                     <Ionicons
                       name="storefront-outline"
                       size={20}
-                      color="#0f172a"
+                      color={colors.text.primary}
                     />
                     <Text style={styles.categoryLabel}>{type}</Text>
                   </View>
@@ -286,7 +298,7 @@ export default function BazarScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   gradientHeader: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
@@ -300,13 +312,13 @@ const styles = StyleSheet.create({
   headerGreeting: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#cbd5e1",
+    color: colors.ui.disabled,
     marginBottom: 4,
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "900",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   headerBadge: {
     width: 48,
@@ -320,10 +332,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   mainFilterBtn: {
     flexDirection: "row",
@@ -342,27 +354,27 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   mainFilterText: {
-    color: "#FFF",
+    color: colors.text.inverse,
     fontWeight: "700",
     fontSize: 13,
   },
   distRow: { flexDirection: "row", gap: 6 },
   distBtn: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   activeDistBtn: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: colors.status.infoLight,
     borderColor: colors.brand.primaryLight,
   },
   distBtnText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   activeDistBtnText: {
     color: colors.brand.primaryLight,
@@ -373,12 +385,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
   },
   resultsText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   clearFilterText: {
     fontSize: 13,
@@ -389,11 +401,11 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: colors.ui.overlay,
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     height: "75%",
@@ -406,12 +418,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   modalScroll: { paddingBottom: 40, paddingHorizontal: spacing.md },
   categoryItem: {
@@ -426,7 +438,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   categoryItemSelected: {
-    backgroundColor: "#f0f9ff",
+    backgroundColor: colors.tint.blueLight,
     borderColor: colors.brand.primary,
   },
   categoryItemContent: {
@@ -438,7 +450,7 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
 
   // List Styles
@@ -457,18 +469,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "700",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   emptySubText: {
     textAlign: "center",
     fontSize: 13,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
     marginTop: 4,
   },
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     marginHorizontal: spacing.md,
@@ -479,12 +491,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 10,
     fontSize: 15,
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   noResultText: {
     textAlign: "center",
     marginTop: 30,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
     fontSize: 14,
   },
 });

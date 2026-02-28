@@ -3,21 +3,21 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  CheckCircle,
-  Package,
-  Truck,
-  XCircle,
+    ArrowLeft,
+    CheckCircle,
+    Package,
+    Truck,
+    XCircle,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 // Mock order data
@@ -82,35 +82,35 @@ export default function OrdersScreen() {
         return {
           icon: CheckCircle,
           color: colors.status.success,
-          bg: "#dcfce7",
+          bg: colors.status.successLight,
           text: "Delivered",
         };
       case "in-transit":
         return {
           icon: Truck,
           color: colors.status.info,
-          bg: "#dbeafe",
+          bg: colors.status.infoLight,
           text: "In Transit",
         };
       case "processing":
         return {
           icon: Package,
           color: colors.status.warning,
-          bg: "#fef3c7",
+          bg: colors.status.warningLight,
           text: "Processing",
         };
       case "cancelled":
         return {
           icon: XCircle,
           color: colors.status.error,
-          bg: "#fee2e2",
+          bg: colors.status.errorLight,
           text: "Cancelled",
         };
       default:
         return {
           icon: Package,
           color: colors.text.secondary,
-          bg: "#f1f5f9",
+          bg: colors.ui.backgroundAlt,
           text: "Unknown",
         };
     }
@@ -158,7 +158,11 @@ export default function OrdersScreen() {
 
           <View style={styles.orderMeta}>
             <View style={styles.metaItem}>
-              <Ionicons name="calendar-outline" size={14} color="#64748b" />
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color={colors.text.secondary}
+              />
               <Text style={styles.metaText}>
                 Ordered: {new Date(order.orderDate).toLocaleDateString()}
               </Text>
@@ -166,7 +170,11 @@ export default function OrdersScreen() {
 
             {order.deliveryDate && (
               <View style={styles.metaItem}>
-                <Ionicons name="time-outline" size={14} color="#64748b" />
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color={colors.text.secondary}
+                />
                 <Text style={styles.metaText}>
                   Delivery: {new Date(order.deliveryDate).toLocaleDateString()}
                 </Text>
@@ -182,7 +190,11 @@ export default function OrdersScreen() {
 
             <TouchableOpacity style={styles.detailsBtn}>
               <Text style={styles.detailsBtnText}>View Details</Text>
-              <Ionicons name="chevron-forward" size={16} color="#FFF" />
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.text.inverse}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -240,7 +252,7 @@ export default function OrdersScreen() {
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Package size={64} color="#cbd5e1" />
+            <Package size={64} color={colors.ui.disabled} />
             <Text style={styles.emptyText}>No orders found</Text>
             <Text style={styles.emptySubtext}>
               Start shopping to see your orders here
@@ -256,7 +268,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 2,
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -264,7 +276,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -279,16 +291,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     gap: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   filterTab: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   activeFilterTab: {
     backgroundColor: colors.brand.primary,
@@ -299,20 +311,20 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   activeFilterTabText: {
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   listContent: {
     padding: spacing.md,
     paddingBottom: 100,
   },
   orderCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.medium,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   orderHeader: {
     flexDirection: "row",
@@ -333,7 +345,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   orderId: {
     fontSize: 12,
@@ -385,7 +397,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
+    borderTopColor: colors.ui.borderLight,
   },
   totalLabel: {
     fontSize: 12,
@@ -409,7 +421,7 @@ const styles = StyleSheet.create({
   detailsBtnText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   emptyContainer: {
     flex: 1,

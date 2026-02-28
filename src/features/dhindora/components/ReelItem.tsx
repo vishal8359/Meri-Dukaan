@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { EnhancedReel } from "@/src/assets/mockData";
+import { colors } from "@/src/theme/colors";
 import {
     useCommentsManager,
     useReelInteraction,
@@ -215,7 +216,7 @@ export const ReelItem: React.FC<ReelItemProps> = ({
       {/* Loading indicator */}
       {isLoading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#fff" />
+          <ActivityIndicator size="large" color={colors.text.inverse} />
         </View>
       )}
 
@@ -317,7 +318,7 @@ const styles = StyleSheet.create({
   },
   pauseText: {
     fontSize: 40,
-    color: "#fff",
+    color: colors.text.inverse,
   },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,

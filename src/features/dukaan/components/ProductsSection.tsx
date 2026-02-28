@@ -1,16 +1,16 @@
 import { useApp } from "@/src/context/AppContext";
-import { colors } from "@/src/theme/colors";
+import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import { Search, ShoppingCart, Star } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface Product {
@@ -152,7 +152,11 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               <Text style={styles.categoryTag}>{item.category}</Text>
             </View>
             <View style={styles.ratingBadge}>
-              <Star size={11} color="#FFB800" fill="#FFB800" />
+              <Star
+                size={11}
+                color={colors.brand.star}
+                fill={colors.brand.star}
+              />
               <Text style={styles.rating}>4.5</Text>
             </View>
           </View>
@@ -169,7 +173,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           style={styles.addToCartBtn}
           onPress={() => handleAddToCart(item)}
         >
-          <ShoppingCart size={16} color="#FFF" />
+          <ShoppingCart size={16} color={colors.text.inverse} />
           <Text style={styles.addToCartText}>Add to Cart</Text>
         </TouchableOpacity>
       )}
@@ -201,11 +205,11 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       {/* Search bar shown only when NOT controlled by parent */}
       {!onSearchChange && (
         <View style={styles.searchContainer}>
-          <Search size={18} color="#999" style={styles.searchIcon} />
+          <Search size={18} color={colors.ui.muted} style={styles.searchIcon} />
           <TextInput
             placeholder="Search products..."
             style={styles.searchInput}
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.ui.muted}
             value={searchQuery}
             onChangeText={handleSearchChange}
           />
@@ -243,10 +247,10 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 8,
+    borderColor: colors.ui.border,
+    borderRadius: radius.sm,
     paddingHorizontal: 12,
     height: 44,
     marginBottom: 16,
@@ -257,19 +261,15 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 14,
-    color: "#333",
+    color: colors.text.primary,
   },
   storeBannerContainer: {
     height: 180,
     marginBottom: 20,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     overflow: "hidden",
-    backgroundColor: "#f1f5f9",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: colors.ui.backgroundAlt,
+    ...shadows.medium,
   },
   bannerImage: {
     width: "100%",
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
     marginBottom: 4,
   },
   bannerSubtitle: {
@@ -307,16 +307,12 @@ const styles = StyleSheet.create({
     height: 12,
   },
   productCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
     padding: 14,
     borderWidth: 1,
-    borderColor: "#e8ecf1",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: colors.ui.border,
+    ...shadows.small,
     marginHorizontal: 1,
   },
   productRow: {
@@ -328,7 +324,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 10,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -352,7 +348,7 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     flex: 1,
     marginRight: 8,
   },
@@ -362,20 +358,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeSuccess: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
   },
   badgeError: {
-    backgroundColor: "#fee2e2",
+    backgroundColor: colors.status.errorBorder,
   },
   statusText: {
     fontSize: 10,
     fontWeight: "600",
   },
   textSuccess: {
-    color: "#166534",
+    color: colors.status.successDark,
   },
   textError: {
-    color: "#991b1b",
+    color: colors.status.errorDark,
   },
   categoryRow: {
     flexDirection: "row",
@@ -384,23 +380,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryBadge: {
-    backgroundColor: "#f0f4ff",
+    backgroundColor: colors.tint.blueLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#c7d2fe",
+    borderColor: colors.status.infoBorder,
   },
   categoryTag: {
     fontSize: 11,
-    color: "#4f46e5",
+    color: colors.brand.primary,
     fontWeight: "600",
   },
   ratingBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#fffbeb",
+    backgroundColor: colors.tint.orangeLight,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -408,7 +404,7 @@ const styles = StyleSheet.create({
   rating: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#b45309",
+    color: colors.status.warningDark,
   },
   productFooter: {
     flexDirection: "row",
@@ -418,11 +414,11 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   deliveryBadge: {
     fontSize: 11,
-    color: "#047857",
+    color: colors.status.successDark,
     fontWeight: "600",
   },
   addToCartBtn: {
@@ -437,7 +433,7 @@ const styles = StyleSheet.create({
   addToCartText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   emptyContainer: {
     alignItems: "center",
@@ -445,6 +441,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
   },
 });

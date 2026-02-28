@@ -40,7 +40,10 @@ const TOP_OFFERS = [
     subtitle: "Up to 50% OFF",
     image:
       "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600",
-    gradient: ["#fef3c7", "#fde68a"] as [string, string],
+    gradient: [colors.status.warningLight, colors.tint.goldLight] as [
+      string,
+      string,
+    ],
   },
   {
     id: "2",
@@ -48,7 +51,10 @@ const TOP_OFFERS = [
     subtitle: "New in stock today",
     image:
       "https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=600",
-    gradient: ["#dbeafe", "#bfdbfe"] as [string, string],
+    gradient: [colors.status.infoLight, colors.status.infoBorder] as [
+      string,
+      string,
+    ],
   },
   {
     id: "3",
@@ -56,7 +62,10 @@ const TOP_OFFERS = [
     subtitle: "Flat 200 OFF",
     image:
       "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600",
-    gradient: ["#fce7f3", "#fbcfe8"] as [string, string],
+    gradient: [colors.tint.pinkLight, colors.tint.pinkLight] as [
+      string,
+      string,
+    ],
   },
 ];
 
@@ -149,7 +158,7 @@ export default function HomeScreen() {
         </View>
       ) : null}
       <View style={styles.subscriptionBadge}>
-        <Zap size={8} color="#f59e0b" />
+        <Zap size={8} color={colors.brand.star} />
         <Text style={styles.subscriptionText}>Subscribe</Text>
       </View>
       <View style={styles.flashDealInfo}>
@@ -209,7 +218,7 @@ export default function HomeScreen() {
         style={styles.trendingImage}
       />
       <View style={styles.ratingCrown}>
-        <Star size={10} color="#fbbf24" fill="#fbbf24" />
+        <Star size={10} color={colors.brand.star} fill={colors.brand.star} />
         <Text style={styles.ratingCrownText}>{store.rating}</Text>
       </View>
       <View style={styles.storeDistanceBadge}>
@@ -304,7 +313,11 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
               <View style={styles.flashIconContainer}>
-                <Zap size={16} color="#f59e0b" fill="#f59e0b" />
+                <Zap
+                  size={16}
+                  color={colors.brand.star}
+                  fill={colors.brand.star}
+                />
               </View>
               <View>
                 <Text style={styles.sectionTitle}>Flash Deals</Text>
@@ -368,18 +381,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8fafc" },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   addressBar: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     marginBottom: 4,
     borderRadius: radius.md,
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
     shadowRadius: 3,
@@ -403,7 +416,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   addressRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  addressText: { fontSize: 14, fontWeight: "800", color: "#0f172a" },
+  addressText: { fontSize: 14, fontWeight: "800", color: colors.text.primary },
   section: { marginTop: spacing.lg },
   sectionHeader: {
     flexDirection: "row",
@@ -417,7 +430,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: colors.text.primary },
   sectionSubtitle: {
     fontSize: 13,
     fontWeight: "600",
@@ -434,7 +447,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 12,
-    backgroundColor: "#fef3c7",
+    backgroundColor: colors.status.warningLight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -464,7 +477,7 @@ const styles = StyleSheet.create({
   quickPickName: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#0f172a",
+    color: colors.text.primary,
     textAlign: "center",
   },
   offersList: { paddingHorizontal: spacing.md },
@@ -474,7 +487,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     marginRight: spacing.md,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -485,12 +498,12 @@ const styles = StyleSheet.create({
   offerTitle: {
     fontSize: 22,
     fontWeight: "900",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 4,
   },
   offerSubtitle: {
     fontSize: 14,
-    color: "#475569",
+    color: colors.text.caption,
     marginBottom: spacing.sm,
     fontWeight: "600",
   },
@@ -498,12 +511,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 9999,
     gap: 4,
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -519,27 +532,31 @@ const styles = StyleSheet.create({
   flashDealsList: { paddingHorizontal: spacing.md },
   flashDealCard: {
     width: 148,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     marginRight: spacing.md,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
   },
-  flashDealImage: { width: "100%", height: 120, backgroundColor: "#f1f5f9" },
+  flashDealImage: {
+    width: "100%",
+    height: 120,
+    backgroundColor: colors.ui.backgroundAlt,
+  },
   discountBadge: {
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: "#10b981",
+    backgroundColor: colors.tint.green,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
   },
-  discountText: { fontSize: 10, fontWeight: "800", color: "#fff" },
+  discountText: { fontSize: 10, fontWeight: "800", color: colors.text.inverse },
   subscriptionBadge: {
     position: "absolute",
     top: 8,
@@ -552,12 +569,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
-  subscriptionText: { fontSize: 8, fontWeight: "700", color: "#fbbf24" },
+  subscriptionText: {
+    fontSize: 8,
+    fontWeight: "700",
+    color: colors.brand.star,
+  },
   flashDealInfo: { padding: spacing.sm },
   flashDealName: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 2,
   },
   flashDealStore: {
@@ -575,17 +596,21 @@ const styles = StyleSheet.create({
   storesList: { paddingHorizontal: spacing.md },
   trendingCard: {
     width: 170,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     marginRight: spacing.md,
     overflow: "hidden",
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 5,
   },
-  trendingImage: { width: "100%", height: 110, backgroundColor: "#f1f5f9" },
+  trendingImage: {
+    width: "100%",
+    height: 110,
+    backgroundColor: colors.ui.backgroundAlt,
+  },
   ratingCrown: {
     position: "absolute",
     top: 8,
@@ -598,7 +623,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-  ratingCrownText: { fontSize: 12, fontWeight: "800", color: "#fbbf24" },
+  ratingCrownText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: colors.brand.star,
+  },
   storeDistanceBadge: {
     position: "absolute",
     top: 8,
@@ -611,7 +640,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
-  storeDistance: { fontSize: 10, fontWeight: "700", color: "#fff" },
+  storeDistance: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
   trendingBadge: {
     position: "absolute",
     bottom: 60,
@@ -623,13 +656,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: colors.ui.surface,
   },
   trendingContent: { padding: spacing.sm },
   trendingName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 2,
   },
   trendingType: { fontSize: 11, color: colors.text.secondary, marginBottom: 6 },

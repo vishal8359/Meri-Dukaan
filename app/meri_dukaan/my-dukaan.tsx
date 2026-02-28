@@ -2,26 +2,26 @@ import { colors, radius, shadows } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  Camera,
-  ChevronLeft,
-  Edit2,
-  Plus,
-  Star,
-  Trash2,
+    Camera,
+    ChevronLeft,
+    Edit2,
+    Plus,
+    Star,
+    Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function MyDukaanScreen() {
@@ -108,7 +108,7 @@ export default function MyDukaanScreen() {
             />
             {isEditingProfile && (
               <TouchableOpacity style={styles.cameraBtn}>
-                <Camera size={20} color="#fff" />
+                <Camera size={20} color={colors.text.inverse} />
               </TouchableOpacity>
             )}
           </View>
@@ -143,12 +143,21 @@ export default function MyDukaanScreen() {
             {/* Read Only Stats */}
             <View style={styles.statsRow}>
               <View style={styles.statBadge}>
-                <Star size={14} color="#E9C46A" fill="#E9C46A" />
+                <Star
+                  size={14}
+                  color={colors.brand.star}
+                  fill={colors.brand.star}
+                />
                 <Text style={styles.statText}>{storeData.rating} Rating</Text>
               </View>
-              <View style={[styles.statBadge, { backgroundColor: "#e0f2fe" }]}>
-                <Ionicons name="people" size={14} color="#0284c7" />
-                <Text style={[styles.statText, { color: "#0284c7" }]}>
+              <View
+                style={[
+                  styles.statBadge,
+                  { backgroundColor: colors.tint.blueLight },
+                ]}
+              >
+                <Ionicons name="people" size={14} color={colors.status.info} />
+                <Text style={[styles.statText, { color: colors.status.info }]}>
                   {storeData.followers} Followers
                 </Text>
               </View>
@@ -160,7 +169,7 @@ export default function MyDukaanScreen() {
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Inventory</Text>
           <TouchableOpacity style={styles.addBtn}>
-            <Plus size={16} color="#fff" />
+            <Plus size={16} color={colors.text.inverse} />
             <Text style={styles.addBtnText}>Add Item</Text>
           </TouchableOpacity>
         </View>
@@ -193,10 +202,12 @@ export default function MyDukaanScreen() {
                   </Text>
                   <Switch
                     trackColor={{
-                      false: "#e2e8f0",
+                      false: colors.ui.border,
                       true: colors.brand.primaryLight,
                     }}
-                    thumbColor={item.stock ? colors.brand.primary : "#f4f3f4"}
+                    thumbColor={
+                      item.stock ? colors.brand.primary : colors.ui.surfaceHover
+                    }
                     onValueChange={() => toggleStock(item.id)}
                     value={item.stock}
                     style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
@@ -284,13 +295,17 @@ const styles = StyleSheet.create({
   statBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEF9C3",
+    backgroundColor: colors.status.warningLight,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radius.full,
     gap: 6,
   },
-  statText: { fontSize: 12, fontWeight: "700", color: "#854d0e" },
+  statText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.status.warningDark,
+  },
 
   // Inventory
   sectionHeader: {
@@ -309,7 +324,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     gap: 4,
   },
-  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 12 },
+  addBtnText: { color: colors.text.inverse, fontWeight: "600", fontSize: 12 },
   inventoryList: { gap: 12 },
   productCard: {
     flexDirection: "row",
@@ -335,7 +350,7 @@ const styles = StyleSheet.create({
   stockLabel: { fontSize: 10, fontWeight: "600", marginBottom: 2 },
   deleteBtn: {
     padding: 8,
-    backgroundColor: "#fee2e2",
+    backgroundColor: colors.status.errorBorder,
     borderRadius: radius.sm,
   },
 });

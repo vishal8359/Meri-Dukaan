@@ -1,15 +1,15 @@
 import { useApp } from "@/src/context/AppContext";
-import { colors } from "@/src/theme/colors";
+import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import { Clock, Heart, Plus, Star, Store } from "lucide-react-native";
 import React, { useCallback } from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface Service {
@@ -103,7 +103,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         <View style={styles.serviceHeader}>
           <View style={styles.serviceInfo}>
             <View style={styles.serviceNameRow}>
-              <Store size={16} color="#6366f1" />
+              <Store size={16} color={colors.tint.purple} />
               <Text style={styles.serviceName} numberOfLines={1}>
                 {item.name}
               </Text>
@@ -114,7 +114,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
 
             {item.duration && (
               <View style={styles.durationBadge}>
-                <Clock size={12} color="#8b5cf6" />
+                <Clock size={12} color={colors.tint.purple} />
                 <Text style={styles.durationText}>{item.duration}</Text>
               </View>
             )}
@@ -127,8 +127,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             >
               <Heart
                 size={20}
-                color={isInWishlist(item.id) ? "#ef4444" : "#94a3b8"}
-                fill={isInWishlist(item.id) ? "#ef4444" : "none"}
+                color={
+                  isInWishlist(item.id) ? colors.status.error : colors.ui.muted
+                }
+                fill={isInWishlist(item.id) ? colors.status.error : "none"}
               />
             </TouchableOpacity>
             <View
@@ -151,7 +153,11 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             )}
             {item.rating && (
               <View style={styles.ratingBadge}>
-                <Star size={12} color="#FFB800" fill="#FFB800" />
+                <Star
+                  size={12}
+                  color={colors.brand.star}
+                  fill={colors.brand.star}
+                />
                 <Text style={styles.serviceRating}>{item.rating}</Text>
               </View>
             )}
@@ -162,7 +168,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               style={styles.bookBtn}
               onPress={() => handleBookService(item)}
             >
-              <Plus size={14} color="#FFF" />
+              <Plus size={14} color={colors.text.inverse} />
               <Text style={styles.bookText}>Book</Text>
             </TouchableOpacity>
           )}
@@ -225,14 +231,10 @@ const styles = StyleSheet.create({
   storeBannerContainer: {
     height: 180,
     marginBottom: 20,
-    borderRadius: 16,
+    borderRadius: radius.lg,
     overflow: "hidden",
-    backgroundColor: "#f1f5f9",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    backgroundColor: colors.ui.backgroundAlt,
+    ...shadows.medium,
   },
   bannerImage: {
     width: "100%",
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
   bannerTitle: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
     marginBottom: 4,
   },
   bannerSubtitle: {
@@ -270,22 +272,18 @@ const styles = StyleSheet.create({
     height: 12,
   },
   serviceCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e8ecf1",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: colors.ui.border,
+    ...shadows.small,
     marginHorizontal: 1,
   },
   serviceImage: {
     width: "100%",
     height: 120,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   serviceContent: {
     padding: 14,
@@ -318,19 +316,19 @@ const styles = StyleSheet.create({
   serviceName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     flex: 1,
   },
   serviceDescription: {
     fontSize: 12,
-    color: "#64748b",
+    color: colors.text.secondary,
     marginBottom: 6,
   },
   durationBadge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -338,7 +336,7 @@ const styles = StyleSheet.create({
   },
   durationText: {
     fontSize: 11,
-    color: "#7c3aed",
+    color: colors.tint.purple,
     fontWeight: "600",
   },
   statusBadge: {
@@ -347,16 +345,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   badgeActive: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
   },
   badgeInactive: {
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   statusText: {
     fontSize: 10,
-    color: "#334155",
+    color: colors.text.caption,
     fontWeight: "600",
   },
   serviceFooter: {
@@ -378,7 +376,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
-    backgroundColor: "#fffbeb",
+    backgroundColor: colors.tint.orangeLight,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -386,7 +384,7 @@ const styles = StyleSheet.create({
   serviceRating: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#b45309",
+    color: colors.status.warningDark,
   },
   bookBtn: {
     flexDirection: "row",
@@ -401,7 +399,7 @@ const styles = StyleSheet.create({
   bookText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   emptyContainer: {
     alignItems: "center",
@@ -409,6 +407,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    color: "#94a3b8",
+    color: colors.text.tertiary,
   },
 });

@@ -3,12 +3,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Dimensions,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
@@ -45,7 +45,7 @@ export const StoreCardGrid = ({ store, onPress }: StoreCardGridProps) => {
       <View style={styles.imageContainer}>
         <Image source={imageSource} style={styles.image} resizeMode="cover" />
         <View style={styles.ratingBadge}>
-          <Ionicons name="star" size={10} color="#000" />
+          <Ionicons name="star" size={10} color={colors.text.primary} />
           <Text style={styles.ratingText}>{store.rating}</Text>
         </View>
       </View>
@@ -62,13 +62,21 @@ export const StoreCardGrid = ({ store, onPress }: StoreCardGridProps) => {
 
         <View style={styles.footerRow}>
           <View style={styles.distanceBox}>
-            <Ionicons name="location-sharp" size={12} color="#143e47" />
+            <Ionicons
+              name="location-sharp"
+              size={12}
+              color={colors.brand.primary}
+            />
             <Text style={styles.distanceText}>{store.distance}</Text>
           </View>
 
           {/* A smaller, cleaner visit button for grid view */}
           <View style={styles.miniBtn}>
-            <Ionicons name="arrow-forward" size={12} color="#FFF" />
+            <Ionicons
+              name="arrow-forward"
+              size={12}
+              color={colors.text.inverse}
+            />
           </View>
         </View>
       </View>
@@ -78,19 +86,19 @@ export const StoreCardGrid = ({ store, onPress }: StoreCardGridProps) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     width: CARD_WIDTH,
     marginBottom: spacing.md,
     ...shadows.medium,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
-    overflow: "hidden", // Ensures image doesn't bleed past border radius
+    borderColor: colors.ui.borderLight,
+    overflow: "hidden",
   },
   imageContainer: {
     width: "100%",
     height: 120,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.ui.surfaceHover,
   },
   image: {
     width: "100%",
@@ -102,7 +110,7 @@ const styles = StyleSheet.create({
     right: 8,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E9C46A", // Gold
+    backgroundColor: colors.brand.star,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -111,7 +119,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#000",
+    color: colors.text.primary,
   },
   infoContainer: {
     padding: spacing.sm,
@@ -119,7 +127,7 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#143e47", // Peacock Blue
+    color: colors.brand.primary,
     marginBottom: 2,
   },
   typeText: {
@@ -140,11 +148,11 @@ const styles = StyleSheet.create({
   },
   distanceText: {
     fontSize: 11,
-    color: "#143e47",
+    color: colors.brand.primary,
     fontWeight: "700",
   },
   miniBtn: {
-    backgroundColor: "#143e47",
+    backgroundColor: colors.brand.primary,
     width: 22,
     height: 22,
     borderRadius: 11,

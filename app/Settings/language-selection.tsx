@@ -86,7 +86,7 @@ export default function LanguageSelectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -112,12 +112,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     padding: spacing.md,
     borderRadius: radius.lg,
     marginBottom: spacing.sm,
     borderWidth: 2,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   selectedItem: {
     borderColor: colors.brand.primary,

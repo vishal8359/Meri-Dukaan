@@ -1,4 +1,5 @@
 // src/features/dhindora/components/DescriptionModal.tsx
+import { colors } from "@/src/theme/colors";
 import { BadgeCheck, ExternalLink, MapPin, X } from "lucide-react-native";
 import React from "react";
 import {
@@ -70,19 +71,23 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
                 <View style={styles.storeNameRow}>
                   <Text style={styles.storeName}>{store.name}</Text>
                   {store.isVerified && (
-                    <BadgeCheck size={16} color="#00BAFF" fill="#00BAFF" />
+                    <BadgeCheck
+                      size={16}
+                      color={colors.brand.dhindoraVerified}
+                      fill={colors.brand.dhindoraVerified}
+                    />
                   )}
                 </View>
                 <Text style={styles.storeType}>{store.type}</Text>
               </View>
               <ExternalLink
                 size={18}
-                color="#fff"
+                color={colors.text.inverse}
                 style={styles.externalIcon}
               />
             </TouchableOpacity>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={24} color="#fff" />
+              <X size={24} color={colors.text.inverse} />
             </TouchableOpacity>
           </View>
 
@@ -113,7 +118,7 @@ export const DescriptionModal: React.FC<DescriptionModalProps> = ({
               onStorePress();
             }}
           >
-            <MapPin size={18} color="#fff" />
+            <MapPin size={18} color={colors.text.inverse} />
             <Text style={styles.visitStoreBtnText}>Visit Store</Text>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -169,7 +174,7 @@ const styles = StyleSheet.create({
   storeName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   storeType: {
     fontSize: 13,
@@ -189,7 +194,7 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#fff",
+    color: colors.text.inverse,
   },
   hashtagsContainer: {
     flexDirection: "row",
@@ -206,13 +211,13 @@ const styles = StyleSheet.create({
   hashtagText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#ff4081",
+    color: colors.brand.dhindoraAccent,
   },
   visitStoreBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ff4081",
+    backgroundColor: colors.brand.dhindoraAccent,
     margin: 16,
     marginTop: 8,
     paddingVertical: 14,
@@ -222,7 +227,7 @@ const styles = StyleSheet.create({
   visitStoreBtnText: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
 });
 

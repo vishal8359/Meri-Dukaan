@@ -81,7 +81,7 @@ export default function TermsOfServiceScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF" },
+  container: { flex: 1, backgroundColor: colors.ui.surface },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   backButton: { padding: 4 },
   headerTitle: { fontSize: 18, fontWeight: "800", color: colors.text.primary },
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingBottom: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   termTitle: {
     fontSize: 16,

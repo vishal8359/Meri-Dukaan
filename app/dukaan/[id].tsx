@@ -2,12 +2,11 @@ import { EnhancedReel } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
 import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
-import { colors, radius } from "@/src/theme/colors";
+import { colors, radius, shadows } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ArrowLeft,
   ChevronRight,
   Clock,
   Heart,
@@ -175,7 +174,11 @@ export default function StoreDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#94a3b8" />
+          <Ionicons
+            name="alert-circle-outline"
+            size={64}
+            color={colors.ui.muted}
+          />
           <Text style={styles.errorText}>Store not found</Text>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Text style={styles.backButtonText}>Go Back</Text>
@@ -222,10 +225,6 @@ export default function StoreDetailScreen() {
 
         {/* Top Navigation Bar */}
         <View style={styles.heroTopBar}>
-          <TouchableOpacity onPress={handleBack} style={styles.heroBackBtn}>
-            <ArrowLeft size={22} color="#fff" />
-          </TouchableOpacity>
-
           <View style={styles.heroTopRight}>
             {/* Reels Button - Always visible */}
             <TouchableOpacity
@@ -236,14 +235,22 @@ export default function StoreDetailScreen() {
               ]}
             >
               <View style={styles.reelsBtnRow}>
-                <Play size={14} color="#fff" fill="#fff" />
+                <Play
+                  size={14}
+                  color={colors.text.inverse}
+                  fill={colors.text.inverse}
+                />
                 <Text style={styles.reelsBtnText}>{storeReelsCount}</Text>
               </View>
             </TouchableOpacity>
 
             {/* Rating Badge */}
             <View style={styles.ratingBadge}>
-              <Star size={14} color="#FFB800" fill="#FFB800" />
+              <Star
+                size={14}
+                color={colors.brand.star}
+                fill={colors.brand.star}
+              />
               <Text style={styles.ratingText}>{store?.rating}</Text>
             </View>
           </View>
@@ -272,7 +279,7 @@ export default function StoreDetailScreen() {
               <Text style={styles.storeTypeText}>{store?.type}</Text>
             </View>
             <View style={styles.openBadge}>
-              <Clock size={10} color="#16a34a" />
+              <Clock size={10} color={colors.status.successDark} />
               <Text style={styles.openText}>Open Now</Text>
             </View>
           </View>
@@ -307,8 +314,8 @@ export default function StoreDetailScreen() {
           >
             <Heart
               size={18}
-              color={isSaved ? "#fff" : "#ef4444"}
-              fill={isSaved ? "#ef4444" : "transparent"}
+              color={isSaved ? colors.text.inverse : colors.status.error}
+              fill={isSaved ? colors.status.error : "transparent"}
             />
             <Text
               style={[
@@ -321,7 +328,7 @@ export default function StoreDetailScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
-            <Share2 size={18} color="#3b82f6" />
+            <Share2 size={18} color={colors.status.info} />
             <Text style={styles.actionBtnText}>Share</Text>
           </TouchableOpacity>
 
@@ -329,30 +336,30 @@ export default function StoreDetailScreen() {
             style={styles.actionBtnPrimary}
             onPress={handleCall}
           >
-            <Phone size={18} color="#fff" />
+            <Phone size={18} color={colors.text.inverse} />
             <Text style={styles.actionBtnTextPrimary}>Call Store</Text>
           </TouchableOpacity>
         </View>
 
         {/* Location Info */}
         <TouchableOpacity style={styles.locationRow}>
-          <MapPin size={16} color="#64748b" />
+          <MapPin size={16} color={colors.text.secondary} />
           <Text style={styles.locationText} numberOfLines={1}>
             123 Market Street, City Center
           </Text>
-          <ChevronRight size={16} color="#94a3b8" />
+          <ChevronRight size={16} color={colors.ui.muted} />
         </TouchableOpacity>
       </View>
 
       {/* Quick Contact Row */}
       <View style={styles.quickContactRow}>
         <TouchableOpacity style={styles.quickContactBtn}>
-          <MessageCircle size={18} color="#3b82f6" />
+          <MessageCircle size={18} color={colors.status.info} />
           <Text style={styles.quickContactText}>Chat</Text>
         </TouchableOpacity>
         <View style={styles.quickContactDivider} />
         <TouchableOpacity style={styles.quickContactBtn}>
-          <Clock size={18} color="#f59e0b" />
+          <Clock size={18} color={colors.brand.star} />
           <Text style={styles.quickContactText}>9 AM - 9 PM</Text>
         </TouchableOpacity>
       </View>
@@ -433,11 +440,11 @@ export default function StoreDetailScreen() {
         >
           <SafeAreaView edges={["top"]} style={styles.stickySearchSafe}>
             <View style={styles.searchInputContainer}>
-              <Search size={18} color="#64748b" />
+              <Search size={18} color={colors.text.secondary} />
               <TextInput
                 placeholder="Search products..."
                 style={styles.searchInput}
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.ui.muted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
@@ -493,7 +500,7 @@ export default function StoreDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.ui.surfaceHover,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -507,7 +514,7 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
     marginTop: 16,
     marginBottom: 24,
   },
@@ -518,7 +525,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   backButtonText: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 16,
     fontWeight: "600",
   },
@@ -542,18 +549,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
     alignItems: "center",
     paddingHorizontal: 16,
     zIndex: 10,
-  },
-  heroBackBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "center",
-    alignItems: "center",
   },
   heroTopRight: {
     flexDirection: "row",
@@ -583,7 +582,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   reelsBtnText: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 13,
     fontWeight: "700" as const,
     marginLeft: 6,
@@ -592,20 +591,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadows.small,
   },
   ratingText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   paginationContainer: {
     position: "absolute",
@@ -640,7 +635,7 @@ const styles = StyleSheet.create({
   heroStoreName: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
     marginBottom: 10,
     textShadowColor: "rgba(0,0,0,0.5)",
     textShadowOffset: { width: 0, height: 2 },
@@ -659,7 +654,7 @@ const styles = StyleSheet.create({
   storeTypeText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
@@ -667,7 +662,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 20,
@@ -675,21 +670,17 @@ const styles = StyleSheet.create({
   openText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#16a34a",
+    color: colors.status.successDark,
   },
 
   // Store Card
   storeCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     marginHorizontal: 16,
     marginTop: -20,
     borderRadius: 16,
     padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 5,
+    ...shadows.medium,
     zIndex: 10,
   },
   statsRow: {
@@ -698,7 +689,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
     marginBottom: 16,
   },
   statItem: {
@@ -708,11 +699,11 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   statLabel: {
     fontSize: 11,
-    color: "#64748b",
+    color: colors.text.secondary,
     marginTop: 2,
     textTransform: "uppercase",
     letterSpacing: 0.3,
@@ -720,7 +711,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 30,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: colors.ui.border,
   },
   actionRow: {
     flexDirection: "row",
@@ -734,22 +725,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 12,
     borderWidth: 1.5,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: 12,
     gap: 6,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
   },
   actionBtnActive: {
-    backgroundColor: "#fef2f2",
-    borderColor: "#fecaca",
+    backgroundColor: colors.status.errorLight,
+    borderColor: colors.status.errorBorder,
   },
   actionBtnText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#334155",
+    color: colors.text.caption,
   },
   actionBtnTextActive: {
-    color: "#ef4444",
+    color: colors.status.error,
   },
   actionBtnPrimary: {
     flex: 1.2,
@@ -759,17 +750,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 6,
-    backgroundColor: "#22c55e",
+    backgroundColor: colors.status.success,
   },
   actionBtnTextPrimary: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   locationRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.ui.surfaceHover,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 10,
@@ -778,22 +769,18 @@ const styles = StyleSheet.create({
   locationText: {
     flex: 1,
     fontSize: 13,
-    color: "#475569",
+    color: colors.text.caption,
   },
 
   // Quick Contact
   quickContactRow: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     marginHorizontal: 16,
     marginTop: 12,
     borderRadius: 12,
     padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.small,
   },
   quickContactBtn: {
     flex: 1,
@@ -806,11 +793,11 @@ const styles = StyleSheet.create({
   quickContactText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#475569",
+    color: colors.text.caption,
   },
   quickContactDivider: {
     width: 1,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: colors.ui.border,
     marginVertical: 4,
   },
 
@@ -820,14 +807,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 20,
     marginBottom: 16,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: 16,
     padding: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.small,
   },
   tabBtn: {
     flex: 1,
@@ -837,12 +820,12 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tabBtnActive: {
-    backgroundColor: colors.brand.primaryLight,
+    backgroundColor: colors.ui.background,
   },
   tabBtnText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   tabBtnTextActive: {
     color: colors.brand.primary,
@@ -870,15 +853,11 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     zIndex: 100,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 5,
+    borderBottomColor: colors.ui.borderLight,
+    ...shadows.small,
   },
   stickySearchSafe: {
     paddingHorizontal: 16,
@@ -887,7 +866,7 @@ const styles = StyleSheet.create({
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     borderRadius: 12,
     paddingHorizontal: 14,
     height: 48,
@@ -896,6 +875,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#1e293b",
+    color: colors.text.heading,
   },
 });

@@ -241,7 +241,7 @@ export default function DeleteAccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -265,13 +265,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing.lg,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
   },
   stepDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: colors.ui.border,
   },
   activeStepDot: {
     backgroundColor: colors.brand.primary,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   stepLine: {
     width: 40,
     height: 2,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: colors.ui.border,
     marginHorizontal: 4,
   },
   content: {
@@ -307,14 +307,14 @@ const styles = StyleSheet.create({
   },
   itemsList: {
     alignSelf: "stretch",
-    backgroundColor: "#fef2f2",
+    backgroundColor: colors.status.errorLight,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.xl,
   },
   listItem: {
     fontSize: 14,
-    color: "#991b1b",
+    color: colors.status.errorDark,
     marginBottom: spacing.xs,
     lineHeight: 20,
   },
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   cancelButton: {
     paddingVertical: spacing.md,
@@ -364,12 +364,12 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     fontSize: 24,
     fontWeight: "700",
     textAlign: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
   },
   otpContainer: {
     flexDirection: "row",
@@ -380,12 +380,12 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     fontSize: 20,
     fontWeight: "700",
     textAlign: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
   },
   primaryButton: {
     backgroundColor: colors.brand.primary,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   secondaryButton: {
     paddingVertical: spacing.md,

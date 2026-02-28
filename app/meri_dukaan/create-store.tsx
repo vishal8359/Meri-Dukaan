@@ -119,7 +119,7 @@ export default function CreateStoreScreen() {
                   style={styles.removeImageBtn}
                   onPress={() => handleRemoveImage(index)}
                 >
-                  <Trash2 size={14} color="#fff" />
+                  <Trash2 size={14} color={colors.text.inverse} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -277,7 +277,7 @@ export default function CreateStoreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
   },
   backButton: {
     padding: 4,
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   removeImageBtn: {
     position: "absolute",
@@ -362,9 +362,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     gap: spacing.sm,
@@ -379,11 +379,11 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   categoryPicker: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     marginTop: spacing.sm,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     maxHeight: 200,
   },
   categoryItem: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   categoryText: {
     fontSize: 15,
@@ -403,11 +403,11 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   businessTypeCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   selectedBusinessType: {
     borderColor: colors.brand.primary,
@@ -435,7 +435,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#dbeafe",
+    backgroundColor: colors.status.infoLight,
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.xl,
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 13,
-    color: "#1e40af",
+    color: colors.status.infoDark,
     fontWeight: "600",
   },
   createBtn: {
@@ -455,6 +455,6 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
 });

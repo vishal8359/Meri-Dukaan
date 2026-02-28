@@ -60,7 +60,7 @@ export default function SettingsScreen() {
         </View>
       </View>
       {rightComponent ||
-        (showArrow && <ChevronRight size={20} color="#cbd5e1" />)}
+        (showArrow && <ChevronRight size={20} color={colors.ui.disabled} />)}
     </TouchableOpacity>
   );
 
@@ -78,7 +78,11 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container}>
       {/* Gradient Header */}
       <LinearGradient
-        colors={["#0f172a", "#1e3a4f", "#1e5a62"]}
+        colors={[
+          colors.gradient.navyStart,
+          colors.gradient.navyEnd,
+          colors.brand.primaryLight,
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientHeader}
@@ -88,10 +92,14 @@ export default function SettingsScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <ArrowLeft size={24} color="#FFF" />
+            <ArrowLeft size={24} color={colors.text.inverse} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <Settings size={28} color="#10b981" style={{ marginBottom: 4 }} />
+            <Settings
+              size={28}
+              color={colors.tint.green}
+              style={{ marginBottom: 4 }}
+            />
             <Text style={styles.headerTitle}>Settings</Text>
             <Text style={styles.headerSubtitle}>Manage your preferences</Text>
           </View>
@@ -115,10 +123,12 @@ export default function SettingsScreen() {
                 value={notifications}
                 onValueChange={setNotifications}
                 trackColor={{
-                  false: "#e2e8f0",
-                  true: "#fecaca",
+                  false: colors.ui.border,
+                  true: colors.status.errorBorder,
                 }}
-                thumbColor={notifications ? "#ef4444" : "#f4f3f4"}
+                thumbColor={
+                  notifications ? colors.status.error : colors.ui.surfaceHover
+                }
               />
             }
             showArrow={false}
@@ -140,10 +150,12 @@ export default function SettingsScreen() {
                 value={locationServices}
                 onValueChange={setLocationServices}
                 trackColor={{
-                  false: "#e2e8f0",
-                  true: "#bfdbfe",
+                  false: colors.ui.border,
+                  true: colors.status.infoBorder,
                 }}
-                thumbColor={locationServices ? "#3b82f6" : "#f4f3f4"}
+                thumbColor={
+                  locationServices ? colors.status.info : colors.ui.surfaceHover
+                }
               />
             }
             showArrow={false}
@@ -163,10 +175,12 @@ export default function SettingsScreen() {
                 onValueChange={setDarkMode}
                 disabled
                 trackColor={{
-                  false: "#e2e8f0",
-                  true: "#ddd6fe",
+                  false: colors.ui.border,
+                  true: colors.tint.purpleLight,
                 }}
-                thumbColor={darkMode ? "#8b5cf6" : "#f4f3f4"}
+                thumbColor={
+                  darkMode ? colors.tint.purple : colors.ui.surfaceHover
+                }
               />
             }
             showArrow={false}
@@ -237,7 +251,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   gradientHeader: {
     paddingBottom: spacing.md,
@@ -259,11 +273,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "#cbd5e1",
+    color: colors.ui.disabled,
     marginTop: 2,
     fontWeight: "600",
   },
@@ -283,7 +297,7 @@ const styles = StyleSheet.create({
   sectionIndicator: {
     width: 4,
     height: 20,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     borderRadius: 2,
   },
   sectionTitle: {
@@ -294,7 +308,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   sectionContent: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
     ...shadows.small,
@@ -306,7 +320,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   settingLeft: {
     flexDirection: "row",
@@ -317,7 +331,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -344,11 +358,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: "#fef2f2",
+    backgroundColor: colors.status.errorLight,
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#fee2e2",
+    borderColor: colors.status.errorBorder,
   },
   deleteButtonText: {
     fontSize: 16,

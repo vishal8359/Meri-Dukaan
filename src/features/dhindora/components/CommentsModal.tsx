@@ -1,4 +1,5 @@
 // src/features/dhindora/components/CommentsModal.tsx
+import { colors } from "@/src/theme/colors";
 import { ChevronDown, ChevronUp, Heart, Send, X } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import {
@@ -69,8 +70,8 @@ const ReplyItem: React.FC<{
         >
           <Heart
             size={12}
-            color={reply.liked ? "#ff4081" : "#888"}
-            fill={reply.liked ? "#ff4081" : "none"}
+            color={reply.liked ? colors.brand.dhindoraAccent : colors.ui.muted}
+            fill={reply.liked ? colors.brand.dhindoraAccent : "none"}
           />
           {reply.likesCount > 0 && (
             <Text style={styles.replyLikeCount}>{reply.likesCount}</Text>
@@ -115,8 +116,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
           >
             <Heart
               size={14}
-              color={comment.liked ? "#ff4081" : "#888"}
-              fill={comment.liked ? "#ff4081" : "none"}
+              color={
+                comment.liked ? colors.brand.dhindoraAccent : colors.ui.muted
+              }
+              fill={comment.liked ? colors.brand.dhindoraAccent : "none"}
             />
             {comment.likesCount > 0 && (
               <Text style={styles.likeCount}>{comment.likesCount}</Text>
@@ -138,9 +141,9 @@ const CommentItem: React.FC<CommentItemProps> = ({
               onPress={() => setShowReplies(!showReplies)}
             >
               {showReplies ? (
-                <ChevronUp size={14} color="#888" />
+                <ChevronUp size={14} color={colors.ui.muted} />
               ) : (
-                <ChevronDown size={14} color="#888" />
+                <ChevronDown size={14} color={colors.ui.muted} />
               )}
               <Text style={styles.showRepliesText}>
                 {showReplies ? "Hide" : "View"} {comment.replies.length}{" "}
@@ -228,7 +231,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
             <View style={styles.headerHandle} />
             <Text style={styles.headerTitle}>Comments</Text>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={24} color="#333" />
+              <X size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
 
@@ -266,7 +269,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
                 </Text>
               </Text>
               <TouchableOpacity onPress={cancelReply}>
-                <X size={18} color="#666" />
+                <X size={18} color={colors.text.secondary} />
               </TouchableOpacity>
             </View>
           )}
@@ -281,7 +284,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
               ref={inputRef}
               style={styles.input}
               placeholder={replyingTo ? "Add a reply..." : "Add a comment..."}
-              placeholderTextColor="#888"
+              placeholderTextColor={colors.ui.muted}
               value={commentText}
               onChangeText={setCommentText}
               multiline
@@ -295,7 +298,14 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
               onPress={handleSend}
               disabled={!commentText.trim()}
             >
-              <Send size={20} color={commentText.trim() ? "#ff4081" : "#ccc"} />
+              <Send
+                size={20}
+                color={
+                  commentText.trim()
+                    ? colors.brand.dhindoraAccent
+                    : colors.ui.disabled
+                }
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -314,7 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "70%",
@@ -324,19 +334,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.ui.borderLight,
   },
   headerHandle: {
     width: 40,
     height: 4,
-    backgroundColor: "#ddd",
+    backgroundColor: colors.ui.disabled,
     borderRadius: 2,
     marginBottom: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
   },
   closeBtn: {
     position: "absolute",
@@ -368,11 +378,11 @@ const styles = StyleSheet.create({
   commentUsername: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
     marginRight: 8,
   },
   reviewBadge: {
-    backgroundColor: "#e8f5e9",
+    backgroundColor: colors.status.successLight,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -381,15 +391,15 @@ const styles = StyleSheet.create({
   reviewBadgeText: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#4caf50",
+    color: colors.status.success,
   },
   commentTime: {
     fontSize: 12,
-    color: "#888",
+    color: colors.ui.muted,
   },
   commentText: {
     fontSize: 14,
-    color: "#333",
+    color: colors.text.primary,
     lineHeight: 20,
   },
   commentActions: {
@@ -405,14 +415,14 @@ const styles = StyleSheet.create({
   },
   likeCount: {
     fontSize: 12,
-    color: "#888",
+    color: colors.ui.muted,
   },
   replyBtn: {
     paddingVertical: 2,
   },
   replyBtnText: {
     fontSize: 12,
-    color: "#888",
+    color: colors.ui.muted,
     fontWeight: "600",
   },
   repliesSection: {
@@ -425,7 +435,7 @@ const styles = StyleSheet.create({
   },
   showRepliesText: {
     fontSize: 12,
-    color: "#888",
+    color: colors.ui.muted,
     fontWeight: "600",
   },
   repliesList: {
@@ -453,16 +463,16 @@ const styles = StyleSheet.create({
   replyUsername: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
     marginRight: 8,
   },
   replyTime: {
     fontSize: 11,
-    color: "#888",
+    color: colors.ui.muted,
   },
   replyText: {
     fontSize: 13,
-    color: "#333",
+    color: colors.text.primary,
     lineHeight: 18,
   },
   replyActions: {
@@ -475,7 +485,7 @@ const styles = StyleSheet.create({
   },
   replyLikeCount: {
     fontSize: 11,
-    color: "#888",
+    color: colors.ui.muted,
   },
   emptyContainer: {
     alignItems: "center",
@@ -484,12 +494,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
+    color: colors.text.primary,
     marginBottom: 4,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#888",
+    color: colors.ui.muted,
   },
   replyIndicator: {
     flexDirection: "row",
@@ -497,15 +507,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   replyIndicatorText: {
     fontSize: 13,
-    color: "#666",
+    color: colors.text.secondary,
   },
   replyingToName: {
     fontWeight: "700",
-    color: "#333",
+    color: colors.text.primary,
   },
   inputContainer: {
     flexDirection: "row",
@@ -513,8 +523,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#fff",
+    borderTopColor: colors.ui.borderLight,
+    backgroundColor: colors.ui.surface,
   },
   inputAvatar: {
     width: 32,
@@ -525,7 +535,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 14,
-    color: "#333",
+    color: colors.text.primary,
     maxHeight: 80,
     paddingVertical: 8,
   },

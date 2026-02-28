@@ -269,7 +269,7 @@ export default function ProductDetailScreen() {
         {/* Status Indicator */}
         {item.status === "active" && (
           <View style={styles.availableBadge}>
-            <Check size={10} color="#fff" />
+            <Check size={10} color={colors.text.inverse} />
           </View>
         )}
       </View>
@@ -285,7 +285,11 @@ export default function ProductDetailScreen() {
         {item.rating && (
           <View style={styles.relatedRatingContainer}>
             <View style={styles.relatedRating}>
-              <Star size={13} color="#E9C46A" fill="#E9C46A" />
+              <Star
+                size={13}
+                color={colors.brand.star}
+                fill={colors.brand.star}
+              />
               <Text style={styles.relatedRatingText}>{item.rating}</Text>
             </View>
             {item.reviews && (
@@ -307,7 +311,7 @@ export default function ProductDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.ui.surface} />
 
       {/* Header */}
       <View style={styles.header}>
@@ -315,17 +319,17 @@ export default function ProductDetailScreen() {
           style={styles.headerButton}
           onPress={() => router.back()}
         >
-          <ChevronLeft size={24} color="#1e293b" />
+          <ChevronLeft size={24} color={colors.text.heading} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Product Details</Text>
         <TouchableOpacity style={styles.headerButton}>
-          <Share2 size={20} color="#1e293b" />
+          <Share2 size={20} color={colors.text.heading} />
         </TouchableOpacity>
       </View>
 
       {showAddedMessage && (
         <View style={styles.successpMessage}>
-          <Check size={18} color="#fff" />
+          <Check size={18} color={colors.text.inverse} />
           <Text style={styles.successMessageText}>
             {quantity} item{quantity > 1 ? "s" : ""} added to cart!
           </Text>
@@ -399,9 +403,11 @@ export default function ProductDetailScreen() {
               <Heart
                 size={20}
                 color={
-                  isInWishlist(product.id) ? "#ef4444" : colors.brand.primary
+                  isInWishlist(product.id)
+                    ? colors.status.error
+                    : colors.brand.primary
                 }
-                fill={isInWishlist(product.id) ? "#ef4444" : "none"}
+                fill={isInWishlist(product.id) ? colors.status.error : "none"}
               />
             </TouchableOpacity>
           </View>
@@ -423,10 +429,14 @@ export default function ProductDetailScreen() {
                       key={i}
                       size={14}
                       color={
-                        i < Math.floor(product.rating!) ? "#E9C46A" : "#cbd5e1"
+                        i < Math.floor(product.rating!)
+                          ? colors.brand.star
+                          : colors.ui.disabled
                       }
                       fill={
-                        i < Math.floor(product.rating!) ? "#E9C46A" : "none"
+                        i < Math.floor(product.rating!)
+                          ? colors.brand.star
+                          : "none"
                       }
                     />
                   ))}
@@ -556,7 +566,7 @@ export default function ProductDetailScreen() {
               onPress={handleAddToCart}
               activeOpacity={0.85}
             >
-              <ShoppingCart size={20} color="#fff" />
+              <ShoppingCart size={20} color={colors.text.inverse} />
               <Text style={styles.addToCartText}>Add {quantity}x to Cart</Text>
               <Text style={styles.addToCartPrice}>
                 ₹{(product.price * quantity).toLocaleString()}
@@ -579,7 +589,7 @@ export default function ProductDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   header: {
     flexDirection: "row",
@@ -588,9 +598,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
     ...shadows.small,
   },
   headerButton: {
@@ -600,13 +610,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
   },
   successpMessage: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#22c55e",
+    backgroundColor: colors.status.success,
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.md,
@@ -616,7 +626,7 @@ const styles = StyleSheet.create({
   successMessageText: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   scrollContent: {
     paddingHorizontal: spacing.md,
@@ -634,7 +644,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 360,
     borderRadius: radius.lg,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   outOfStockBanner: {
     position: "absolute",
@@ -650,7 +660,7 @@ const styles = StyleSheet.create({
   outOfStockBannerText: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
     letterSpacing: 2,
   },
   imageCountBadge: {
@@ -663,7 +673,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   imageCountText: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "700",
   },
@@ -676,7 +686,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
     overflow: "hidden",
     marginRight: spacing.sm,
   },
@@ -689,7 +699,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   infoCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -708,13 +718,13 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#1e293b",
+    color: colors.text.heading,
     lineHeight: 28,
   },
   stockAvailability: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#16a34a",
+    color: colors.status.successDark,
     marginBottom: spacing.md,
   },
   ratingCategoryRow: {
@@ -737,10 +747,10 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   categoryBadge: {
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
@@ -768,7 +778,7 @@ const styles = StyleSheet.create({
   stockInfo: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   storeDeliveryColumn: {
     flex: 1,
@@ -780,7 +790,7 @@ const styles = StyleSheet.create({
   storeLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   storeName: {
     fontSize: 12,
@@ -793,12 +803,12 @@ const styles = StyleSheet.create({
   deliveryLabel: {
     fontSize: 10,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   deliveryTime: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#16a34a",
+    color: colors.status.successDark,
   },
   wishlistButton: {
     width: 40,
@@ -807,28 +817,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: "#e2e8f0",
-    backgroundColor: "#fff",
+    borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
   },
   wishlistButtonActive: {
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
+    borderColor: colors.status.errorBorder,
+    backgroundColor: colors.status.errorLight,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     marginBottom: spacing.md,
   },
   relatedSubtitle: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
     marginBottom: spacing.md,
     marginTop: -spacing.sm,
   },
   descriptionCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
@@ -849,12 +859,12 @@ const styles = StyleSheet.create({
   bulletText: {
     flex: 1,
     fontSize: 13,
-    color: "#475569",
+    color: colors.text.caption,
     lineHeight: 20,
     fontWeight: "500",
   },
   detailsCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.lg,
@@ -866,23 +876,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   detailLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   detailValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
   },
   statusSuccess: {
-    color: "#166534",
+    color: colors.status.successDark,
   },
   statusError: {
-    color: "#991b1b",
+    color: colors.status.errorDark,
   },
   relatedSection: {
     marginBottom: spacing.lg,
@@ -892,7 +902,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   relatedCard: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
     width: 155,
@@ -903,12 +913,12 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 130,
     overflow: "hidden",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   relatedImage: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
   },
   categoryBadgeRelated: {
     position: "absolute",
@@ -922,7 +932,7 @@ const styles = StyleSheet.create({
   categoryBadgeText: {
     fontSize: 8,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
     textTransform: "uppercase",
   },
   availableBadge: {
@@ -932,7 +942,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: radius.full,
-    backgroundColor: "#16a34a",
+    backgroundColor: colors.status.successDark,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -949,7 +959,7 @@ const styles = StyleSheet.create({
   relatedOutOfStockText: {
     fontSize: 11,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
     textAlign: "center",
   },
   relatedInfo: {
@@ -959,14 +969,14 @@ const styles = StyleSheet.create({
   relatedName: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     lineHeight: 15,
   },
   relatedRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    backgroundColor: "#fef3c7",
+    backgroundColor: colors.status.warningLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
@@ -980,12 +990,12 @@ const styles = StyleSheet.create({
   relatedRatingText: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#92400e",
+    color: colors.status.warningDark,
   },
   relatedReviews: {
     fontSize: 9,
     fontWeight: "600",
-    color: "#b45309",
+    color: colors.status.warningDark,
   },
   relatedPrice: {
     fontSize: 14,
@@ -1001,8 +1011,8 @@ const styles = StyleSheet.create({
   relatedDelivery: {
     fontSize: 9,
     fontWeight: "700",
-    color: "#16a34a",
-    backgroundColor: "#f0fdf4",
+    color: colors.status.successDark,
+    backgroundColor: colors.tint.greenLight,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
@@ -1011,9 +1021,9 @@ const styles = StyleSheet.create({
   bottomCard: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
+    borderTopColor: colors.ui.borderLight,
     ...shadows.large,
   },
   quantitySection: {
@@ -1022,13 +1032,13 @@ const styles = StyleSheet.create({
   quantityLabel: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#1e293b",
+    color: colors.text.heading,
     marginBottom: spacing.sm,
   },
   quantityControl: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
     borderRadius: radius.lg,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
@@ -1039,9 +1049,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: radius.md,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   quantityDisplay: {
     flex: 1,
@@ -1051,13 +1061,13 @@ const styles = StyleSheet.create({
   quantityValue: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1e293b",
+    color: colors.text.heading,
   },
   cartSummary: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -1066,7 +1076,7 @@ const styles = StyleSheet.create({
   cartSummaryLabel: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748b",
+    color: colors.text.secondary,
   },
   cartSummaryValue: {
     fontSize: 14,
@@ -1086,15 +1096,15 @@ const styles = StyleSheet.create({
   addToCartText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   addToCartPrice: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
   },
   outOfStockButton: {
-    backgroundColor: "#cbd5e1",
+    backgroundColor: colors.ui.disabled,
     paddingVertical: spacing.lg,
     borderRadius: radius.lg,
     alignItems: "center",
@@ -1103,7 +1113,7 @@ const styles = StyleSheet.create({
   outOfStockText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#fff",
+    color: colors.text.inverse,
     marginBottom: spacing.xs,
   },
   outOfStockSubtext: {

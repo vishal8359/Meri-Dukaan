@@ -282,7 +282,11 @@ export default function CartScreen() {
       {isEmpty ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconContainer}>
-            <ShoppingBag size={80} color="#cbd5e1" strokeWidth={1.5} />
+            <ShoppingBag
+              size={80}
+              color={colors.ui.disabled}
+              strokeWidth={1.5}
+            />
           </View>
           <Text style={styles.emptyText}>Your cart is empty</Text>
           <Text style={styles.emptySubtext}>
@@ -464,7 +468,11 @@ export default function CartScreen() {
 
             {activeCartTotal > 500 && (
               <View style={styles.savingsRow}>
-                <CheckCircle size={16} color="#22c55e" fill="#22c55e" />
+                <CheckCircle
+                  size={16}
+                  color={colors.status.success}
+                  fill={colors.status.success}
+                />
                 <Text style={styles.savingsText}>
                   You saved ₹40 on delivery!
                 </Text>
@@ -500,14 +508,14 @@ export default function CartScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     ...shadows.small,
   },
   backButton: {
@@ -527,9 +535,9 @@ const styles = StyleSheet.create({
   contentContainer: { flex: 1 },
   tabContainer: {
     flexDirection: "row",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   tab: {
     flex: 1,
@@ -552,22 +560,22 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   cartItem: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.xl,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.medium,
     borderWidth: 1,
-    borderColor: "#f1f5f9",
+    borderColor: colors.ui.borderLight,
   },
   serviceItem: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.xl,
     padding: spacing.md,
     marginBottom: spacing.md,
     ...shadows.medium,
     borderWidth: 1.5,
-    borderColor: "#ede9fe",
+    borderColor: colors.tint.purpleLight,
   },
   itemHeader: {
     flexDirection: "row",
@@ -580,14 +588,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     overflow: "hidden",
     marginRight: spacing.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     ...shadows.small,
   },
   productImage: { width: "100%", height: "100%" },
   imagePlaceholder: {
     width: "100%",
     height: "100%",
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -602,7 +610,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#ede9fe",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.sm,
@@ -627,8 +635,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: "#fecaca",
-    backgroundColor: "#fef2f2",
+    borderColor: colors.status.errorBorder,
+    backgroundColor: colors.status.errorLight,
   },
   itemFooter: {
     flexDirection: "row",
@@ -636,26 +644,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#f1f5f9",
+    borderTopColor: colors.ui.borderLight,
   },
   quantityContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
     borderRadius: radius.lg,
     padding: spacing.xs,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   quantityBtn: {
     width: 36,
     height: 36,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   quantityText: {
     fontSize: 16,
@@ -685,13 +693,13 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingTop: spacing.md,
     borderTopWidth: 1.5,
-    borderTopColor: "#ede9fe",
+    borderTopColor: colors.tint.purpleLight,
   },
   bookingInfo: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#f3f0ff",
+    backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
@@ -707,7 +715,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     padding: spacing.md,
@@ -741,7 +749,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    backgroundColor: "#dcfce7",
+    backgroundColor: colors.status.successLight,
     padding: spacing.md,
     borderRadius: radius.lg,
     marginBottom: spacing.md,
@@ -751,12 +759,12 @@ const styles = StyleSheet.create({
   savingsText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#166534",
+    color: colors.status.successDark,
     flex: 1,
   },
   divider: {
     height: 1.5,
-    backgroundColor: "#e2e8f0",
+    backgroundColor: colors.ui.border,
     marginVertical: spacing.md,
   },
   totalLabel: {
@@ -783,7 +791,7 @@ const styles = StyleSheet.create({
   checkoutBtnText: {
     fontSize: 16,
     fontWeight: "800",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   emptyContainer: {
     flex: 1,
@@ -793,7 +801,7 @@ const styles = StyleSheet.create({
   },
   emptyIconContainer: {
     marginBottom: spacing.xl,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     width: 120,
     height: 120,
     borderRadius: 60,
@@ -822,6 +830,6 @@ const styles = StyleSheet.create({
   shopButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
 });

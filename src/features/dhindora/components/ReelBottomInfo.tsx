@@ -1,4 +1,5 @@
 // src/features/dhindora/components/ReelBottomInfo.tsx
+import { colors } from "@/src/theme/colors";
 import { BadgeCheck } from "lucide-react-native";
 import React from "react";
 import {
@@ -38,7 +39,11 @@ export const ReelBottomInfo: React.FC<ReelBottomInfoProps> = ({
             <View style={styles.storeNameRow}>
               <Text style={styles.storeName}>{store.name}</Text>
               {store.isVerified && (
-                <BadgeCheck size={14} color="#00BAFF" fill="#00BAFF" />
+                <BadgeCheck
+                  size={14}
+                  color={colors.brand.dhindoraVerified}
+                  fill={colors.brand.dhindoraVerified}
+                />
               )}
             </View>
             <Text style={styles.storeType}>{store.type}</Text>
@@ -99,7 +104,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 2,
-    borderColor: "#fff",
+    borderColor: colors.text.inverse,
   },
   storeTextContainer: {
     marginLeft: 10,
@@ -110,7 +115,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   storeName: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 14,
     fontWeight: "700",
     textShadowColor: "rgba(0,0,0,0.8)",
@@ -130,14 +135,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: colors.text.inverse,
   },
   followingBtn: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 6,
   },
   followText: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 15,
     fontWeight: "700",
     textShadowColor: "rgba(0,0,0,0.8)",
@@ -145,10 +150,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
   followingText: {
-    color: "#fff",
+    color: colors.text.inverse,
   },
   description: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 14,
     lineHeight: 20,
     paddingRight: 80,
@@ -175,7 +180,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   audioText: {
-    color: "#fff",
+    color: colors.text.inverse,
     fontSize: 12,
     fontWeight: "600",
     flex: 1,

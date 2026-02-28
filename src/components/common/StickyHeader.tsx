@@ -84,32 +84,34 @@ export const StickyHeader = () => {
   return (
     <>
       <View style={[styles.container, { paddingTop: (insets.top || 10) + 12 }]}>
-        {/* Row 1 — Logo + Actions */}
+        {/* Row 1 — Sidebar + Logo + Actions */}
         <View style={styles.topRow}>
-          {/* Logo */}
-          <Image
-            source={require("../../assets/header_logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          {/* Left Section: Sidebar + Logo */}
+          <View style={styles.leftSection}>
+            {/* Sidebar Menu */}
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            >
+              <Menu size={20} color={colors.text.inverse} />
+            </TouchableOpacity>
+
+            {/* Logo */}
+            <Image
+              source={require("../../assets/header_logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
 
           {/* Right Actions */}
           <View style={styles.actionsRow}>
-            {/* Notification */}
-            <TouchableOpacity
-              style={styles.iconBtn}
-              onPress={() => router.push("/notification/notifications" as any)}
-            >
-              <Bell size={22} color="#fff" />
-              <View style={styles.notifDot} />
-            </TouchableOpacity>
-
             {/* Cart */}
             <TouchableOpacity
               style={styles.iconBtn}
               onPress={() => router.push("/cart/cart" as any)}
             >
-              <ShoppingCart size={22} color="#fff" />
+              <ShoppingCart size={18} color={colors.text.inverse} />
               {cartItemCount > 0 && (
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>
@@ -119,19 +121,20 @@ export const StickyHeader = () => {
               )}
             </TouchableOpacity>
 
-            {/* Menu */}
+            {/* Notification */}
             <TouchableOpacity
               style={styles.iconBtn}
-              onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+              onPress={() => router.push("/notification/notifications" as any)}
             >
-              <Menu size={24} color="#fff" />
+              <Bell size={18} color={colors.text.inverse} />
+              <View style={styles.notifDot} />
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Row 2 — Search Bar (tap to open modal) */}
         <Pressable style={styles.searchBarTrigger} onPress={openSearch}>
-          <Search size={17} color="#94a3b8" />
+          <Search size={17} color={colors.ui.muted} />
           <Text style={styles.searchPlaceholder}>
             Search products, stores, services...
           </Text>
@@ -149,7 +152,7 @@ export const StickyHeader = () => {
           {/* Modal Header — Search input */}
           <View style={styles.modalHeader}>
             <TouchableOpacity style={styles.modalBackBtn} onPress={closeSearch}>
-              <X size={22} color="#0f172a" />
+              <X size={22} color={colors.text.primary} />
             </TouchableOpacity>
             <View style={styles.modalSearchBar}>
               <Search size={18} color={colors.brand.primary} />
@@ -157,7 +160,7 @@ export const StickyHeader = () => {
                 ref={searchInputRef}
                 style={styles.modalSearchInput}
                 placeholder="Search products, stores..."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={colors.ui.muted}
                 value={query}
                 onChangeText={setQuery}
                 autoFocus
@@ -170,7 +173,7 @@ export const StickyHeader = () => {
                     searchInputRef.current?.focus();
                   }}
                 >
-                  <X size={18} color="#94a3b8" />
+                  <X size={18} color={colors.ui.muted} />
                 </TouchableOpacity>
               )}
               {isSearching && (
@@ -228,14 +231,16 @@ export const StickyHeader = () => {
                       styles.typeIconOverlay,
                       {
                         backgroundColor:
-                          item.type === "store" ? "#3b82f6" : "#10b981",
+                          item.type === "store"
+                            ? colors.status.info
+                            : colors.tint.green,
                       },
                     ]}
                   >
                     {item.type === "store" ? (
-                      <MapPin size={8} color="#fff" />
+                      <MapPin size={8} color={colors.text.inverse} />
                     ) : (
-                      <ShoppingCart size={8} color="#fff" />
+                      <ShoppingCart size={8} color={colors.text.inverse} />
                     )}
                   </View>
                 </View>
@@ -256,7 +261,9 @@ export const StickyHeader = () => {
                     styles.resultBadge,
                     {
                       backgroundColor:
-                        item.type === "store" ? "#eff6ff" : "#f0fdf4",
+                        item.type === "store"
+                          ? colors.tint.blueLight
+                          : colors.tint.greenLight,
                     },
                   ]}
                 >
@@ -264,7 +271,10 @@ export const StickyHeader = () => {
                     style={[
                       styles.resultBadgeText,
                       {
-                        color: item.type === "store" ? "#2563eb" : "#16a34a",
+                        color:
+                          item.type === "store"
+                            ? colors.status.info
+                            : colors.status.successDark,
                       },
                     ]}
                   >
@@ -300,14 +310,16 @@ export const StickyHeader = () => {
                           styles.typeIconOverlay,
                           {
                             backgroundColor:
-                              item.type === "store" ? "#3b82f6" : "#10b981",
+                              item.type === "store"
+                                ? colors.status.info
+                                : colors.tint.green,
                           },
                         ]}
                       >
                         {item.type === "store" ? (
-                          <MapPin size={8} color="#fff" />
+                          <MapPin size={8} color={colors.text.inverse} />
                         ) : (
-                          <ShoppingCart size={8} color="#fff" />
+                          <ShoppingCart size={8} color={colors.text.inverse} />
                         )}
                       </View>
                     </View>
@@ -324,7 +336,9 @@ export const StickyHeader = () => {
                         styles.resultBadge,
                         {
                           backgroundColor:
-                            item.type === "store" ? "#eff6ff" : "#f0fdf4",
+                            item.type === "store"
+                              ? colors.tint.blueLight
+                              : colors.tint.greenLight,
                         },
                       ]}
                     >
@@ -333,7 +347,9 @@ export const StickyHeader = () => {
                           styles.resultBadgeText,
                           {
                             color:
-                              item.type === "store" ? "#2563eb" : "#16a34a",
+                              item.type === "store"
+                                ? colors.status.info
+                                : colors.status.successDark,
                           },
                         ]}
                       >
@@ -359,7 +375,7 @@ const styles = StyleSheet.create({
     ...shadows.medium,
   },
 
-  /* ── Row 1: Logo + Actions ───────────────── */
+  /* ── Row 1: Sidebar + Logo + Actions ───────────────── */
   topRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -367,10 +383,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingBottom: 10,
   },
+  leftSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   logo: {
     width: 140,
     height: 42,
-    marginLeft: 0,
   },
   actionsRow: {
     flexDirection: "row",
@@ -378,9 +398,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: "rgba(255,255,255,0.15)",
     justifyContent: "center",
     alignItems: "center",
@@ -393,7 +413,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.status.error,
     borderWidth: 1.5,
     borderColor: colors.brand.primary,
   },
@@ -404,7 +424,7 @@ const styles = StyleSheet.create({
     minWidth: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: "#ef4444",
+    backgroundColor: colors.status.error,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 3,
@@ -414,20 +434,20 @@ const styles = StyleSheet.create({
   cartBadgeText: {
     fontSize: 8,
     fontWeight: "800",
-    color: "#fff",
+    color: colors.text.inverse,
   },
 
   /* ── Row 2: Search Trigger ───────────────── */
   searchBarTrigger: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: 12,
     marginHorizontal: spacing.md,
     paddingHorizontal: 14,
     height: 42,
     gap: 10,
-    shadowColor: "#000",
+    shadowColor: colors.brand.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
@@ -436,14 +456,14 @@ const styles = StyleSheet.create({
   searchPlaceholder: {
     flex: 1,
     fontSize: 13,
-    color: "#94a3b8",
+    color: colors.ui.muted,
     fontWeight: "500",
   },
 
   /* ═══ SEARCH MODAL ═══ */
   modalContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
   },
   modalHeader: {
     flexDirection: "row",
@@ -452,13 +472,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     gap: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   modalBackBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -466,7 +486,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.ui.surfaceHover,
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
@@ -477,7 +497,7 @@ const styles = StyleSheet.create({
   modalSearchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#0f172a",
+    color: colors.text.primary,
     fontWeight: "500",
     paddingVertical: 0,
   },
@@ -515,13 +535,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f8fafc",
+    borderBottomColor: colors.ui.surfaceHover,
   },
   resultImageWrapper: {
     width: 52,
     height: 52,
     borderRadius: 12,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.backgroundAlt,
     overflow: "hidden",
     marginRight: 12,
     position: "relative",
@@ -540,7 +560,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1.5,
-    borderColor: "#fff",
+    borderColor: colors.ui.surface,
   },
   resultInfo: {
     flex: 1,
@@ -549,7 +569,7 @@ const styles = StyleSheet.create({
   resultName: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 3,
   },
   resultSubtitle: {
@@ -581,7 +601,7 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     marginBottom: 4,
   },
   emptySubtitle: {
@@ -591,7 +611,7 @@ const styles = StyleSheet.create({
   suggestionsHeader: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#0f172a",
+    color: colors.text.primary,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,

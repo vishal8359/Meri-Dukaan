@@ -132,7 +132,7 @@ export default function HelpSupportScreen() {
         <Text style={styles.contactTitle}>{title}</Text>
         <Text style={styles.contactSubtitle}>{subtitle}</Text>
       </View>
-      <ChevronRight size={20} color="#cbd5e1" />
+      <ChevronRight size={20} color={colors.ui.disabled} />
     </TouchableOpacity>
   );
 
@@ -140,7 +140,11 @@ export default function HelpSupportScreen() {
     <SafeAreaView style={styles.container}>
       {/* Gradient Header */}
       <LinearGradient
-        colors={["#0f172a", "#1e3a4f", "#1e5a62"]}
+        colors={[
+          colors.gradient.navyStart,
+          colors.gradient.navyEnd,
+          colors.brand.primaryLight,
+        ]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientHeader}
@@ -150,10 +154,14 @@ export default function HelpSupportScreen() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <ArrowLeft size={24} color="#FFF" />
+            <ArrowLeft size={24} color={colors.text.inverse} />
           </TouchableOpacity>
           <View style={styles.headerContent}>
-            <HelpCircle size={28} color="#10b981" style={{ marginBottom: 4 }} />
+            <HelpCircle
+              size={28}
+              color={colors.tint.green}
+              style={{ marginBottom: 4 }}
+            />
             <Text style={styles.headerTitle}>Help & Support</Text>
             <Text style={styles.headerSubtitle}>We're here to help</Text>
           </View>
@@ -177,21 +185,21 @@ export default function HelpSupportScreen() {
               title="Call Us"
               subtitle="+91 98765 43210"
               onPress={handleCall}
-              color="#3b82f6"
+              color={colors.status.info}
             />
             <ContactOption
               icon={Mail}
               title="Email Us"
               subtitle="support@sangam.in"
               onPress={handleEmail}
-              color="#f59e0b"
+              color={colors.status.warning}
             />
             <ContactOption
               icon={MessageCircle}
               title="WhatsApp"
               subtitle="Chat with us"
               onPress={handleWhatsApp}
-              color="#10b981"
+              color={colors.tint.green}
             />
           </View>
         </View>
@@ -217,7 +225,7 @@ export default function HelpSupportScreen() {
           </View>
           <View style={styles.messageCard}>
             <View style={styles.messageWrap}>
-              <Send size={18} color="#3b82f6" />
+              <Send size={18} color={colors.status.info} />
               <Text style={styles.messageLabel}>Your Message</Text>
             </View>
             <TextInput
@@ -235,7 +243,7 @@ export default function HelpSupportScreen() {
               onPress={handleSubmitMessage}
               activeOpacity={0.8}
             >
-              <Send size={18} color="#FFF" />
+              <Send size={18} color={colors.text.inverse} />
               <Text style={styles.sendButtonText}>Send Message</Text>
             </TouchableOpacity>
           </View>
@@ -255,10 +263,10 @@ export default function HelpSupportScreen() {
                   { backgroundColor: "#f0fdf415" },
                 ]}
               >
-                <FileText size={18} color="#f59e0b" />
+                <FileText size={18} color={colors.status.warning} />
               </View>
               <Text style={styles.linkText}>Terms of Service</Text>
-              <ChevronRight size={18} color="#cbd5e1" />
+              <ChevronRight size={18} color={colors.ui.disabled} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.linkItem} activeOpacity={0.7}>
               <View
@@ -267,10 +275,10 @@ export default function HelpSupportScreen() {
                   { backgroundColor: "#dbeafe15" },
                 ]}
               >
-                <FileText size={18} color="#3b82f6" />
+                <FileText size={18} color={colors.status.info} />
               </View>
               <Text style={styles.linkText}>Privacy Policy</Text>
-              <ChevronRight size={18} color="#cbd5e1" />
+              <ChevronRight size={18} color={colors.ui.disabled} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.linkItem} activeOpacity={0.7}>
               <View
@@ -279,10 +287,10 @@ export default function HelpSupportScreen() {
                   { backgroundColor: "#f0fdfa15" },
                 ]}
               >
-                <FileText size={18} color="#10b981" />
+                <FileText size={18} color={colors.tint.green} />
               </View>
               <Text style={styles.linkText}>Refund Policy</Text>
-              <ChevronRight size={18} color="#cbd5e1" />
+              <ChevronRight size={18} color={colors.ui.disabled} />
             </TouchableOpacity>
           </View>
         </View>
@@ -312,7 +320,7 @@ export default function HelpSupportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
   },
   gradientHeader: {
     paddingBottom: spacing.md,
@@ -334,11 +342,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   headerSubtitle: {
     fontSize: 12,
-    color: "#cbd5e1",
+    color: colors.ui.disabled,
     marginTop: 2,
     fontWeight: "600",
   },
@@ -357,7 +365,7 @@ const styles = StyleSheet.create({
   sectionIndicator: {
     width: 4,
     height: 24,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     borderRadius: 2,
   },
   sectionTitle: {
@@ -366,7 +374,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   contactContainer: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
     ...shadows.small,
@@ -377,13 +385,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
   },
   contactIconContainer: {
     width: 44,
     height: 44,
     borderRadius: radius.md,
-    backgroundColor: "#f1f5f9",
+    backgroundColor: colors.ui.borderLight,
     justifyContent: "center",
     alignItems: "center",
     marginRight: spacing.md,
@@ -405,12 +413,12 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   faqItem: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
     borderLeftWidth: 4,
-    borderLeftColor: "#3b82f6",
+    borderLeftColor: colors.status.info,
     ...shadows.small,
   },
   faqHeader: {
@@ -419,7 +427,7 @@ const styles = StyleSheet.create({
   },
   faqIconContainer: {
     marginRight: spacing.sm,
-    backgroundColor: "#dbeafe",
+    backgroundColor: colors.status.infoLight,
     width: 28,
     height: 28,
     borderRadius: 6,
@@ -440,7 +448,7 @@ const styles = StyleSheet.create({
     paddingLeft: 40,
   },
   messageCard: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
     ...shadows.small,
@@ -463,18 +471,18 @@ const styles = StyleSheet.create({
     minHeight: 120,
     marginBottom: spacing.md,
     textAlignVertical: "top",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: colors.ui.background,
     borderRadius: radius.md,
     padding: spacing.sm,
     borderWidth: 1,
-    borderColor: "#e2e8f0",
+    borderColor: colors.ui.border,
   },
   sendButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,
-    backgroundColor: "#3b82f6",
+    backgroundColor: colors.status.info,
     paddingVertical: spacing.md,
     borderRadius: radius.md,
     ...shadows.small,
@@ -482,10 +490,10 @@ const styles = StyleSheet.create({
   sendButtonText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#FFF",
+    color: colors.text.inverse,
   },
   linksContainer: {
-    backgroundColor: "#FFF",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
     ...shadows.small,
@@ -496,7 +504,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
+    borderBottomColor: colors.ui.borderLight,
     gap: spacing.md,
   },
   linkIconContainer: {
@@ -514,12 +522,12 @@ const styles = StyleSheet.create({
   },
   hoursCard: {
     flexDirection: "row",
-    backgroundColor: "#f0f9ff",
+    backgroundColor: colors.tint.blueLight,
     borderRadius: radius.lg,
     padding: spacing.md,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: "#bfdbfe",
+    borderColor: colors.status.infoBorder,
   },
   hoursInfo: {
     flex: 1,

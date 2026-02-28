@@ -8,12 +8,12 @@ import * as NavigationBar from "expo-navigation-bar";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  FlatList,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  useWindowDimensions,
-  View,
+    FlatList,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    useWindowDimensions,
+    View,
 } from "react-native";
 import { ReelItem } from "../components/ReelItem";
 
@@ -187,6 +187,6 @@ export default function DhindoraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: "#000", // Intentional: pure black for video player background
   },
 });
