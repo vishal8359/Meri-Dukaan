@@ -20,6 +20,15 @@ export default function RootLayout() {
             }}
           />
 
+          {/* Category Products Page */}
+          <Stack.Screen
+            name="category/[id]"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+
           {/* 3. Register Cart Screen - Path: app/cart/cart.tsx */}
           <Stack.Screen
             name="cart/cart"

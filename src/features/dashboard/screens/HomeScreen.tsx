@@ -1,17 +1,23 @@
-// src/features/dashboard/screens/HomeScreen.tsx
+﻿// src/features/dashboard/screens/HomeScreen.tsx
+import {
+  mockProducts,
+  Product,
+  PRODUCT_CATEGORIES,
+} from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
-import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { colors, radius, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
+  ChevronDown,
   ChevronRight,
-  Clock,
   MapPin,
   Star,
   TrendingUp,
   Zap,
 } from "lucide-react-native";
-import React, { useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   Animated,
   Dimensions,
@@ -25,61 +31,7 @@ import {
 
 const { width } = Dimensions.get("window");
 
-// Mock Data
-const QUICK_PICKS = [
-  { id: "1", name: "Vegetables", icon: "🥬", color: "#4ade80" },
-  { id: "2", name: "Fruits", icon: "🍎", color: "#fb923c" },
-  { id: "3", name: "Dairy", icon: "🥛", color: "#60a5fa" },
-  { id: "4", name: "Snacks", icon: "🍿", color: "#fbbf24" },
-  { id: "5", name: "Beverages", icon: "🥤", color: "#f472b6" },
-  { id: "6", name: "Bakery", icon: "🍞", color: "#a78bfa" },
-  { id: "7", name: "Meat", icon: "🍗", color: "#f87171" },
-  { id: "8", name: "Household", icon: "🧼", color: "#34d399" },
-  { id: "9", name: "Electronics", icon: "📱", color: "#3b82f6" },
-  { id: "10", name: "Gifts", icon: "🎁", color: "#ec4899" },
-  { id: "11", name: "Stationery", icon: "📝", color: "#f59e0b" },
-  { id: "12", name: "Garments", icon: "👕", color: "#8b5cf6" },
-  { id: "13", name: "Salon", icon: "💇", color: "#f97316" },
-  { id: "14", name: "Beauty", icon: "💄", color: "#db2777" },
-  { id: "15", name: "Books", icon: "📚", color: "#06b6d4" },
-  { id: "16", name: "Toys", icon: "🧸", color: "#10b981" },
-];
-
-const FLASH_DEALS = [
-  {
-    id: "1",
-    name: "Fresh Tomatoes",
-    store: "Sharma Kirana",
-    price: 30,
-    originalPrice: 40,
-    discount: 25,
-    image:
-      "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
-    timeLeft: "2h 30m",
-  },
-  {
-    id: "2",
-    name: "Green Chilies",
-    store: "Organic Farms",
-    price: 45,
-    originalPrice: 60,
-    discount: 25,
-    image:
-      "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
-    timeLeft: "1h 15m",
-  },
-  {
-    id: "3",
-    name: "Fresh Milk",
-    store: "Daily Dairy",
-    price: 50,
-    originalPrice: 60,
-    discount: 17,
-    image:
-      "https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=300",
-    timeLeft: "45m",
-  },
-];
+const QUICK_PICKS = PRODUCT_CATEGORIES.filter((c) => c.id !== "all");
 
 const TOP_OFFERS = [
   {
@@ -88,7 +40,7 @@ const TOP_OFFERS = [
     subtitle: "Up to 50% OFF",
     image:
       "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600",
-    color: "#fef3c7",
+    gradient: ["#fef3c7", "#fde68a"] as [string, string],
   },
   {
     id: "2",
@@ -96,19 +48,68 @@ const TOP_OFFERS = [
     subtitle: "New in stock today",
     image:
       "https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=600",
-    color: "#dbeafe",
+    gradient: ["#dbeafe", "#bfdbfe"] as [string, string],
+  },
+  {
+    id: "3",
+    title: "Mega Sale",
+    subtitle: "Flat 200 OFF",
+    image:
+      "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600",
+    gradient: ["#fce7f3", "#fbcfe8"] as [string, string],
   },
 ];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { getFeaturedStores } = useApp();
+  const { cart, allStores } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const featuredStores = getFeaturedStores(6);
+  const flashScrollRef = useRef<FlatList>(null);
+  const flashIndexRef = useRef(0);
+
+  const flashDealProducts = useMemo(
+    () =>
+      mockProducts
+        .filter((p) => p.isSubscription && p.discount)
+        .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+        .slice(0, 10),
+    [],
+  );
+
+  const trendingStores = useMemo(() => {
+    return [...allStores]
+      .sort((a, b) => {
+        if (b.rating !== a.rating) return b.rating - a.rating;
+        const aF = parseFloat(a.followers.replace("k", "000"));
+        const bF = parseFloat(b.followers.replace("k", "000"));
+        return bF - aF;
+      })
+      .slice(0, 8);
+  }, [allStores]);
+
+  useEffect(() => {
+    if (flashDealProducts.length <= 1) return;
+    const interval = setInterval(() => {
+      flashIndexRef.current =
+        (flashIndexRef.current + 1) % flashDealProducts.length;
+      flashScrollRef.current?.scrollToIndex({
+        index: flashIndexRef.current,
+        animated: true,
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [flashDealProducts.length]);
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dukaan/${storeId}` as any);
+  };
+
+  const navigateToCategory = (categoryId: string) => {
+    router.push({
+      pathname: "/category/[id]",
+      params: { id: categoryId },
+    } as any);
   };
 
   const navigateToProduct = (productId: string) => {
@@ -119,98 +120,115 @@ export default function HomeScreen() {
   };
 
   const QuickPickItem = ({ item }: { item: (typeof QUICK_PICKS)[0] }) => (
-    <TouchableOpacity style={styles.quickPickItem}>
+    <TouchableOpacity
+      style={styles.quickPickItem}
+      onPress={() => navigateToCategory(item.id)}
+      activeOpacity={0.7}
+    >
       <View
         style={[styles.quickPickIcon, { backgroundColor: item.color + "20" }]}
       >
         <Text style={styles.quickPickEmoji}>{item.icon}</Text>
       </View>
-      <Text style={styles.quickPickName}>{item.name}</Text>
+      <Text style={styles.quickPickName} numberOfLines={1}>
+        {item.name}
+      </Text>
     </TouchableOpacity>
   );
 
-  const FlashDealCard = ({ item }: { item: (typeof FLASH_DEALS)[0] }) => (
+  const FlashDealCard = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.flashDealCard}
       onPress={() => navigateToProduct(item.id)}
+      activeOpacity={0.85}
     >
       <Image source={{ uri: item.image }} style={styles.flashDealImage} />
-
-      {/* Discount Badge */}
-      <View style={styles.discountBadge}>
-        <Text style={styles.discountText}>{item.discount}% OFF</Text>
+      {item.discount ? (
+        <View style={styles.discountBadge}>
+          <Text style={styles.discountText}>{item.discount}% OFF</Text>
+        </View>
+      ) : null}
+      <View style={styles.subscriptionBadge}>
+        <Zap size={8} color="#f59e0b" />
+        <Text style={styles.subscriptionText}>Subscribe</Text>
       </View>
-
-      {/* Timer Badge */}
-      <View style={styles.timerBadge}>
-        <Clock size={10} color="#fff" />
-        <Text style={styles.timerText}>{item.timeLeft}</Text>
-      </View>
-
       <View style={styles.flashDealInfo}>
         <Text style={styles.flashDealName} numberOfLines={1}>
           {item.name}
         </Text>
         <Text style={styles.flashDealStore} numberOfLines={1}>
-          {item.store}
+          {item.storeName} {"\u2022"} {item.distance}
         </Text>
         <View style={styles.priceRow}>
-          <Text style={styles.flashPrice}>₹{item.price}</Text>
-          <Text style={styles.flashOriginalPrice}>₹{item.originalPrice}</Text>
+          <Text style={styles.flashPrice}>
+            {"\u20B9"}
+            {item.price}
+          </Text>
+          {item.originalPrice ? (
+            <Text style={styles.flashOriginalPrice}>
+              {"\u20B9"}
+              {item.originalPrice}
+            </Text>
+          ) : null}
         </View>
       </View>
     </TouchableOpacity>
   );
 
   const OfferBanner = ({ item }: { item: (typeof TOP_OFFERS)[0] }) => (
-    <TouchableOpacity
-      style={[styles.offerBanner, { backgroundColor: item.color }]}
-    >
-      <View style={styles.offerContent}>
-        <Text style={styles.offerTitle}>{item.title}</Text>
-        <Text style={styles.offerSubtitle}>{item.subtitle}</Text>
-        <View style={styles.shopNowBtn}>
-          <Text style={styles.shopNowText}>Shop Now</Text>
-          <ChevronRight size={14} color={colors.brand.primary} />
+    <TouchableOpacity style={styles.offerBanner} activeOpacity={0.9}>
+      <LinearGradient
+        colors={item.gradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.offerGradient}
+      >
+        <View style={styles.offerContent}>
+          <Text style={styles.offerTitle}>{item.title}</Text>
+          <Text style={styles.offerSubtitle}>{item.subtitle}</Text>
+          <View style={styles.shopNowBtn}>
+            <Text style={styles.shopNowText}>Shop Now</Text>
+            <ChevronRight size={14} color={colors.brand.primary} />
+          </View>
         </View>
-      </View>
-      <Image source={{ uri: item.image }} style={styles.offerImage} />
+        <Image source={{ uri: item.image }} style={styles.offerImage} />
+      </LinearGradient>
     </TouchableOpacity>
   );
 
-  const StoreCard = ({ store }: any) => (
+  const TrendingStoreCard = ({ store }: { store: any }) => (
     <TouchableOpacity
-      style={styles.storeCard}
+      style={styles.trendingCard}
       onPress={() => navigateToStore(store.id)}
+      activeOpacity={0.85}
     >
       <Image
         source={
           typeof store.image === "string" ? { uri: store.image } : store.image
         }
-        style={styles.storeCardImage}
+        style={styles.trendingImage}
       />
-
-      {/* Distance Badge */}
+      <View style={styles.ratingCrown}>
+        <Star size={10} color="#fbbf24" fill="#fbbf24" />
+        <Text style={styles.ratingCrownText}>{store.rating}</Text>
+      </View>
       <View style={styles.storeDistanceBadge}>
-        <MapPin size={10} color="#fff" />
+        <MapPin size={9} color="#fff" />
         <Text style={styles.storeDistance}>{store.distance}</Text>
       </View>
-
-      <View style={styles.storeCardContent}>
-        <Text style={styles.storeCardName} numberOfLines={1}>
+      <View style={styles.trendingBadge}>
+        <TrendingUp size={10} color="#fff" />
+      </View>
+      <View style={styles.trendingContent}>
+        <Text style={styles.trendingName} numberOfLines={1}>
           {store.name}
         </Text>
-        <Text style={styles.storeCardType} numberOfLines={1}>
+        <Text style={styles.trendingType} numberOfLines={1}>
           {store.type}
         </Text>
-
-        <View style={styles.storeCardFooter}>
-          <View style={styles.ratingBox}>
-            <Star size={12} color="#fbbf24" fill="#fbbf24" />
-            <Text style={styles.ratingText}>{store.rating}</Text>
-          </View>
+        <View style={styles.trendingFooter}>
           <View style={styles.followersBox}>
-            <Ionicons name="people" size={12} color={colors.text.secondary} />
+            <Ionicons name="people" size={11} color={colors.text.secondary} />
             <Text style={styles.followersText}>{store.followers}</Text>
           </View>
         </View>
@@ -227,23 +245,35 @@ export default function HomeScreen() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false },
         )}
+        contentContainerStyle={{ paddingTop: spacing.sm }}
       >
-        {/* Delivery Address Bar */}
-        <View style={styles.addressBar}>
-          <View style={styles.addressLeft}>
-            <MapPin size={18} color={colors.brand.primary} />
-            <View>
-              <Text style={styles.deliveryLabel}>Deliver to</Text>
-              <Text style={styles.addressText}>Rajendra Nagar, Patna</Text>
+        {/* Deliver To */}
+        <TouchableOpacity
+          style={styles.addressBar}
+          activeOpacity={0.7}
+          onPress={() => router.push("/Profile/edit-profile" as any)}
+        >
+          <View style={styles.addressPin}>
+            <MapPin size={16} color={colors.brand.primary} />
+          </View>
+          <View style={styles.addressContent}>
+            <Text style={styles.deliverLabel}>Deliver to</Text>
+            <View style={styles.addressRow}>
+              <Text style={styles.addressText} numberOfLines={1}>
+                Rajendra Nagar, Patna
+              </Text>
+              <ChevronDown size={14} color={colors.text.secondary} />
             </View>
           </View>
-          <TouchableOpacity>
-            <ChevronRight size={20} color={colors.text.secondary} />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
         {/* Quick Picks */}
         <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionSubtitle}>
+              What are you looking for?
+            </Text>
+          </View>
           <FlatList
             horizontal
             data={QUICK_PICKS}
@@ -264,6 +294,8 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.offersList}
             pagingEnabled
+            snapToInterval={width - 16}
+            decelerationRate="fast"
           />
         </View>
 
@@ -271,21 +303,31 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
-              <Zap size={20} color="#f59e0b" fill="#f59e0b" />
-              <Text style={styles.sectionTitle}>Flash Deals</Text>
+              <View style={styles.flashIconContainer}>
+                <Zap size={16} color="#f59e0b" fill="#f59e0b" />
+              </View>
+              <View>
+                <Text style={styles.sectionTitle}>Flash Deals</Text>
+                <Text style={styles.sectionSubLabel}>
+                  From subscription stores
+                </Text>
+              </View>
             </View>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View All →</Text>
+            <TouchableOpacity onPress={() => navigateToCategory("all")}>
+              <Text style={styles.viewAllText}>View All </Text>
             </TouchableOpacity>
           </View>
-
           <FlatList
+            ref={flashScrollRef}
             horizontal
-            data={FLASH_DEALS}
+            data={flashDealProducts}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <FlashDealCard item={item} />}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.flashDealsList}
+            snapToInterval={156}
+            decelerationRate="fast"
+            onScrollToIndexFailed={() => {}}
           />
         </View>
 
@@ -293,27 +335,32 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
-              <TrendingUp size={20} color={colors.brand.primary} />
-              <Text style={styles.sectionTitle}>Trending Stores</Text>
+              <View style={styles.trendingIconContainer}>
+                <TrendingUp size={16} color={colors.brand.primary} />
+              </View>
+              <View>
+                <Text style={styles.sectionTitle}>Trending Stores</Text>
+                <Text style={styles.sectionSubLabel}>
+                  Highest rated & most popular
+                </Text>
+              </View>
             </View>
             <TouchableOpacity
-              onPress={() => router.push("/(drawer)/(tabs)/bazar")}
+              onPress={() => router.push("/(drawer)/(tabs)/bazar" as any)}
             >
-              <Text style={styles.viewAllText}>View All →</Text>
+              <Text style={styles.viewAllText}>View All </Text>
             </TouchableOpacity>
           </View>
-
           <FlatList
             horizontal
-            data={featuredStores}
+            data={trendingStores}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <StoreCard store={item} />}
+            renderItem={({ item }) => <TrendingStoreCard store={item} />}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.storesList}
           />
         </View>
 
-        {/* Bottom Spacing */}
         <View style={{ height: 100 }} />
       </Animated.ScrollView>
     </View>
@@ -321,38 +368,43 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, backgroundColor: "#f8fafc" },
   addressBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    backgroundColor: "#fef3c7",
-    borderBottomWidth: 1,
-    borderBottomColor: "#fde68a",
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: 4,
+    borderRadius: radius.md,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
   },
-  addressLeft: {
-    flexDirection: "row",
+  addressPin: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.brand.primary + "12",
+    justifyContent: "center",
     alignItems: "center",
-    gap: spacing.sm,
+    marginRight: 10,
   },
-  deliveryLabel: {
-    fontSize: 12,
+  addressContent: { flex: 1 },
+  deliverLabel: {
+    fontSize: 10,
     fontWeight: "600",
     color: colors.text.secondary,
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
   },
-  addressText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text.primary,
-  },
-  section: {
-    marginTop: spacing.lg,
-  },
+  addressRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  addressText: { fontSize: 14, fontWeight: "800", color: "#0f172a" },
+  section: { marginTop: spacing.lg },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -363,147 +415,149 @@ const styles = StyleSheet.create({
   sectionTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 10,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.text.primary,
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#0f172a" },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.secondary,
   },
-  viewAllText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.brand.primary,
+  sectionSubLabel: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.text.secondary,
+    marginTop: 1,
   },
-  // Quick Picks
-  quickPicksList: {
-    paddingHorizontal: spacing.sm,
+  viewAllText: { fontSize: 13, fontWeight: "700", color: colors.brand.primary },
+  flashIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#fef3c7",
+    justifyContent: "center",
+    alignItems: "center",
   },
+  trendingIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: colors.brand.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  quickPicksList: { paddingHorizontal: spacing.sm },
   quickPickItem: {
     alignItems: "center",
-    marginHorizontal: spacing.xs,
+    marginHorizontal: spacing.xs + 2,
     width: 68,
   },
   quickPickIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 6,
   },
-  quickPickEmoji: {
-    fontSize: 30,
-  },
+  quickPickEmoji: { fontSize: 28 },
   quickPickName: {
     fontSize: 11,
     fontWeight: "600",
-    color: colors.text.primary,
+    color: "#0f172a",
     textAlign: "center",
   },
-  // Offers
-  offersList: {
-    paddingHorizontal: spacing.md,
-  },
+  offersList: { paddingHorizontal: spacing.md },
   offerBanner: {
-    width: width - 32,
-    height: 140,
+    width: width - 40,
+    height: 150,
     borderRadius: radius.lg,
     marginRight: spacing.md,
-    flexDirection: "row",
     overflow: "hidden",
-    ...shadows.medium,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  offerContent: {
-    flex: 1,
-    padding: spacing.md,
-    justifyContent: "center",
-  },
+  offerGradient: { flex: 1, flexDirection: "row" },
+  offerContent: { flex: 1, padding: spacing.md, justifyContent: "center" },
   offerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: colors.text.primary,
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#0f172a",
     marginBottom: 4,
   },
   offerSubtitle: {
     fontSize: 14,
-    color: colors.text.secondary,
+    color: "#475569",
     marginBottom: spacing.sm,
+    fontWeight: "600",
   },
   shopNowBtn: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "flex-start",
     backgroundColor: "#fff",
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.full,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9999,
     gap: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  shopNowText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.brand.primary,
-  },
+  shopNowText: { fontSize: 12, fontWeight: "800", color: colors.brand.primary },
   offerImage: {
-    width: 120,
+    width: 130,
     height: "100%",
+    borderTopRightRadius: radius.lg,
+    borderBottomRightRadius: radius.lg,
   },
-  // Flash Deals
-  flashDealsList: {
-    paddingHorizontal: spacing.md,
-  },
+  flashDealsList: { paddingHorizontal: spacing.md },
   flashDealCard: {
-    width: 140,
+    width: 148,
     backgroundColor: "#fff",
     borderRadius: radius.lg,
     marginRight: spacing.md,
-    ...shadows.medium,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  flashDealImage: {
-    width: "100%",
-    height: 120,
-    backgroundColor: "#f1f5f9",
-  },
+  flashDealImage: { width: "100%", height: 120, backgroundColor: "#f1f5f9" },
   discountBadge: {
     position: "absolute",
     top: 8,
     left: 8,
-    backgroundColor: colors.status.success,
+    backgroundColor: "#10b981",
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: radius.sm,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
-  discountText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#fff",
-  },
-  timerBadge: {
+  discountText: { fontSize: 10, fontWeight: "800", color: "#fff" },
+  subscriptionBadge: {
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: colors.status.error,
+    backgroundColor: "rgba(0,0,0,0.65)",
     paddingHorizontal: 6,
     paddingVertical: 3,
-    borderRadius: radius.sm,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
   },
-  timerText: {
-    fontSize: 9,
-    fontWeight: "800",
-    color: "#fff",
-  },
-  flashDealInfo: {
-    padding: spacing.sm,
-  },
+  subscriptionText: { fontSize: 8, fontWeight: "700", color: "#fbbf24" },
+  flashDealInfo: { padding: spacing.sm },
   flashDealName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
-    color: colors.text.primary,
+    color: "#0f172a",
     marginBottom: 2,
   },
   flashDealStore: {
@@ -511,91 +565,83 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginBottom: 6,
   },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  flashPrice: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: colors.brand.primary,
-  },
+  priceRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  flashPrice: { fontSize: 16, fontWeight: "800", color: colors.brand.primary },
   flashOriginalPrice: {
     fontSize: 12,
     color: colors.text.secondary,
     textDecorationLine: "line-through",
   },
-  // Stores
-  storesList: {
-    paddingHorizontal: spacing.md,
-  },
-  storeCard: {
-    width: 160,
+  storesList: { paddingHorizontal: spacing.md },
+  trendingCard: {
+    width: 170,
     backgroundColor: "#fff",
     borderRadius: radius.lg,
     marginRight: spacing.md,
-    ...shadows.medium,
     overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  storeCardImage: {
-    width: "100%",
-    height: 100,
-    backgroundColor: "#f1f5f9",
+  trendingImage: { width: "100%", height: 110, backgroundColor: "#f1f5f9" },
+  ratingCrown: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
+  ratingCrownText: { fontSize: 12, fontWeight: "800", color: "#fbbf24" },
   storeDistanceBadge: {
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: "rgba(0,0,0,0.65)",
     paddingHorizontal: 6,
     paddingVertical: 3,
-    borderRadius: radius.sm,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     gap: 3,
   },
-  storeDistance: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#fff",
+  storeDistance: { fontSize: 10, fontWeight: "700", color: "#fff" },
+  trendingBadge: {
+    position: "absolute",
+    bottom: 60,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.brand.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
-  storeCardContent: {
-    padding: spacing.sm,
-  },
-  storeCardName: {
-    fontSize: 15,
+  trendingContent: { padding: spacing.sm },
+  trendingName: {
+    fontSize: 14,
     fontWeight: "700",
-    color: colors.text.primary,
+    color: "#0f172a",
     marginBottom: 2,
   },
-  storeCardType: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  storeCardFooter: {
+  trendingType: { fontSize: 11, color: colors.text.secondary, marginBottom: 6 },
+  trendingFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  ratingBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text.primary,
-  },
-  followersBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
+  followersBox: { flexDirection: "row", alignItems: "center", gap: 4 },
   followersText: {
     fontSize: 11,
+    fontWeight: "600",
     color: colors.text.secondary,
   },
 });
