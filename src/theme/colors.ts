@@ -7,7 +7,7 @@
 export const colors = {
   // Brand Identity — deep navy palette
   brand: {
-    primary: "#1B2E4B", // Deep Navy
+    primary: "#203659", // Deep Navy
     primaryLight: "#2C4A72", // Lighter Navy
     secondary: "#F0A050", // Warm Gold (logo accent)
     accent: "#E8734A", // Burnt Orange (logo complement)

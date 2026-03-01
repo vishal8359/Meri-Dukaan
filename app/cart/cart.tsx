@@ -1,4 +1,4 @@
-import { useApp } from "@/src/context/AppContext";
+import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
@@ -25,21 +25,17 @@ import {
     View,
 } from "react-native";
 
-// Extended cart item with booking info
-interface BookedService {
-  id: string;
-  serviceName: string;
-  storeName: string;
-  storeId: string;
-  price: number;
-  bookingDate: string;
-  bookingTime: string;
-  image?: string;
-}
-
 export default function CartScreen() {
   const router = useRouter();
-  const { cart, addToCart, removeFromCart, cartTotal } = useApp();
+  const {
+    cart,
+    addToCart,
+    removeFromCart,
+    updateCartQuantity,
+    cartTotal,
+    bookedServices,
+    cancelBooking,
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     "products",
@@ -51,44 +47,20 @@ export default function CartScreen() {
     services: boolean;
   }>({ products: true, services: true });
 
-  // Mock booked services
-  const [bookedServices, setBookedServices] = useState<BookedService[]>([
-    {
-      id: "1",
-      serviceName: "Home Delivery",
-      storeName: "Sharma Kirana",
-      storeId: "1",
-      price: 0,
-      bookingDate: "2024-02-15",
-      bookingTime: "10:00 AM",
-      image:
-        "https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=300",
-    },
-    {
-      id: "2",
-      serviceName: "Same Day Delivery",
-      storeName: "Organic Farms",
-      storeId: "2",
-      price: 50,
-      bookingDate: "2024-02-15",
-      bookingTime: "2:00 PM",
-      image:
-        "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=300",
-    },
-  ]);
-
   const updateQuantity = (item: any, increment: boolean) => {
     if (increment) {
       addToCart(item);
     } else {
-      if (item.quantity === 1) {
+      if (item.quantity > 1) {
+        updateCartQuantity(item.id, item.quantity - 1);
+      } else {
         removeFromCart(item.id);
       }
     }
   };
 
   const removeService = (serviceId: string) => {
-    setBookedServices((prev) => prev.filter((s) => s.id !== serviceId));
+    cancelBooking(serviceId);
   };
 
   const toggleCategory = (category: "products" | "services") => {

@@ -1,6 +1,7 @@
 import { AppProvider } from "@/src/context/AppContext";
 import { ReelProvider } from "@/src/context/ReelContext";
 import { Stack } from "expo-router";
+import Toast from "react-native-toast-message";
 
 export default function RootLayout() {
   return (
@@ -110,6 +111,7 @@ export default function RootLayout() {
             }}
           />
         </Stack>
+        <Toast />
       </ReelProvider>
     </AppProvider>
   );

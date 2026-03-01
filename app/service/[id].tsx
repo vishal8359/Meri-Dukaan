@@ -1,26 +1,64 @@
-import { useApp } from "@/src/context/AppContext";
+import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ChevronLeft,
-  Clock,
-  Heart,
-  MapPin,
-  Star,
-  Users,
+    Calendar,
+    Check,
+    ChevronLeft,
+    Clock,
+    Edit2,
+    Heart,
+    MapPin,
+    Star,
+    Users,
+    X,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    Modal,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+// Available time slots
+const TIME_SLOTS = [
+  "9:00 AM",
+  "10:00 AM",
+  "11:00 AM",
+  "12:00 PM",
+  "1:00 PM",
+  "2:00 PM",
+  "3:00 PM",
+  "4:00 PM",
+  "5:00 PM",
+  "6:00 PM",
+  "7:00 PM",
+  "8:00 PM",
+];
+
+// Get next 7 days for date selection
+const getNextDays = () => {
+  const days = [];
+  const today = new Date();
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    days.push({
+      date: date.toISOString().split("T")[0],
+      day: date.toLocaleDateString("en-US", { weekday: "short" }),
+      dayNum: date.getDate(),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+    });
+  }
+  return days;
+};
 
 interface Service {
   id: string;
@@ -43,8 +81,25 @@ interface Service {
 export default function ServiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useApp();
+  const {
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    bookService,
+    isServiceBooked,
+    getBookingByServiceId,
+    updateBooking,
+    cancelBooking,
+  } = useApp();
   const [mainImageIndex, setMainImageIndex] = useState(0);
+
+  // Booking modal state
+  const [bookingModalVisible, setBookingModalVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(getNextDays()[0].date);
+  const [selectedTime, setSelectedTime] = useState("10:00 AM");
+  const [isEditing, setIsEditing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const availableDays = getNextDays();
 
   // Mock service data - in production, fetch from API based on ID
   const service: Service = {
@@ -123,8 +178,60 @@ export default function ServiceDetailScreen() {
     },
   ];
 
-  const handleBookService = () => {
-    alert(`Booked: ${service.name}`);
+  // Check if current service is booked
+  const isBooked = isServiceBooked(service.id);
+  const currentBooking = getBookingByServiceId(service.id);
+
+  const openBookingModal = (editing: boolean = false) => {
+    setIsEditing(editing);
+
+    // If editing, load existing booking data
+    if (editing && currentBooking) {
+      setSelectedDate(currentBooking.bookingDate);
+      setSelectedTime(currentBooking.bookingTime);
+    } else {
+      // Reset to default values
+      setSelectedDate(getNextDays()[0].date);
+      setSelectedTime("10:00 AM");
+    }
+
+    setBookingModalVisible(true);
+  };
+
+  const handleConfirmBooking = () => {
+    if (isEditing && currentBooking) {
+      // Update existing booking
+      updateBooking(currentBooking.id, {
+        bookingDate: selectedDate,
+        bookingTime: selectedTime,
+      });
+    } else {
+      // Create new booking
+      const newBooking: BookedService = {
+        id: `booking-${Date.now()}`,
+        serviceId: service.id,
+        serviceName: service.name,
+        storeName: service.storeName || "Store",
+        storeId: service.storeId || "1",
+        price: service.price,
+        bookingDate: selectedDate,
+        bookingTime: selectedTime,
+        duration: service.duration,
+        image: service.image,
+        status: "confirmed",
+      };
+      bookService(newBooking);
+    }
+
+    setBookingModalVisible(false);
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
+  };
+
+  const handleCancelBooking = () => {
+    if (currentBooking) {
+      cancelBooking(currentBooking.id);
+    }
   };
 
   const handleWishlistToggle = () => {
@@ -409,21 +516,196 @@ export default function ServiceDetailScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <View style={styles.successMessage}>
+          <Check size={16} color={colors.status.successDark} />
+          <Text style={styles.successMessageText}>
+            Service {isEditing ? "updated" : "booked"} successfully!
+          </Text>
+        </View>
+      )}
+
       {/* Book Service Button */}
       <View style={styles.bottomButton}>
         {service.active ? (
-          <TouchableOpacity
-            style={styles.bookButton}
-            onPress={handleBookService}
-          >
-            <Text style={styles.bookButtonText}>Book Service</Text>
-          </TouchableOpacity>
+          isBooked ? (
+            <View style={styles.bookedContainer}>
+              {/* Booking Info */}
+              <View style={styles.bookingInfoCard}>
+                <View style={styles.bookingStatusRow}>
+                  <Check size={16} color={colors.status.successDark} />
+                  <Text style={styles.bookedLabel}>Booked</Text>
+                </View>
+                {currentBooking && (
+                  <View style={styles.bookingDateTimeRow}>
+                    <Calendar size={14} color={colors.brand.primary} />
+                    <Text style={styles.bookingDateText}>
+                      {new Date(currentBooking.bookingDate).toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </Text>
+                    <Clock size={14} color={colors.brand.primary} />
+                    <Text style={styles.bookingTimeText}>
+                      {currentBooking.bookingTime}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              {/* Action Buttons */}
+              <View style={styles.bookedActionsRow}>
+                <TouchableOpacity
+                  style={styles.changeBookingButton}
+                  onPress={() => openBookingModal(true)}
+                >
+                  <Edit2 size={16} color={colors.brand.primary} />
+                  <Text style={styles.changeBookingText}>Change</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.cancelBookingButton}
+                  onPress={handleCancelBooking}
+                >
+                  <X size={16} color={colors.status.error} />
+                  <Text style={styles.cancelBookingText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.bookButton}
+              onPress={() => openBookingModal(false)}
+            >
+              <Text style={styles.bookButtonText}>Book Service</Text>
+            </TouchableOpacity>
+          )
         ) : (
           <View style={styles.unavailableButton}>
             <Text style={styles.unavailableText}>Service Unavailable</Text>
           </View>
         )}
       </View>
+
+      {/* Booking Modal */}
+      <Modal
+        visible={bookingModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setBookingModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {isEditing ? "Change Booking" : "Book Service"}
+              </Text>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setBookingModalVisible(false)}
+              >
+                <X size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Service Info */}
+            <View style={styles.modalServiceInfo}>
+              <Text style={styles.modalServiceName}>{service.name}</Text>
+              <Text style={styles.modalServicePrice}>
+                {service.price > 0 ? `₹${service.price}` : "FREE"}
+              </Text>
+            </View>
+
+            <ScrollView
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Date Selection */}
+              <Text style={styles.modalSectionTitle}>Select Date</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.dateScrollView}
+              >
+                {availableDays.map((day) => (
+                  <TouchableOpacity
+                    key={day.date}
+                    style={[
+                      styles.dateCard,
+                      selectedDate === day.date && styles.dateCardSelected,
+                    ]}
+                    onPress={() => setSelectedDate(day.date)}
+                  >
+                    <Text
+                      style={[
+                        styles.dateDayText,
+                        selectedDate === day.date && styles.dateTextSelected,
+                      ]}
+                    >
+                      {day.day}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dateNumText,
+                        selectedDate === day.date && styles.dateTextSelected,
+                      ]}
+                    >
+                      {day.dayNum}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.dateMonthText,
+                        selectedDate === day.date && styles.dateTextSelected,
+                      ]}
+                    >
+                      {day.month}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              {/* Time Selection */}
+              <Text style={styles.modalSectionTitle}>Select Time</Text>
+              <View style={styles.timeGrid}>
+                {TIME_SLOTS.map((time) => (
+                  <TouchableOpacity
+                    key={time}
+                    style={[
+                      styles.timeSlot,
+                      selectedTime === time && styles.timeSlotSelected,
+                    ]}
+                    onPress={() => setSelectedTime(time)}
+                  >
+                    <Text
+                      style={[
+                        styles.timeSlotText,
+                        selectedTime === time && styles.timeSlotTextSelected,
+                      ]}
+                    >
+                      {time}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            {/* Confirm Button */}
+            <TouchableOpacity
+              style={styles.confirmBookingBtn}
+              onPress={handleConfirmBooking}
+            >
+              <Check size={20} color={colors.text.inverse} />
+              <Text style={styles.confirmBookingText}>
+                {isEditing ? "Update Booking" : "Confirm Booking"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -860,6 +1142,244 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   unavailableText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  // Success Message
+  successMessage: {
+    position: "absolute",
+    top: 100,
+    left: 20,
+    right: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.status.successLight,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    zIndex: 100,
+    ...shadows.medium,
+  },
+  successMessageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.status.successDark,
+  },
+  // Booked Container
+  bookedContainer: {
+    gap: 12,
+  },
+  bookingInfoCard: {
+    backgroundColor: colors.status.successLight,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.status.success,
+  },
+  bookingStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  bookedLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.status.successDark,
+  },
+  bookingDateTimeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  bookingDateText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.brand.primary,
+    marginRight: 8,
+  },
+  bookingTimeText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.brand.primary,
+  },
+  bookedActionsRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  changeBookingButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.tint.blueLight,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+  },
+  changeBookingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.brand.primary,
+  },
+  cancelBookingButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.status.errorLight,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.status.error,
+  },
+  cancelBookingText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.status.error,
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: colors.ui.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text.heading,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalServiceInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: colors.ui.backgroundAlt,
+  },
+  modalServiceName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  modalServicePrice: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  modalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  modalSectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.heading,
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  dateScrollView: {
+    marginBottom: 16,
+  },
+  dateCard: {
+    width: 70,
+    height: 80,
+    backgroundColor: colors.ui.backgroundAlt,
+    borderRadius: 12,
+    marginRight: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+  },
+  dateCardSelected: {
+    backgroundColor: colors.brand.primary,
+    borderColor: colors.brand.primary,
+  },
+  dateDayText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.text.secondary,
+  },
+  dateNumText: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text.primary,
+    marginVertical: 2,
+  },
+  dateMonthText: {
+    fontSize: 11,
+    fontWeight: "500",
+    color: colors.text.secondary,
+  },
+  dateTextSelected: {
+    color: colors.text.inverse,
+  },
+  timeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 20,
+  },
+  timeSlot: {
+    width: "30%",
+    paddingVertical: 12,
+    backgroundColor: colors.ui.backgroundAlt,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+  },
+  timeSlotSelected: {
+    backgroundColor: colors.brand.primary,
+    borderColor: colors.brand.primary,
+  },
+  timeSlotText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  timeSlotTextSelected: {
+    color: colors.text.inverse,
+  },
+  confirmBookingBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.brand.primary,
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  confirmBookingText: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,

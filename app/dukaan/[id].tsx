@@ -7,31 +7,31 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ChevronRight,
-  Clock,
-  Heart,
-  MapPin,
-  MessageCircle,
-  Phone,
-  Play,
-  Search,
-  Share2,
-  Star,
+    ChevronRight,
+    Clock,
+    Heart,
+    MapPin,
+    MessageCircle,
+    Phone,
+    Play,
+    Search,
+    Share2,
+    Star,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  Linking,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    Linking,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -128,6 +128,10 @@ export default function StoreDetailScreen() {
       description: "Free over ₹500",
       active: true,
       price: 0,
+      duration: "24-48 hrs",
+      image:
+        "https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=300",
+      rating: 4.8,
     },
     {
       id: "2",
@@ -135,6 +139,10 @@ export default function StoreDetailScreen() {
       description: "Order before 5 PM",
       active: true,
       price: 50,
+      duration: "4-6 hrs",
+      image:
+        "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=300",
+      rating: 4.7,
     },
     {
       id: "3",
@@ -142,6 +150,109 @@ export default function StoreDetailScreen() {
       description: "Special pricing for bulk",
       active: false,
       price: 0,
+      duration: "1-3 days",
+      image:
+        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=300",
+      rating: 4.5,
+    },
+    {
+      id: "4",
+      name: "Hair Cutting (Saloon)",
+      description: "Professional hair styling",
+      active: true,
+      price: 200,
+      duration: "30-45 min",
+      image:
+        "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=300",
+      rating: 4.9,
+    },
+    {
+      id: "5",
+      name: "Welding Services",
+      description: "Metal repairs & fabrication",
+      active: true,
+      price: 500,
+      duration: "1-2 hrs",
+      image:
+        "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=300",
+      rating: 4.6,
+    },
+    {
+      id: "6",
+      name: "Clothes Stitching",
+      description: "Custom tailoring & alterations",
+      active: true,
+      price: 300,
+      duration: "2-3 days",
+      image:
+        "https://images.unsplash.com/photo-1558171813-4c088753af8f?q=80&w=300",
+      rating: 4.7,
+    },
+    {
+      id: "7",
+      name: "Vehicle Rental",
+      description: "Bikes, scooters & cars",
+      active: true,
+      price: 150,
+      duration: "Per hour",
+      image:
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=300",
+      rating: 4.4,
+    },
+    {
+      id: "8",
+      name: "Equipment Rental",
+      description: "Tools & machinery",
+      active: true,
+      price: 100,
+      duration: "Per day",
+      image:
+        "https://images.unsplash.com/photo-1504148455328-c376907d081c?q=80&w=300",
+      rating: 4.3,
+    },
+    {
+      id: "9",
+      name: "Plumbing Services",
+      description: "Repairs & installations",
+      active: true,
+      price: 400,
+      duration: "1-2 hrs",
+      image:
+        "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?q=80&w=300",
+      rating: 4.5,
+    },
+    {
+      id: "10",
+      name: "Electrical Repairs",
+      description: "Wiring & appliance repair",
+      active: true,
+      price: 350,
+      duration: "1-3 hrs",
+      image:
+        "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=300",
+      rating: 4.6,
+    },
+    {
+      id: "11",
+      name: "Beauty Services",
+      description: "Makeup & skincare",
+      active: true,
+      price: 500,
+      duration: "1-2 hrs",
+      image:
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300",
+      rating: 4.8,
+    },
+    {
+      id: "12",
+      name: "Laundry & Dry Clean",
+      description: "Professional cleaning",
+      active: true,
+      price: 80,
+      duration: "24 hrs",
+      image:
+        "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?q=80&w=300",
+      rating: 4.4,
     },
   ];
 
@@ -473,6 +584,7 @@ export default function StoreDetailScreen() {
                 onBookService={handleBookService}
                 storeImage={storeImages[0] || ""}
                 storeName={store?.name}
+                storeId={id as string}
               />
             )}
           </View>

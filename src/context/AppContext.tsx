@@ -1,11 +1,11 @@
 // src/context/AppContext.tsx
 
 import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useMemo,
-  useState,
+    createContext,
+    ReactNode,
+    useContext,
+    useMemo,
+    useState,
 } from "react";
 import { EnhancedReel, mockReels, mockStores, Store } from "../assets/mockData";
 
@@ -24,6 +24,21 @@ interface WishlistItem {
   description?: string;
   image?: string;
   rating?: number;
+}
+
+// Booked Service interface
+export interface BookedService {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  storeName: string;
+  storeId: string;
+  price: number;
+  bookingDate: string;
+  bookingTime: string;
+  duration?: string;
+  image?: string;
+  status: "confirmed" | "pending" | "completed" | "cancelled";
 }
 
 // Re-export EnhancedReel as Reel for backward compatibility
@@ -49,6 +64,14 @@ interface AppContextType {
   removeFromWishlist: (itemId: string) => void;
   isInWishlist: (itemId: string) => boolean;
   clearWishlist: () => void;
+
+  // Booked Services Management
+  bookedServices: BookedService[];
+  bookService: (service: BookedService) => void;
+  cancelBooking: (bookingId: string) => void;
+  updateBooking: (bookingId: string, updates: Partial<BookedService>) => void;
+  isServiceBooked: (serviceId: string) => boolean;
+  getBookingByServiceId: (serviceId: string) => BookedService | undefined;
 
   // Store Management (Centralized)
   allStores: Store[];
@@ -95,6 +118,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [bookedServices, setBookedServices] = useState<BookedService[]>([]);
   const [allStores] = useState<Store[]>(mockStores);
   const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
 
@@ -169,6 +193,54 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const clearWishlist = () => {
     setWishlist([]);
+  };
+
+  // --- Booked Services Functions ---
+  const bookService = (service: BookedService) => {
+    setBookedServices((prev) => {
+      // Check if service is already booked
+      const exists = prev.find((s) => s.serviceId === service.serviceId);
+      if (exists) {
+        // Update existing booking
+        return prev.map((s) =>
+          s.serviceId === service.serviceId ? { ...s, ...service } : s,
+        );
+      }
+      return [...prev, service];
+    });
+  };
+
+  const cancelBooking = (bookingId: string) => {
+    setBookedServices((prev) =>
+      prev.filter((service) => service.id !== bookingId),
+    );
+  };
+
+  const updateBooking = (
+    bookingId: string,
+    updates: Partial<BookedService>,
+  ) => {
+    setBookedServices((prev) =>
+      prev.map((service) =>
+        service.id === bookingId ? { ...service, ...updates } : service,
+      ),
+    );
+  };
+
+  const isServiceBooked = (serviceId: string): boolean => {
+    return bookedServices.some(
+      (service) =>
+        service.serviceId === serviceId && service.status !== "cancelled",
+    );
+  };
+
+  const getBookingByServiceId = (
+    serviceId: string,
+  ): BookedService | undefined => {
+    return bookedServices.find(
+      (service) =>
+        service.serviceId === serviceId && service.status !== "cancelled",
+    );
   };
 
   // --- Store Functions (Centralized & Reusable) ---
@@ -271,6 +343,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isInWishlist,
       clearWishlist,
 
+      // Booked Services
+      bookedServices,
+      bookService,
+      cancelBooking,
+      updateBooking,
+      isServiceBooked,
+      getBookingByServiceId,
+
       // Stores
       allStores,
       getStoreById,
@@ -284,7 +364,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       toggleLikeReel,
       updateReelComments,
     }),
-    [user, cart, cartTotal, allStores, reels, wishlist],
+    [user, cart, cartTotal, allStores, reels, wishlist, bookedServices],
   );
 
   return (
