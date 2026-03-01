@@ -31,7 +31,15 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Moving Dhindora and Profile next to each other */}
+      <Tabs.Screen
+        name="mybusz"
+        options={{
+          title: "myBusz",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="bag-handle" size={24} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="dhindora"
         options={{
@@ -42,13 +50,12 @@ export default function TabLayout() {
           header: () => null, // Hide header for Dhindora screen
         }}
       />
+      {/* Profile hidden from tab bar but still accessible via drawer */}
       <Tabs.Screen
         name="profile"
         options={{
+          href: null, // Hides from tab bar
           title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Ionicons name="person" size={24} color={color} />
-          ),
         }}
       />
     </Tabs>

@@ -4,25 +4,26 @@ import { SearchResult, useDebounceSearch } from "@/src/hooks/useDebounceSearch";
 import { DrawerActions } from "@react-navigation/native";
 import { useNavigation, useRouter } from "expo-router";
 import {
-  Bell,
-  MapPin,
-  Menu,
-  Search,
-  ShoppingCart,
-  X,
+    Bell,
+    Heart,
+    MapPin,
+    Menu,
+    Search,
+    ShoppingCart,
+    X,
 } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Image,
-  Keyboard,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Image,
+    Keyboard,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, shadows, spacing } from "../../theme/colors";
@@ -31,7 +32,7 @@ export const StickyHeader = () => {
   const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { cart } = useApp();
+  const { cart, wishlist } = useApp();
 
   const {
     query,
@@ -116,6 +117,21 @@ export const StickyHeader = () => {
                 <View style={styles.cartBadge}>
                   <Text style={styles.cartBadgeText}>
                     {cartItemCount > 99 ? "99+" : cartItemCount}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Wishlist */}
+            <TouchableOpacity
+              style={styles.iconBtn}
+              onPress={() => router.push("/wishlist/wishlist" as any)}
+            >
+              <Heart size={18} color={colors.text.inverse} />
+              {wishlist.length > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {wishlist.length > 99 ? "99+" : wishlist.length}
                   </Text>
                 </View>
               )}
