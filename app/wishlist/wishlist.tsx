@@ -1,10 +1,22 @@
-// app/wishlist.tsx
-import { useApp } from "@/src/context/AppContext";
+// app/wishlist/wishlist.tsx
+import { WishlistItem, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Heart, ShoppingCart, Trash2 } from "lucide-react-native";
-import React from "react";
+import {
+    ArrowLeft,
+    Calendar,
+    Clock,
+    Heart,
+    MapPin,
+    Package,
+    ShoppingCart,
+    Star,
+    Store,
+    Trash2,
+    Wrench,
+} from "lucide-react-native";
+import React, { useMemo, useState } from "react";
 import {
     FlatList,
     Image,
@@ -14,121 +26,302 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Toast from "react-native-toast-message";
+
+type TabType = "all" | "product" | "service" | "store";
+
+const TABS: { key: TabType; label: string; icon: any }[] = [
+  { key: "all", label: "All", icon: Heart },
+  { key: "product", label: "Products", icon: Package },
+  { key: "service", label: "Services", icon: Wrench },
+  { key: "store", label: "Stores", icon: Store },
+];
 
 export default function WishlistScreen() {
   const router = useRouter();
-  const { addToCart, wishlist, removeFromWishlist } = useApp();
+  const {
+    addToCart,
+    wishlist,
+    removeFromWishlist,
+    clearWishlist,
+    getWishlistByType,
+  } = useApp();
+  const [activeTab, setActiveTab] = useState<TabType>("all");
 
-  const handleAddToCart = (item: any) => {
-    if (item.inStock !== false) {
-      addToCart({
-        id: item.id,
-        name: item.name,
-        price: item.price,
-      });
-      // Show success feedback (you can add toast/snackbar here)
-    }
+  const filteredItems = useMemo(() => {
+    if (activeTab === "all") return wishlist;
+    return getWishlistByType(activeTab);
+  }, [wishlist, activeTab, getWishlistByType]);
+
+  const tabCounts = useMemo(
+    () => ({
+      all: wishlist.length,
+      product: getWishlistByType("product").length,
+      service: getWishlistByType("service").length,
+      store: getWishlistByType("store").length,
+    }),
+    [wishlist, getWishlistByType],
+  );
+
+  const handleAddToCart = (item: WishlistItem) => {
+    if (item.type === "store") return;
+    addToCart({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+    });
+    Toast.show({
+      type: "success",
+      text1: "Added to cart",
+      text2: `${item.name} added successfully!`,
+      visibilityTime: 2000,
+      position: "top",
+    });
   };
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dukaan/${storeId}`);
   };
 
-  const WishlistCard = ({ item }: { item: any }) => {
-    const discount = item.originalPrice
-      ? Math.round(
-          ((item.originalPrice - item.price) / item.originalPrice) * 100,
-        )
-      : 0;
+  const navigateToProduct = (productId: string) => {
+    router.push({
+      pathname: "/product/[id]",
+      params: { id: productId },
+    } as any);
+  };
 
-    return (
-      <View style={styles.card}>
-        <TouchableOpacity
-          style={styles.cardContent}
-          onPress={() => item.storeId && navigateToStore(item.storeId)}
-          activeOpacity={0.7}
-        >
-          {/* Image Section */}
-          <View style={styles.imageContainer}>
-            {item.image && (
-              <Image source={{ uri: item.image }} style={styles.image} />
-            )}
-            {!item.inStock && (
-              <View style={styles.outOfStockOverlay}>
-                <Text style={styles.outOfStockText}>Out of Stock</Text>
-              </View>
-            )}
-            {discount > 0 && (
-              <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>{discount}% OFF</Text>
-              </View>
-            )}
+  const navigateToService = (serviceId: string) => {
+    router.push({
+      pathname: "/service/[id]",
+      params: { id: serviceId },
+    } as any);
+  };
+
+  const handleItemPress = (item: WishlistItem) => {
+    if (item.type === "store" && item.storeId) {
+      navigateToStore(item.storeId);
+    } else if (item.type === "product") {
+      navigateToProduct(item.id);
+    } else if (item.type === "service") {
+      navigateToService(item.id);
+    }
+  };
+
+  // --- Product Card ---
+  const ProductCard = ({ item }: { item: WishlistItem }) => (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardContent}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.imageContainer}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Package size={32} color={colors.ui.muted} />
+            </View>
+          )}
+          <View style={styles.typeBadge}>
+            <Text style={styles.typeBadgeText}>Product</Text>
           </View>
+        </View>
 
-          {/* Info Section */}
-          <View style={styles.infoSection}>
-            <Text style={styles.itemName} numberOfLines={2}>
+        <View style={styles.infoSection}>
+          <Text style={styles.itemName} numberOfLines={2}>
+            {item.name}
+          </Text>
+
+          {item.storeName && (
+            <TouchableOpacity
+              onPress={() => item.storeId && navigateToStore(item.storeId)}
+            >
+              <Text style={styles.storeName}>{item.storeName}</Text>
+            </TouchableOpacity>
+          )}
+
+          {item.rating !== undefined && item.rating > 0 && (
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={14} color={colors.brand.star} />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+              {item.category && (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{item.category}</Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          <Text style={styles.price}>₹{item.price}</Text>
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={styles.cartButton}
+          onPress={() => handleAddToCart(item)}
+        >
+          <ShoppingCart size={16} color={colors.text.inverse} />
+          <Text style={styles.cartButtonText}>Add to Cart</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => removeFromWishlist(item.id)}
+        >
+          <Trash2 size={18} color={colors.status.error} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // --- Service Card ---
+  const ServiceCard = ({ item }: { item: WishlistItem }) => (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.cardContent}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.imageContainer}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.image} />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Wrench size={32} color={colors.ui.muted} />
+            </View>
+          )}
+          <View style={[styles.typeBadge, styles.serviceBadge]}>
+            <Text style={styles.typeBadgeText}>Service</Text>
+          </View>
+        </View>
+
+        <View style={styles.infoSection}>
+          <Text style={styles.itemName} numberOfLines={2}>
+            {item.name}
+          </Text>
+
+          {item.storeName && (
+            <TouchableOpacity
+              onPress={() => item.storeId && navigateToStore(item.storeId)}
+            >
+              <Text style={styles.storeName}>{item.storeName}</Text>
+            </TouchableOpacity>
+          )}
+
+          {item.duration && (
+            <View style={styles.durationRow}>
+              <Clock size={12} color={colors.text.secondary} />
+              <Text style={styles.durationText}>{item.duration}</Text>
+            </View>
+          )}
+
+          {item.rating !== undefined && item.rating > 0 && (
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={14} color={colors.brand.star} />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+            </View>
+          )}
+
+          <Text style={styles.price}>₹{item.price}</Text>
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.cartButton, styles.bookButton]}
+          onPress={() => handleItemPress(item)}
+        >
+          <Calendar size={16} color={colors.text.inverse} />
+          <Text style={styles.cartButtonText}>Book Now</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => removeFromWishlist(item.id)}
+        >
+          <Trash2 size={18} color={colors.status.error} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // --- Store Card ---
+  const StoreCard = ({ item }: { item: WishlistItem }) => (
+    <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.storeCardContent}
+        onPress={() => handleItemPress(item)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.storeImageContainer}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={styles.storeImage} />
+          ) : (
+            <View style={styles.storePlaceholder}>
+              <Store size={40} color={colors.ui.muted} />
+            </View>
+          )}
+          <View style={styles.storeOverlay} />
+          <View style={styles.storeCardOverlayContent}>
+            <Text style={styles.storeCardName} numberOfLines={1}>
               {item.name}
             </Text>
-
-            {item.storeName && (
-              <TouchableOpacity
-                onPress={() => item.storeId && navigateToStore(item.storeId)}
-              >
-                <Text style={styles.storeName}>{item.storeName}</Text>
-              </TouchableOpacity>
-            )}
-
-            {item.rating && (
-              <View style={styles.ratingRow}>
-                <Ionicons name="star" size={14} color={colors.brand.star} />
-                <Text style={styles.ratingText}>{item.rating}</Text>
-                {item.category && (
-                  <View style={styles.categoryBadge}>
-                    <Text style={styles.categoryText}>{item.category}</Text>
-                  </View>
-                )}
+            {item.storeType && (
+              <View style={styles.storeTypeBadge}>
+                <Text style={styles.storeTypeText}>{item.storeType}</Text>
               </View>
             )}
-
-            <View style={styles.priceRow}>
-              <View>
-                <Text style={styles.price}>₹{item.price}</Text>
-                {item.originalPrice && (
-                  <Text style={styles.originalPrice}>
-                    ₹{item.originalPrice}
-                  </Text>
-                )}
-              </View>
-            </View>
           </View>
-        </TouchableOpacity>
-
-        {/* Action Buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[
-              styles.cartButton,
-              item.inStock === false && styles.disabledButton,
-            ]}
-            onPress={() => handleAddToCart(item)}
-            disabled={item.inStock === false}
-          >
-            <ShoppingCart size={16} color={colors.text.inverse} />
-            <Text style={styles.cartButtonText}>
-              {item.inStock !== false ? "Add to Cart" : "Out of Stock"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => removeFromWishlist(item.id)}
-          >
-            <Trash2 size={18} color={colors.status.error} />
-          </TouchableOpacity>
         </View>
+
+        <View style={styles.storeInfoRow}>
+          {item.rating !== undefined && item.rating > 0 && (
+            <View style={styles.storeInfoItem}>
+              <Star
+                size={14}
+                color={colors.brand.star}
+                fill={colors.brand.star}
+              />
+              <Text style={styles.storeInfoText}>{item.rating}</Text>
+            </View>
+          )}
+          {item.distance && (
+            <View style={styles.storeInfoItem}>
+              <MapPin size={14} color={colors.text.secondary} />
+              <Text style={styles.storeInfoText}>{item.distance}</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+
+      <View style={styles.actionRow}>
+        <TouchableOpacity
+          style={[styles.cartButton, styles.visitStoreButton]}
+          onPress={() => handleItemPress(item)}
+        >
+          <Store size={16} color={colors.text.inverse} />
+          <Text style={styles.cartButtonText}>Visit Store</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => removeFromWishlist(item.id)}
+        >
+          <Trash2 size={18} color={colors.status.error} />
+        </TouchableOpacity>
       </View>
-    );
+    </View>
+  );
+
+  const renderItem = ({ item }: { item: WishlistItem }) => {
+    switch (item.type) {
+      case "store":
+        return <StoreCard item={item} />;
+      case "service":
+        return <ServiceCard item={item} />;
+      case "product":
+      default:
+        return <ProductCard item={item} />;
+    }
   };
 
   return (
@@ -152,13 +345,51 @@ export default function WishlistScreen() {
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Tab Selector */}
+      <View style={styles.tabContainer}>
+        {TABS.map((tab) => {
+          const isActive = activeTab === tab.key;
+          const TabIcon = tab.icon;
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tab, isActive && styles.tabActive]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <TabIcon
+                size={16}
+                color={isActive ? colors.brand.primary : colors.text.secondary}
+              />
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                {tab.label}
+              </Text>
+              {tabCounts[tab.key] > 0 && (
+                <View
+                  style={[styles.tabCount, isActive && styles.tabCountActive]}
+                >
+                  <Text
+                    style={[
+                      styles.tabCountText,
+                      isActive && styles.tabCountTextActive,
+                    ]}
+                  >
+                    {tabCounts[tab.key]}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {/* Stats Bar */}
       <View style={styles.statsBar}>
         <Text style={styles.statsText}>
-          {wishlist.length} {wishlist.length === 1 ? "item" : "items"} saved
+          {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}{" "}
+          saved
         </Text>
         {wishlist.length > 0 && (
-          <TouchableOpacity>
+          <TouchableOpacity onPress={clearWishlist}>
             <Text style={styles.clearAllText}>Clear All</Text>
           </TouchableOpacity>
         )}
@@ -166,23 +397,31 @@ export default function WishlistScreen() {
 
       {/* Wishlist Items */}
       <FlatList
-        data={wishlist}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <WishlistCard item={item} />}
+        data={filteredItems}
+        keyExtractor={(item) => `${item.type}-${item.id}`}
+        renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Heart size={64} color={colors.ui.disabled} />
-            <Text style={styles.emptyText}>Your wishlist is empty</Text>
+            <Text style={styles.emptyText}>
+              {activeTab === "all"
+                ? "Your wishlist is empty"
+                : `No saved ${activeTab === "product" ? "products" : activeTab === "service" ? "services" : "stores"}`}
+            </Text>
             <Text style={styles.emptySubtext}>
-              Save items you love to buy them later
+              {activeTab === "store"
+                ? "Save stores you love to visit them later"
+                : activeTab === "service"
+                  ? "Save services you want to book later"
+                  : "Save items you love to buy them later"}
             </Text>
             <TouchableOpacity
               style={styles.shopButton}
               onPress={() => router.push("/(drawer)/(tabs)/bazar")}
             >
-              <Text style={styles.shopButtonText}>Start Shopping</Text>
+              <Text style={styles.shopButtonText}>Start Exploring</Text>
             </TouchableOpacity>
           </View>
         }
@@ -219,6 +458,64 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.text.primary,
   },
+
+  // Tabs
+  tabContainer: {
+    flexDirection: "row",
+    backgroundColor: colors.ui.surface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    gap: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.borderLight,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.backgroundAlt,
+  },
+  tabActive: {
+    backgroundColor: colors.tint.blueLight,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+  tabTextActive: {
+    color: colors.brand.primary,
+    fontWeight: "700",
+  },
+  tabCount: {
+    backgroundColor: colors.ui.muted,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  tabCountActive: {
+    backgroundColor: colors.brand.primary,
+  },
+  tabCountText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  tabCountTextActive: {
+    color: colors.text.inverse,
+  },
+
+  // Stats
   statsBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -239,10 +536,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.status.error,
   },
+
+  // List
   listContent: {
     padding: spacing.md,
     paddingBottom: 100,
   },
+
+  // Common Card
   card: {
     backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
@@ -268,34 +569,29 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  outOfStockOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
+  placeholderImage: {
+    width: "100%",
+    height: "100%",
     justifyContent: "center",
     alignItems: "center",
   },
-  outOfStockText: {
-    color: colors.text.inverse,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  discountBadge: {
+  typeBadge: {
     position: "absolute",
     top: 6,
-    right: 6,
-    backgroundColor: colors.status.success,
+    left: 6,
+    backgroundColor: colors.brand.primary,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  discountText: {
+  serviceBadge: {
+    backgroundColor: colors.tint.purple,
+  },
+  typeBadgeText: {
     color: colors.text.inverse,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "800",
+    textTransform: "uppercase",
   },
   infoSection: {
     flex: 1,
@@ -318,7 +614,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   ratingText: {
     fontSize: 12,
@@ -337,23 +633,24 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text.secondary,
   },
-  priceRow: {
+  durationRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 6,
+  },
+  durationText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: colors.text.secondary,
   },
   price: {
     fontSize: 18,
     fontWeight: "800",
     color: colors.text.primary,
   },
-  originalPrice: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.secondary,
-    textDecorationLine: "line-through",
-    marginTop: 2,
-  },
+
+  // Action Row
   actionRow: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -370,8 +667,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
   },
-  disabledButton: {
-    backgroundColor: colors.ui.disabled,
+  bookButton: {
+    backgroundColor: colors.tint.purple,
+  },
+  visitStoreButton: {
+    backgroundColor: colors.status.info,
   },
   cartButtonText: {
     fontSize: 14,
@@ -388,6 +688,77 @@ const styles = StyleSheet.create({
     borderColor: colors.status.errorBorder,
     backgroundColor: colors.status.errorLight,
   },
+
+  // Store Card
+  storeCardContent: {
+    overflow: "hidden",
+  },
+  storeImageContainer: {
+    width: "100%",
+    height: 140,
+    backgroundColor: colors.ui.backgroundAlt,
+    position: "relative",
+  },
+  storeImage: {
+    width: "100%",
+    height: "100%",
+  },
+  storePlaceholder: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  storeOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  storeCardOverlayContent: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    right: 12,
+  },
+  storeCardName: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text.inverse,
+    marginBottom: 4,
+  },
+  storeTypeBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255,255,255,0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  storeTypeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  storeInfoRow: {
+    flexDirection: "row",
+    gap: 16,
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  storeInfoItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  storeInfoText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+
+  // Empty
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
@@ -405,6 +776,8 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.xs,
     marginBottom: spacing.xl,
+    textAlign: "center",
+    paddingHorizontal: spacing.xl,
   },
   shopButton: {
     backgroundColor: colors.brand.primary,

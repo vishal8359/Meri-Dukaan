@@ -2,25 +2,25 @@ import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  Check,
-  ChevronLeft,
-  Heart,
-  Minus,
-  Plus,
-  Share2,
-  ShoppingCart,
-  Star,
+    Check,
+    ChevronLeft,
+    Heart,
+    Minus,
+    Plus,
+    Share2,
+    ShoppingCart,
+    Star,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -205,13 +205,15 @@ export default function ProductDetailScreen() {
   }, [quantity]);
 
   const toggleWishlist = useCallback(() => {
-    if (isInWishlist(product.id)) {
-      removeFromWishlist(product.id);
+    const wishlistId = `product-${product.id}`;
+    if (isInWishlist(wishlistId)) {
+      removeFromWishlist(wishlistId);
     } else {
       addToWishlist({
-        id: product.id,
+        id: wishlistId,
         name: product.name,
         price: product.price,
+        type: "product",
         image: product.image,
         description: product.description,
         rating: product.rating,
@@ -396,18 +398,23 @@ export default function ProductDetailScreen() {
             <TouchableOpacity
               style={[
                 styles.wishlistButton,
-                isInWishlist(product.id) && styles.wishlistButtonActive,
+                isInWishlist(`product-${product.id}`) &&
+                  styles.wishlistButtonActive,
               ]}
               onPress={toggleWishlist}
             >
               <Heart
                 size={20}
                 color={
-                  isInWishlist(product.id)
+                  isInWishlist(`product-${product.id}`)
                     ? colors.status.error
                     : colors.brand.primary
                 }
-                fill={isInWishlist(product.id) ? colors.status.error : "none"}
+                fill={
+                  isInWishlist(`product-${product.id}`)
+                    ? colors.status.error
+                    : "none"
+                }
               />
             </TouchableOpacity>
           </View>

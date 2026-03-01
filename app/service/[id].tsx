@@ -235,13 +235,15 @@ export default function ServiceDetailScreen() {
   };
 
   const handleWishlistToggle = () => {
-    if (isInWishlist(service.id)) {
-      removeFromWishlist(service.id);
+    const wishlistId = `service-${service.id}`;
+    if (isInWishlist(wishlistId)) {
+      removeFromWishlist(wishlistId);
     } else {
       addToWishlist({
-        id: service.id,
+        id: wishlistId,
         name: service.name,
         price: service.price,
+        type: "service",
         description: service.description,
         image: service.image,
         rating: service.rating,
@@ -382,11 +384,15 @@ export default function ServiceDetailScreen() {
               <Heart
                 size={20}
                 color={
-                  isInWishlist(service.id)
+                  isInWishlist(`service-${service.id}`)
                     ? colors.status.error
                     : colors.brand.primary
                 }
-                fill={isInWishlist(service.id) ? colors.status.error : "none"}
+                fill={
+                  isInWishlist(`service-${service.id}`)
+                    ? colors.status.error
+                    : "none"
+                }
               />
             </TouchableOpacity>
           </View>

@@ -32,7 +32,7 @@ import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout } = useApp();
+  const { user, logout, wishlist } = useApp();
 
   // Sub-component for Info Rows
   const InfoRow = ({ icon: Icon, label, value }: any) => (
@@ -118,7 +118,7 @@ export default function ProfileScreen() {
         />
         <EnhancedStatBox
           icon={Heart}
-          number="8"
+          number={String(wishlist.length)}
           label="Wishlist"
           color="#ef4444"
         />

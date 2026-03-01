@@ -203,16 +203,21 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     (service: Service, e: any) => {
       e.stopPropagation();
 
-      if (isInWishlist(service.id)) {
-        removeFromWishlist(service.id);
+      const wishlistId = `service-${service.id}`;
+      if (isInWishlist(wishlistId)) {
+        removeFromWishlist(wishlistId);
       } else {
         addToWishlist({
-          id: service.id,
+          id: wishlistId,
           name: service.name,
           price: service.price,
+          type: "service",
           description: service.description,
           image: service.image,
           rating: service.rating,
+          storeName: storeName,
+          storeId: storeId,
+          duration: service.duration,
         });
       }
     },
@@ -276,11 +281,15 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                 <Heart
                   size={20}
                   color={
-                    isInWishlist(item.id)
+                    isInWishlist(`service-${item.id}`)
                       ? colors.status.error
                       : colors.ui.muted
                   }
-                  fill={isInWishlist(item.id) ? colors.status.error : "none"}
+                  fill={
+                    isInWishlist(`service-${item.id}`)
+                      ? colors.status.error
+                      : "none"
+                  }
                 />
               </TouchableOpacity>
               <View

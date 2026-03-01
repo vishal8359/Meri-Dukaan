@@ -1,34 +1,34 @@
 // app/category/[id].tsx
 import {
-    mockProducts,
-    Product,
-    PRODUCT_CATEGORIES,
+  mockProducts,
+  Product,
+  PRODUCT_CATEGORIES,
 } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Grid2x2,
-    Heart,
-    List,
-    MapPin,
-    Search,
-    ShoppingCart,
-    SortAsc,
-    Star,
-    X
+  ArrowLeft,
+  Grid2x2,
+  Heart,
+  List,
+  MapPin,
+  Search,
+  ShoppingCart,
+  SortAsc,
+  Star,
+  X,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -122,13 +122,15 @@ export default function CategoryProductsScreen() {
 
   const toggleWishlist = useCallback(
     (product: Product) => {
-      if (isInWishlist(product.id)) {
-        removeFromWishlist(product.id);
+      const wishlistId = `product-${product.id}`;
+      if (isInWishlist(wishlistId)) {
+        removeFromWishlist(wishlistId);
       } else {
         addToWishlist({
-          id: product.id,
+          id: wishlistId,
           name: product.name,
           price: product.price,
+          type: "product",
           image: product.image,
           rating: product.rating,
         });
@@ -172,7 +174,7 @@ export default function CategoryProductsScreen() {
   };
 
   const ProductGridCard = ({ item }: { item: Product }) => {
-    const wishlisted = isInWishlist(item.id);
+    const wishlisted = isInWishlist(`product-${item.id}`);
     return (
       <TouchableOpacity
         style={styles.gridCard}
@@ -237,7 +239,7 @@ export default function CategoryProductsScreen() {
   };
 
   const ProductListCard = ({ item }: { item: Product }) => {
-    const wishlisted = isInWishlist(item.id);
+    const wishlisted = isInWishlist(`product-${item.id}`);
     return (
       <TouchableOpacity
         style={styles.listCard}

@@ -17,13 +17,20 @@ interface CartItem {
   quantity: number;
 }
 
-interface WishlistItem {
+export interface WishlistItem {
   id: string;
   name: string;
   price: number;
+  type: "product" | "service" | "store";
   description?: string;
   image?: string;
   rating?: number;
+  storeName?: string;
+  storeId?: string;
+  category?: string;
+  storeType?: string;
+  distance?: string;
+  duration?: string;
 }
 
 // Booked Service interface
@@ -64,6 +71,8 @@ interface AppContextType {
   removeFromWishlist: (itemId: string) => void;
   isInWishlist: (itemId: string) => boolean;
   clearWishlist: () => void;
+  toggleWishlistItem: (item: WishlistItem) => void;
+  getWishlistByType: (type: "product" | "service" | "store") => WishlistItem[];
 
   // Booked Services Management
   bookedServices: BookedService[];
@@ -95,15 +104,6 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
-}
-
-interface WishlistItem {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  image?: string;
-  rating?: number;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -193,6 +193,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const clearWishlist = () => {
     setWishlist([]);
+  };
+
+  const toggleWishlistItem = (item: WishlistItem) => {
+    if (isInWishlist(item.id)) {
+      removeFromWishlist(item.id);
+    } else {
+      addToWishlist(item);
+    }
+  };
+
+  const getWishlistByType = (
+    type: "product" | "service" | "store",
+  ): WishlistItem[] => {
+    return wishlist.filter((item) => item.type === type);
   };
 
   // --- Booked Services Functions ---
@@ -342,6 +356,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       removeFromWishlist,
       isInWishlist,
       clearWishlist,
+      toggleWishlistItem,
+      getWishlistByType,
 
       // Booked Services
       bookedServices,

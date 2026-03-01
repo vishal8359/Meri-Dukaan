@@ -1,7 +1,14 @@
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
-import { Minus, Plus, Search, ShoppingCart, Star } from "lucide-react-native";
+import {
+  Heart,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  Star,
+} from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
 import {
   FlatList,
@@ -43,7 +50,15 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   storeName = "Store",
 }) => {
   const router = useRouter();
-  const { addToCart, cart, updateCartQuantity, removeFromCart } = useApp();
+  const {
+    addToCart,
+    cart,
+    updateCartQuantity,
+    removeFromCart,
+    isInWishlist,
+    addToWishlist,
+    removeFromWishlist,
+  } = useApp();
   const [localSearchQuery, setLocalSearchQuery] = React.useState("");
   const searchQuery = externalSearchQuery || localSearchQuery;
 
@@ -96,6 +111,27 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       });
     },
     [storeId, addToCart, storeName],
+  );
+
+  const handleWishlistToggle = useCallback(
+    (product: Product) => {
+      const wishlistId = `product-${product.id}`;
+      if (isInWishlist(wishlistId)) {
+        removeFromWishlist(wishlistId);
+      } else {
+        addToWishlist({
+          id: wishlistId,
+          name: product.name,
+          price: product.price,
+          type: "product",
+          image: product.image,
+          storeName: storeName,
+          storeId: storeId,
+          category: product.category,
+        });
+      }
+    },
+    [isInWishlist, addToWishlist, removeFromWishlist, storeId, storeName],
   );
 
   const handleIncreaseQuantity = useCallback(
@@ -171,24 +207,44 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               <Text style={styles.productName} numberOfLines={1}>
                 {item.name}
               </Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  item.status === "active"
-                    ? styles.badgeSuccess
-                    : styles.badgeError,
-                ]}
-              >
-                <Text
+              <View style={styles.productHeaderRight}>
+                <View
                   style={[
-                    styles.statusText,
+                    styles.statusBadge,
                     item.status === "active"
-                      ? styles.textSuccess
-                      : styles.textError,
+                      ? styles.badgeSuccess
+                      : styles.badgeError,
                   ]}
                 >
-                  {item.status === "active" ? "✓ In Stock" : "Out of Stock"}
-                </Text>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      item.status === "active"
+                        ? styles.textSuccess
+                        : styles.textError,
+                    ]}
+                  >
+                    {item.status === "active" ? "✓ In Stock" : "Out of Stock"}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.wishlistBtn}
+                  onPress={() => handleWishlistToggle(item)}
+                >
+                  <Heart
+                    size={18}
+                    color={
+                      isInWishlist(`product-${item.id}`)
+                        ? colors.status.error
+                        : colors.ui.muted
+                    }
+                    fill={
+                      isInWishlist(`product-${item.id}`)
+                        ? colors.status.error
+                        : "none"
+                    }
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -417,6 +473,14 @@ const styles = StyleSheet.create({
     color: colors.text.heading,
     flex: 1,
     marginRight: 8,
+  },
+  productHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  wishlistBtn: {
+    padding: 4,
   },
   statusBadge: {
     paddingHorizontal: 6,

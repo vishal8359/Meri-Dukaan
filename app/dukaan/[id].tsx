@@ -43,7 +43,13 @@ const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { getStoreById, reels } = useApp();
+  const {
+    getStoreById,
+    reels,
+    isInWishlist,
+    addToWishlist,
+    removeFromWishlist,
+  } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
 
@@ -57,9 +63,9 @@ export default function StoreDetailScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
 
   const store = getStoreById(id as string);
+  const isSaved = store ? isInWishlist(`store-${store.id}`) : false;
   const storeImages =
     store?.images && store.images.length > 0
       ? store.images
@@ -269,7 +275,23 @@ export default function StoreDetailScreen() {
   };
 
   const handleSave = () => {
-    setIsSaved(!isSaved);
+    if (!store) return;
+    const wishlistId = `store-${store.id}`;
+    if (isInWishlist(wishlistId)) {
+      removeFromWishlist(wishlistId);
+    } else {
+      addToWishlist({
+        id: wishlistId,
+        name: store.name,
+        price: 0,
+        type: "store",
+        image: store.image,
+        rating: store.rating,
+        storeType: store.type,
+        distance: store.distance,
+        storeId: store.id,
+      });
+    }
   };
 
   const handleShare = async () => {
