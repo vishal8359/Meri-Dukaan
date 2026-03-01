@@ -31,6 +31,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -125,6 +126,13 @@ export default function CategoryProductsScreen() {
       const wishlistId = `product-${product.id}`;
       if (isInWishlist(wishlistId)) {
         removeFromWishlist(wishlistId);
+        Toast.show({
+          type: "info",
+          text1: "Removed from wishlist",
+          text2: `${product.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
       } else {
         addToWishlist({
           id: wishlistId,
@@ -133,6 +141,13 @@ export default function CategoryProductsScreen() {
           type: "product",
           image: product.image,
           rating: product.rating,
+        });
+        Toast.show({
+          type: "success",
+          text1: "Added to wishlist",
+          text2: `${product.name} saved!`,
+          visibilityTime: 1500,
+          position: "top",
         });
       }
     },

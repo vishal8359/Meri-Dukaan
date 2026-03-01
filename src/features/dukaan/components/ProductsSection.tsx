@@ -118,6 +118,13 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       const wishlistId = `product-${product.id}`;
       if (isInWishlist(wishlistId)) {
         removeFromWishlist(wishlistId);
+        Toast.show({
+          type: "info",
+          text1: "Removed from wishlist",
+          text2: `${product.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
       } else {
         addToWishlist({
           id: wishlistId,
@@ -128,6 +135,13 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
           storeName: storeName,
           storeId: storeId,
           category: product.category,
+        });
+        Toast.show({
+          type: "success",
+          text1: "Added to wishlist",
+          text2: `${product.name} saved!`,
+          visibilityTime: 1500,
+          position: "top",
         });
       }
     },
@@ -151,6 +165,13 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         updateCartQuantity(cartItemId, currentQty - 1);
       } else {
         removeFromCart(cartItemId);
+        Toast.show({
+          type: "info",
+          text1: "Removed from cart",
+          text2: `${product.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
       }
     },
     [storeId, getCartQuantity, updateCartQuantity, removeFromCart],

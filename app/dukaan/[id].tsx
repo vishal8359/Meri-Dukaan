@@ -34,6 +34,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -279,6 +280,13 @@ export default function StoreDetailScreen() {
     const wishlistId = `store-${store.id}`;
     if (isInWishlist(wishlistId)) {
       removeFromWishlist(wishlistId);
+      Toast.show({
+        type: "info",
+        text1: "Removed from wishlist",
+        text2: `${store.name} unsaved`,
+        visibilityTime: 1500,
+        position: "top",
+      });
     } else {
       addToWishlist({
         id: wishlistId,
@@ -290,6 +298,13 @@ export default function StoreDetailScreen() {
         storeType: store.type,
         distance: store.distance,
         storeId: store.id,
+      });
+      Toast.show({
+        type: "success",
+        text1: "Store saved",
+        text2: `${store.name} added to wishlist!`,
+        visibilityTime: 1500,
+        position: "top",
       });
     }
   };

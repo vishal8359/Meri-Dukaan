@@ -23,6 +23,7 @@ import {
     View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 interface Product {
   id: string;
@@ -208,6 +209,13 @@ export default function ProductDetailScreen() {
     const wishlistId = `product-${product.id}`;
     if (isInWishlist(wishlistId)) {
       removeFromWishlist(wishlistId);
+      Toast.show({
+        type: "info",
+        text1: "Removed from wishlist",
+        text2: `${product.name} removed`,
+        visibilityTime: 1500,
+        position: "top",
+      });
     } else {
       addToWishlist({
         id: wishlistId,
@@ -217,6 +225,13 @@ export default function ProductDetailScreen() {
         image: product.image,
         description: product.description,
         rating: product.rating,
+      });
+      Toast.show({
+        type: "success",
+        text1: "Added to wishlist",
+        text2: `${product.name} saved!`,
+        visibilityTime: 1500,
+        position: "top",
       });
     }
   }, [

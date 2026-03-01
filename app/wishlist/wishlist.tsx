@@ -167,7 +167,16 @@ export default function WishlistScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => removeFromWishlist(item.id)}
+          onPress={() => {
+            removeFromWishlist(item.id);
+            Toast.show({
+              type: "info",
+              text1: "Removed from wishlist",
+              text2: `${item.name} removed`,
+              visibilityTime: 1500,
+              position: "top",
+            });
+          }}
         >
           <Trash2 size={18} color={colors.status.error} />
         </TouchableOpacity>
@@ -237,7 +246,16 @@ export default function WishlistScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => removeFromWishlist(item.id)}
+          onPress={() => {
+            removeFromWishlist(item.id);
+            Toast.show({
+              type: "info",
+              text1: "Removed from wishlist",
+              text2: `${item.name} removed`,
+              visibilityTime: 1500,
+              position: "top",
+            });
+          }}
         >
           <Trash2 size={18} color={colors.status.error} />
         </TouchableOpacity>
@@ -304,7 +322,16 @@ export default function WishlistScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => removeFromWishlist(item.id)}
+          onPress={() => {
+            removeFromWishlist(item.id);
+            Toast.show({
+              type: "info",
+              text1: "Removed from wishlist",
+              text2: `${item.name} removed`,
+              visibilityTime: 1500,
+              position: "top",
+            });
+          }}
         >
           <Trash2 size={18} color={colors.status.error} />
         </TouchableOpacity>
@@ -389,7 +416,18 @@ export default function WishlistScreen() {
           saved
         </Text>
         {wishlist.length > 0 && (
-          <TouchableOpacity onPress={clearWishlist}>
+          <TouchableOpacity
+            onPress={() => {
+              clearWishlist();
+              Toast.show({
+                type: "info",
+                text1: "Wishlist cleared",
+                text2: "All items removed from wishlist",
+                visibilityTime: 1500,
+                position: "top",
+              });
+            }}
+          >
             <Text style={styles.clearAllText}>Clear All</Text>
           </TouchableOpacity>
         )}

@@ -206,6 +206,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
       const wishlistId = `service-${service.id}`;
       if (isInWishlist(wishlistId)) {
         removeFromWishlist(wishlistId);
+        Toast.show({
+          type: "info",
+          text1: "Removed from wishlist",
+          text2: `${service.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
       } else {
         addToWishlist({
           id: wishlistId,
@@ -218,6 +225,13 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
           storeName: storeName,
           storeId: storeId,
           duration: service.duration,
+        });
+        Toast.show({
+          type: "success",
+          text1: "Added to wishlist",
+          text2: `${service.name} saved!`,
+          visibilityTime: 1500,
+          position: "top",
         });
       }
     },

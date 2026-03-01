@@ -24,6 +24,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
 export default function CartScreen() {
   const router = useRouter();
@@ -55,12 +56,26 @@ export default function CartScreen() {
         updateCartQuantity(item.id, item.quantity - 1);
       } else {
         removeFromCart(item.id);
+        Toast.show({
+          type: "info",
+          text1: "Removed from cart",
+          text2: `${item.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
       }
     }
   };
 
   const removeService = (serviceId: string) => {
     cancelBooking(serviceId);
+    Toast.show({
+      type: "info",
+      text1: "Service removed",
+      text2: "Booking cancelled",
+      visibilityTime: 1500,
+      position: "top",
+    });
   };
 
   const toggleCategory = (category: "products" | "services") => {
@@ -130,7 +145,16 @@ export default function CartScreen() {
 
             <TouchableOpacity
               style={styles.deleteBtn}
-              onPress={() => removeFromCart(item.id)}
+              onPress={() => {
+                removeFromCart(item.id);
+                Toast.show({
+                  type: "info",
+                  text1: "Removed from cart",
+                  text2: `${item.name} removed`,
+                  visibilityTime: 1500,
+                  position: "top",
+                });
+              }}
             >
               <Trash2 size={18} color={colors.status.error} />
             </TouchableOpacity>
