@@ -12,13 +12,15 @@ import {
     Heart,
     List,
     MapPin,
+    Minus,
+    Plus,
     Search,
     ShoppingCart,
     SortAsc,
     Star,
     X,
 } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import {
     Dimensions,
     FlatList,
@@ -42,10 +44,250 @@ type SortOption =
   | "rating"
   | "distance";
 
+// ── Memoized sub-components (outside parent to avoid re-creation) ──
+
+const CategoryChipItem = memo(
+  ({
+    item,
+    isSelected,
+    onPress,
+  }: {
+    item: (typeof PRODUCT_CATEGORIES)[0];
+    isSelected: boolean;
+    onPress: (id: string) => void;
+  }) => (
+    <TouchableOpacity
+      style={[
+        styles.categoryChip,
+        isSelected && {
+          backgroundColor: item.color,
+          borderColor: item.color,
+        },
+      ]}
+      onPress={() => onPress(item.id)}
+    >
+      <Text style={styles.categoryChipEmoji}>{item.icon}</Text>
+      <Text
+        style={[
+          styles.categoryChipText,
+          isSelected && { color: "#fff", fontWeight: "800" },
+        ]}
+      >
+        {item.name}
+      </Text>
+    </TouchableOpacity>
+  ),
+);
+
+const ProductGridCardItem = memo(
+  ({
+    item,
+    wishlisted,
+    cartQty,
+    onPress,
+    onToggleWishlist,
+    onAddToCart,
+    onIncrease,
+    onDecrease,
+  }: {
+    item: Product;
+    wishlisted: boolean;
+    cartQty: number;
+    onPress: (item: Product) => void;
+    onToggleWishlist: (item: Product) => void;
+    onAddToCart: (item: Product) => void;
+    onIncrease: (item: Product) => void;
+    onDecrease: (item: Product) => void;
+  }) => {
+    const isInCart = cartQty > 0;
+    return (
+      <TouchableOpacity
+        style={styles.gridCard}
+        onPress={() => onPress(item)}
+        activeOpacity={0.8}
+      >
+        <View style={styles.gridImageContainer}>
+          <Image source={{ uri: item.image }} style={styles.gridImage} />
+          {item.discount ? (
+            <View style={styles.discountBadge}>
+              <Text style={styles.discountText}>{item.discount}% OFF</Text>
+            </View>
+          ) : null}
+          <TouchableOpacity
+            style={styles.heartBtn}
+            onPress={() => onToggleWishlist(item)}
+          >
+            <Heart
+              size={18}
+              color={wishlisted ? "#ef4444" : "#94a3b8"}
+              fill={wishlisted ? "#ef4444" : "none"}
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.gridCardContent}>
+          <Text style={styles.productName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View style={styles.storeRow}>
+            <MapPin size={10} color={colors.text.secondary} />
+            <Text style={styles.storeText} numberOfLines={1}>
+              {item.storeName} • {item.distance}
+            </Text>
+          </View>
+          <View style={styles.ratingStoreRow}>
+            <Star size={12} color="#fbbf24" fill="#fbbf24" />
+            <Text style={styles.ratingText}>{item.rating}</Text>
+            <Text style={styles.reviewsText}>({item.reviews})</Text>
+          </View>
+          <View style={styles.priceCartRow}>
+            <View>
+              <Text style={styles.price}>₹{item.price}</Text>
+              {item.originalPrice ? (
+                <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
+              ) : null}
+            </View>
+            {isInCart ? (
+              <View style={styles.qtyBar}>
+                <TouchableOpacity
+                  style={styles.qtyBtn}
+                  onPress={() => onDecrease(item)}
+                >
+                  <Minus size={12} color={colors.brand.primary} />
+                </TouchableOpacity>
+                <Text style={styles.qtyText}>{cartQty}</Text>
+                <TouchableOpacity
+                  style={styles.qtyBtn}
+                  onPress={() => onIncrease(item)}
+                >
+                  <Plus size={12} color={colors.brand.primary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.addCartBtn}
+                onPress={() => onAddToCart(item)}
+              >
+                <ShoppingCart size={14} color="#fff" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+);
+
+const ProductListCardItem = memo(
+  ({
+    item,
+    wishlisted,
+    cartQty,
+    onPress,
+    onToggleWishlist,
+    onAddToCart,
+    onIncrease,
+    onDecrease,
+  }: {
+    item: Product;
+    wishlisted: boolean;
+    cartQty: number;
+    onPress: (item: Product) => void;
+    onToggleWishlist: (item: Product) => void;
+    onAddToCart: (item: Product) => void;
+    onIncrease: (item: Product) => void;
+    onDecrease: (item: Product) => void;
+  }) => {
+    const isInCart = cartQty > 0;
+    return (
+      <TouchableOpacity
+        style={styles.listCard}
+        onPress={() => onPress(item)}
+        activeOpacity={0.8}
+      >
+        <Image source={{ uri: item.image }} style={styles.listImage} />
+        {item.discount ? (
+          <View style={[styles.discountBadge, { top: 8, left: 8 }]}>
+            <Text style={styles.discountText}>{item.discount}% OFF</Text>
+          </View>
+        ) : null}
+        <View style={styles.listCardContent}>
+          <Text style={styles.productName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          <View style={styles.storeRow}>
+            <MapPin size={10} color={colors.text.secondary} />
+            <Text style={styles.storeText} numberOfLines={1}>
+              {item.storeName} • {item.distance}
+            </Text>
+          </View>
+          <View style={styles.ratingStoreRow}>
+            <Star size={12} color="#fbbf24" fill="#fbbf24" />
+            <Text style={styles.ratingText}>{item.rating}</Text>
+            <Text style={styles.reviewsText}>({item.reviews})</Text>
+          </View>
+          <View style={styles.priceCartRow}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Text style={styles.price}>₹{item.price}</Text>
+              {item.originalPrice ? (
+                <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
+              ) : null}
+            </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <TouchableOpacity
+                style={styles.wishlistBtn}
+                onPress={() => onToggleWishlist(item)}
+              >
+                <Heart
+                  size={16}
+                  color={wishlisted ? "#ef4444" : "#94a3b8"}
+                  fill={wishlisted ? "#ef4444" : "none"}
+                />
+              </TouchableOpacity>
+              {isInCart ? (
+                <View style={styles.qtyBar}>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => onDecrease(item)}
+                  >
+                    <Minus size={12} color={colors.brand.primary} />
+                  </TouchableOpacity>
+                  <Text style={styles.qtyText}>{cartQty}</Text>
+                  <TouchableOpacity
+                    style={styles.qtyBtn}
+                    onPress={() => onIncrease(item)}
+                  >
+                    <Plus size={12} color={colors.brand.primary} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addCartBtn}
+                  onPress={() => onAddToCart(item)}
+                >
+                  <ShoppingCart size={14} color="#fff" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+);
+
 export default function MyBuszScreen() {
   const router = useRouter();
-  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } =
-    useApp();
+  const {
+    addToCart,
+    cart,
+    updateCartQuantity,
+    removeFromCart,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+  } = useApp();
 
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,15 +345,59 @@ export default function MyBuszScreen() {
     return products;
   }, [selectedCategory, searchQuery, sortBy]);
 
+  // Build a map of product id → cart quantity for O(1) lookups
+  const cartQtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    cart.forEach((item: any) => {
+      map[item.id] = item.quantity;
+    });
+    return map;
+  }, [cart]);
+
   const handleAddToCart = useCallback(
     (product: Product) => {
       addToCart({
         id: product.id,
         name: product.name,
         price: product.price,
+        image: product.image,
+      });
+      Toast.show({
+        type: "success",
+        text1: "Added to cart",
+        text2: `${product.name} added successfully!`,
+        visibilityTime: 1500,
+        position: "top",
       });
     },
     [addToCart],
+  );
+
+  const handleIncreaseQuantity = useCallback(
+    (product: Product) => {
+      const currentQty = cartQtyMap[product.id] || 0;
+      updateCartQuantity(product.id, currentQty + 1);
+    },
+    [cartQtyMap, updateCartQuantity],
+  );
+
+  const handleDecreaseQuantity = useCallback(
+    (product: Product) => {
+      const currentQty = cartQtyMap[product.id] || 0;
+      if (currentQty > 1) {
+        updateCartQuantity(product.id, currentQty - 1);
+      } else {
+        removeFromCart(product.id);
+        Toast.show({
+          type: "info",
+          text1: "Removed from cart",
+          text2: `${product.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
+      }
+    },
+    [cartQtyMap, updateCartQuantity, removeFromCart],
   );
 
   const toggleWishlist = useCallback(
@@ -155,170 +441,81 @@ export default function MyBuszScreen() {
     { key: "distance", label: "Nearest First" },
   ];
 
-  const CategoryChip = ({ item }: { item: (typeof PRODUCT_CATEGORIES)[0] }) => {
-    const isSelected = selectedCategory === item.id;
-    return (
-      <TouchableOpacity
-        style={[
-          styles.categoryChip,
-          isSelected && {
-            backgroundColor: item.color,
-            borderColor: item.color,
-          },
-        ]}
-        onPress={() => handleCategoryChange(item.id)}
-      >
-        <Text style={styles.categoryChipEmoji}>{item.icon}</Text>
-        <Text
-          style={[
-            styles.categoryChipText,
-            isSelected && { color: "#fff", fontWeight: "800" },
-          ]}
-        >
-          {item.name}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  const handleProductPress = useCallback(
+    (item: Product) => {
+      router.push({
+        pathname: "/product/[id]",
+        params: { id: item.id },
+      } as any);
+    },
+    [router],
+  );
 
-  const ProductGridCard = ({ item }: { item: Product }) => {
-    const wishlisted = isInWishlist(`product-${item.id}`);
-    return (
-      <TouchableOpacity
-        style={styles.gridCard}
-        onPress={() =>
-          router.push({
-            pathname: "/product/[id]",
-            params: { id: item.id },
-          } as any)
-        }
-        activeOpacity={0.8}
-      >
-        <View style={styles.gridImageContainer}>
-          <Image source={{ uri: item.image }} style={styles.gridImage} />
-          {item.discount && (
-            <View style={styles.discountBadge}>
-              <Text style={styles.discountText}>{item.discount}% OFF</Text>
-            </View>
-          )}
-          <TouchableOpacity
-            style={styles.heartBtn}
-            onPress={() => toggleWishlist(item)}
-          >
-            <Heart
-              size={18}
-              color={wishlisted ? "#ef4444" : "#94a3b8"}
-              fill={wishlisted ? "#ef4444" : "none"}
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.gridCardContent}>
-          <Text style={styles.productName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View style={styles.storeRow}>
-            <MapPin size={10} color={colors.text.secondary} />
-            <Text style={styles.storeText} numberOfLines={1}>
-              {item.storeName} • {item.distance}
-            </Text>
-          </View>
-          <View style={styles.ratingStoreRow}>
-            <Star size={12} color="#fbbf24" fill="#fbbf24" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-            <Text style={styles.reviewsText}>({item.reviews})</Text>
-          </View>
-          <View style={styles.priceCartRow}>
-            <View>
-              <Text style={styles.price}>₹{item.price}</Text>
-              {item.originalPrice && (
-                <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
-              )}
-            </View>
-            <TouchableOpacity
-              style={styles.addCartBtn}
-              onPress={() => handleAddToCart(item)}
-            >
-              <ShoppingCart size={14} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderGridItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductGridCardItem
+        item={item}
+        wishlisted={isInWishlist(`product-${item.id}`)}
+        cartQty={cartQtyMap[item.id] || 0}
+        onPress={handleProductPress}
+        onToggleWishlist={toggleWishlist}
+        onAddToCart={handleAddToCart}
+        onIncrease={handleIncreaseQuantity}
+        onDecrease={handleDecreaseQuantity}
+      />
+    ),
+    [
+      cartQtyMap,
+      isInWishlist,
+      handleProductPress,
+      toggleWishlist,
+      handleAddToCart,
+      handleIncreaseQuantity,
+      handleDecreaseQuantity,
+    ],
+  );
 
-  const ProductListCard = ({ item }: { item: Product }) => {
-    const wishlisted = isInWishlist(`product-${item.id}`);
-    return (
-      <TouchableOpacity
-        style={styles.listCard}
-        onPress={() =>
-          router.push({
-            pathname: "/product/[id]",
-            params: { id: item.id },
-          } as any)
-        }
-        activeOpacity={0.8}
-      >
-        <Image source={{ uri: item.image }} style={styles.listImage} />
-        {item.discount && (
-          <View style={[styles.discountBadge, { top: 8, left: 8 }]}>
-            <Text style={styles.discountText}>{item.discount}% OFF</Text>
-          </View>
-        )}
-        <View style={styles.listCardContent}>
-          <Text style={styles.productName} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <View style={styles.storeRow}>
-            <MapPin size={10} color={colors.text.secondary} />
-            <Text style={styles.storeText} numberOfLines={1}>
-              {item.storeName} • {item.distance}
-            </Text>
-          </View>
-          <View style={styles.ratingStoreRow}>
-            <Star size={12} color="#fbbf24" fill="#fbbf24" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-            <Text style={styles.reviewsText}>({item.reviews})</Text>
-          </View>
-          <View style={styles.priceCartRow}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Text style={styles.price}>₹{item.price}</Text>
-              {item.originalPrice && (
-                <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
-              )}
-            </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <TouchableOpacity
-                style={styles.wishlistBtn}
-                onPress={() => toggleWishlist(item)}
-              >
-                <Heart
-                  size={16}
-                  color={wishlisted ? "#ef4444" : "#94a3b8"}
-                  fill={wishlisted ? "#ef4444" : "none"}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.addCartBtn}
-                onPress={() => handleAddToCart(item)}
-              >
-                <ShoppingCart size={14} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const renderListItem = useCallback(
+    ({ item }: { item: Product }) => (
+      <ProductListCardItem
+        item={item}
+        wishlisted={isInWishlist(`product-${item.id}`)}
+        cartQty={cartQtyMap[item.id] || 0}
+        onPress={handleProductPress}
+        onToggleWishlist={toggleWishlist}
+        onAddToCart={handleAddToCart}
+        onIncrease={handleIncreaseQuantity}
+        onDecrease={handleDecreaseQuantity}
+      />
+    ),
+    [
+      cartQtyMap,
+      isInWishlist,
+      handleProductPress,
+      toggleWishlist,
+      handleAddToCart,
+      handleIncreaseQuantity,
+      handleDecreaseQuantity,
+    ],
+  );
+
+  const renderCategoryChip = useCallback(
+    ({ item }: { item: (typeof PRODUCT_CATEGORIES)[0] }) => (
+      <CategoryChipItem
+        item={item}
+        isSelected={selectedCategory === item.id}
+        onPress={handleCategoryChange}
+      />
+    ),
+    [selectedCategory, handleCategoryChange],
+  );
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
+      {/* Compact Search + Sort + View Row */}
+      <View style={styles.toolbarRow}>
         <View style={styles.searchInputWrapper}>
-          <Search size={18} color="#94a3b8" />
+          <Search size={16} color="#94a3b8" />
           <TextInput
             style={styles.searchInput}
             placeholder="Search products..."
@@ -328,10 +525,26 @@ export default function MyBuszScreen() {
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery("")}>
-              <X size={18} color="#94a3b8" />
+              <X size={16} color="#94a3b8" />
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity
+          style={styles.filterBtn}
+          onPress={() => setShowSortModal(!showSortModal)}
+        >
+          <SortAsc size={14} color={colors.brand.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.viewToggle}
+          onPress={() => setIsGrid(!isGrid)}
+        >
+          {isGrid ? (
+            <List size={18} color={colors.brand.primary} />
+          ) : (
+            <Grid2x2 size={18} color={colors.brand.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Category Chips */}
@@ -339,34 +552,11 @@ export default function MyBuszScreen() {
         horizontal
         data={PRODUCT_CATEGORIES}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <CategoryChip item={item} />}
+        renderItem={renderCategoryChip}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryChipsList}
         style={styles.categoryChipsContainer}
       />
-
-      {/* Filter/Sort Bar */}
-      <View style={styles.filterBar}>
-        <TouchableOpacity
-          style={styles.filterBtn}
-          onPress={() => setShowSortModal(!showSortModal)}
-        >
-          <SortAsc size={16} color={colors.brand.primary} />
-          <Text style={styles.filterBtnText}>
-            {sortOptions.find((s) => s.key === sortBy)?.label || "Sort"}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.viewToggle}
-          onPress={() => setIsGrid(!isGrid)}
-        >
-          {isGrid ? (
-            <List size={20} color={colors.brand.primary} />
-          ) : (
-            <Grid2x2 size={20} color={colors.brand.primary} />
-          )}
-        </TouchableOpacity>
-      </View>
 
       {/* Sort Modal */}
       {showSortModal && (
@@ -418,7 +608,7 @@ export default function MyBuszScreen() {
           data={filteredProducts}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          renderItem={({ item }) => <ProductGridCard item={item} />}
+          renderItem={renderGridItem}
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
@@ -426,6 +616,7 @@ export default function MyBuszScreen() {
           maxToRenderPerBatch={6}
           windowSize={5}
           removeClippedSubviews={true}
+          extraData={cartQtyMap}
         />
       ) : (
         <FlatList
@@ -433,13 +624,14 @@ export default function MyBuszScreen() {
           key="list"
           data={filteredProducts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <ProductListCard item={item} />}
+          renderItem={renderListItem}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
           initialNumToRender={8}
           maxToRenderPerBatch={6}
           windowSize={5}
           removeClippedSubviews={true}
+          extraData={cartQtyMap}
         />
       )}
     </View>
@@ -451,88 +643,81 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8fafc",
   },
-  // Search
-  searchContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+  // Toolbar Row (search + sort + view)
+  toolbarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
     backgroundColor: "#fff",
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
   },
   searchInputWrapper: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#f1f5f9",
     borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-    height: 44,
+    paddingHorizontal: 10,
+    gap: 6,
+    height: 36,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     color: "#0f172a",
     fontWeight: "500",
+    paddingVertical: 0,
+  },
+  filterBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: colors.brand.primary + "10",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  viewToggle: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: colors.brand.primary + "10",
+    justifyContent: "center",
+    alignItems: "center",
   },
   // Category Chips
   categoryChipsContainer: {
-    minHeight: 48,
-    maxHeight: 52,
+    minHeight: 40,
+    maxHeight: 42,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
   categoryChipsList: {
-    paddingHorizontal: spacing.md,
-    gap: 8,
+    paddingHorizontal: spacing.sm,
+    gap: 6,
     alignItems: "center",
   },
   categoryChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
     borderWidth: 1.5,
     borderColor: "#e2e8f0",
     backgroundColor: "#fff",
-    gap: 4,
+    gap: 3,
   },
   categoryChipEmoji: {
-    fontSize: 14,
+    fontSize: 12,
   },
   categoryChipText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: "#64748b",
-  },
-  // Filter Bar
-  filterBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
-  },
-  filterBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.brand.primary + "10",
-  },
-  filterBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.brand.primary,
-  },
-  viewToggle: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: colors.brand.primary + "10",
   },
   // Sort Modal
   sortOverlay: {
@@ -545,7 +730,7 @@ const styles = StyleSheet.create({
   },
   sortModal: {
     position: "absolute",
-    top: 200,
+    top: 130,
     left: spacing.md,
     right: spacing.md,
     backgroundColor: "#fff",
@@ -677,6 +862,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary,
     justifyContent: "center",
     alignItems: "center",
+  },
+  qtyBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.brand.primary + "12",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.brand.primary + "30",
+    height: 32,
+    overflow: "hidden",
+  },
+  qtyBtn: {
+    width: 28,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  qtyText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: colors.brand.primary,
+    minWidth: 20,
+    textAlign: "center",
   },
   wishlistBtn: {
     width: 32,

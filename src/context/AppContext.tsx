@@ -3,6 +3,7 @@
 import React, {
     createContext,
     ReactNode,
+    useCallback,
     useContext,
     useMemo,
     useState,
@@ -187,9 +188,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  const isInWishlist = (itemId: string): boolean => {
-    return wishlist.some((item) => item.id === itemId);
-  };
+  const isInWishlist = useCallback(
+    (itemId: string): boolean => {
+      return wishlist.some((item) => item.id === itemId);
+    },
+    [wishlist],
+  );
 
   const clearWishlist = () => {
     setWishlist([]);
