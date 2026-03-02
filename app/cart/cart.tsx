@@ -2,27 +2,28 @@ import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Minus,
-  Plus,
-  ShoppingBag,
-  Square,
-  Store,
-  Trash2,
-  Wrench,
+    AlertTriangle,
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Minus,
+    Plus,
+    ShoppingBag,
+    Square,
+    Store,
+    Trash2,
+    Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -36,6 +37,7 @@ export default function CartScreen() {
     cartTotal,
     bookedServices,
     cancelBooking,
+    confirmBooking,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
@@ -191,13 +193,40 @@ export default function CartScreen() {
 
   const ServiceCard = ({ item }: { item: BookedService }) => {
     const hasImage = item.image && item.image !== "";
+    const isPending = item.status === "pending";
 
     return (
       <TouchableOpacity
-        onPress={() => router.push(`/service/${item.id}`)}
+        onPress={() => router.push(`/service/${item.serviceId}`)}
         activeOpacity={0.8}
       >
-        <View style={styles.serviceItem}>
+        <View
+          style={[styles.serviceItem, isPending && styles.serviceItemPending]}
+        >
+          {/* Status badge */}
+          <View
+            style={[
+              styles.statusBadge,
+              isPending ? styles.statusPending : styles.statusConfirmed,
+            ]}
+          >
+            {isPending ? (
+              <AlertTriangle size={12} color={colors.status.warningDark} />
+            ) : (
+              <CheckCircle size={12} color={colors.status.successDark} />
+            )}
+            <Text
+              style={[
+                styles.statusText,
+                isPending
+                  ? { color: colors.status.warningDark }
+                  : { color: colors.status.successDark },
+              ]}
+            >
+              {isPending ? "Pending Payment" : "Confirmed"}
+            </Text>
+          </View>
+
           <View style={styles.itemHeader}>
             <View style={styles.imageContainer}>
               {hasImage ? (
@@ -252,6 +281,24 @@ export default function CartScreen() {
               <Text style={styles.bookingText}>{item.bookingTime}</Text>
             </View>
           </View>
+
+          {isPending && (
+            <TouchableOpacity
+              style={styles.confirmPayBtn}
+              onPress={() => {
+                confirmBooking(item.id);
+                Toast.show({
+                  type: "success",
+                  text1: "Booking Confirmed!",
+                  text2: `${item.serviceName} is now confirmed`,
+                  visibilityTime: 2000,
+                  position: "top",
+                });
+              }}
+            >
+              <Text style={styles.confirmPayText}>Confirm & Pay</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableOpacity>
     );
@@ -705,6 +752,42 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: colors.brand.primary,
+  },
+  serviceItemPending: {
+    borderColor: colors.status.warningBorder || "#f59e0b",
+  },
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    marginBottom: spacing.sm,
+  },
+  statusPending: {
+    backgroundColor: colors.status.warningLight,
+  },
+  statusConfirmed: {
+    backgroundColor: colors.status.successLight,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  confirmPayBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.brand.primary,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmPayText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.inverse,
   },
   summaryCard: {
     position: "absolute",

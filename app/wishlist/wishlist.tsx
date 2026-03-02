@@ -4,27 +4,29 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Calendar,
-    Clock,
-    Heart,
-    MapPin,
-    Package,
-    ShoppingCart,
-    Star,
-    Store,
-    Trash2,
-    Wrench,
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Heart,
+  MapPin,
+  Minus,
+  Package,
+  Plus,
+  ShoppingCart,
+  Star,
+  Store,
+  Trash2,
+  Wrench,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -41,6 +43,9 @@ export default function WishlistScreen() {
   const router = useRouter();
   const {
     addToCart,
+    cart,
+    removeFromCart,
+    updateCartQuantity,
     wishlist,
     removeFromWishlist,
     clearWishlist,
@@ -63,12 +68,20 @@ export default function WishlistScreen() {
     [wishlist, getWishlistByType],
   );
 
+  // Strip type prefix from wishlist IDs to get the original item ID
+  const getRawId = (item: WishlistItem): string => {
+    return item.id.replace(/^(product|service|store)-/, "");
+  };
+
   const handleAddToCart = (item: WishlistItem) => {
     if (item.type === "store") return;
     addToCart({
-      id: item.id,
+      id: getRawId(item),
       name: item.name,
       price: item.price,
+      image: item.image,
+      storeName: item.storeName,
+      storeId: item.storeId,
     });
     Toast.show({
       type: "success",
@@ -101,9 +114,9 @@ export default function WishlistScreen() {
     if (item.type === "store" && item.storeId) {
       navigateToStore(item.storeId);
     } else if (item.type === "product") {
-      navigateToProduct(item.id);
+      navigateToProduct(getRawId(item));
     } else if (item.type === "service") {
-      navigateToService(item.id);
+      navigateToService(getRawId(item));
     }
   };
 
@@ -158,13 +171,55 @@ export default function WishlistScreen() {
       </TouchableOpacity>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => handleAddToCart(item)}
-        >
-          <ShoppingCart size={16} color={colors.text.inverse} />
-          <Text style={styles.cartButtonText}>Add to Cart</Text>
-        </TouchableOpacity>
+        {(() => {
+          const rawId = getRawId(item);
+          const cartItem = cart.find((c: any) => c.id === rawId);
+          if (cartItem && cartItem.quantity > 0) {
+            return (
+              <View style={styles.qtyRow}>
+                <TouchableOpacity
+                  style={styles.qtyButton}
+                  onPress={() => {
+                    if (cartItem.quantity <= 1) {
+                      removeFromCart(rawId);
+                      Toast.show({
+                        type: "info",
+                        text1: "Removed from cart",
+                        text2: `${item.name} removed`,
+                        visibilityTime: 1500,
+                        position: "top",
+                      });
+                    } else {
+                      updateCartQuantity(rawId, cartItem.quantity - 1);
+                    }
+                  }}
+                >
+                  <Minus size={16} color={colors.text.inverse} />
+                </TouchableOpacity>
+                <View style={styles.qtyDisplay}>
+                  <Text style={styles.qtyValue}>{cartItem.quantity}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.qtyButton}
+                  onPress={() =>
+                    updateCartQuantity(rawId, cartItem.quantity + 1)
+                  }
+                >
+                  <Plus size={16} color={colors.text.inverse} />
+                </TouchableOpacity>
+              </View>
+            );
+          }
+          return (
+            <TouchableOpacity
+              style={styles.cartButton}
+              onPress={() => handleAddToCart(item)}
+            >
+              <ShoppingCart size={16} color={colors.text.inverse} />
+              <Text style={styles.cartButtonText}>Add to Cart</Text>
+            </TouchableOpacity>
+          );
+        })()}
         <TouchableOpacity
           style={styles.deleteButton}
           onPress={() => {
@@ -725,6 +780,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.status.errorBorder,
     backgroundColor: colors.status.errorLight,
+  },
+  qtyRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.brand.primary,
+    borderRadius: radius.md,
+    overflow: "hidden",
+  },
+  qtyButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  qtyDisplay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    height: 40,
+  },
+  qtyValue: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.text.inverse,
   },
 
   // Store Card

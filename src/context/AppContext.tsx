@@ -5,7 +5,9 @@ import React, {
     ReactNode,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
+    useRef,
     useState,
 } from "react";
 import { EnhancedReel, mockReels, mockStores, Store } from "../assets/mockData";
@@ -16,6 +18,9 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image?: string;
+  storeName?: string;
+  storeId?: string;
 }
 
 export interface WishlistItem {
@@ -47,6 +52,7 @@ export interface BookedService {
   duration?: string;
   image?: string;
   status: "confirmed" | "pending" | "completed" | "cancelled";
+  expiresAt?: number; // timestamp for pending booking expiry
 }
 
 // Re-export EnhancedReel as Reel for backward compatibility
@@ -78,6 +84,7 @@ interface AppContextType {
   // Booked Services Management
   bookedServices: BookedService[];
   bookService: (service: BookedService) => void;
+  confirmBooking: (bookingId: string) => void;
   cancelBooking: (bookingId: string) => void;
   updateBooking: (bookingId: string, updates: Partial<BookedService>) => void;
   isServiceBooked: (serviceId: string) => boolean;
@@ -105,6 +112,9 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  image?: string;
+  storeName?: string;
+  storeId?: string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -228,11 +238,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const confirmBooking = (bookingId: string) => {
+    setBookedServices((prev) =>
+      prev.map((service) =>
+        service.id === bookingId
+          ? { ...service, status: "confirmed" as const, expiresAt: undefined }
+          : service,
+      ),
+    );
+  };
+
   const cancelBooking = (bookingId: string) => {
     setBookedServices((prev) =>
       prev.filter((service) => service.id !== bookingId),
     );
   };
+
+  // --- Auto-expire pending bookings after their expiresAt time ---
+  const expiryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    // Check every 10 seconds for expired pending bookings
+    expiryTimerRef.current = setInterval(() => {
+      const now = Date.now();
+      setBookedServices((prev) => {
+        const hasExpired = prev.some(
+          (s) => s.status === "pending" && s.expiresAt && s.expiresAt <= now,
+        );
+        if (!hasExpired) return prev;
+        return prev.filter(
+          (s) => !(s.status === "pending" && s.expiresAt && s.expiresAt <= now),
+        );
+      });
+    }, 10000);
+
+    return () => {
+      if (expiryTimerRef.current) clearInterval(expiryTimerRef.current);
+    };
+  }, []);
 
   const updateBooking = (
     bookingId: string,
@@ -366,6 +409,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       // Booked Services
       bookedServices,
       bookService,
+      confirmBooking,
       cancelBooking,
       updateBooking,
       isServiceBooked,

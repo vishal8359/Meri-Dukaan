@@ -1,32 +1,51 @@
+import { mockServices, ServiceItem } from "@/src/assets/mockData";
 import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Check,
-    ChevronLeft,
-    Clock,
-    Edit2,
-    Heart,
-    MapPin,
-    Star,
-    Users,
-    X,
+  Calendar,
+  Check,
+  ChevronLeft,
+  Clock,
+  Edit2,
+  Heart,
+  MapPin,
+  Package,
+  Star,
+  Users,
+  X,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-    FlatList,
-    Image,
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  InteractionManager,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const IMAGE_HEIGHT = 340;
+const RELATED_CARD_WIDTH = 165;
+const RELATED_BATCH_SIZE = 4;
 
 // Available time slots
 const TIME_SLOTS = [
@@ -61,24 +80,216 @@ const getNextDays = () => {
   return days;
 };
 
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  active: boolean;
-  price: number;
-  image?: string;
-  images?: string[];
-  category?: string;
-  duration?: string;
-  rating?: number;
-  reviewsCount?: number;
-  storeName?: string;
-  storeId?: string;
-  delivery?: string;
-  features?: string[];
-}
+// ─── Skeleton Shimmer Component ─────────────────────────────────────────────
+const SkeletonBlock = ({
+  width,
+  height,
+  borderRadius = radius.md,
+  style,
+}: {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  style?: any;
+}) => {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shimmerAnim]);
+
+  const opacity = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: width as any,
+          height,
+          borderRadius,
+          backgroundColor: colors.ui.disabled,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+// ─── Skeleton Loading Screen ─────────────────────────────────────────────────
+const ServiceSkeleton = () => (
+  <ScrollView
+    style={{ flex: 1, backgroundColor: colors.ui.background }}
+    contentContainerStyle={{ padding: spacing.md }}
+    showsVerticalScrollIndicator={false}
+  >
+    <SkeletonBlock
+      width="100%"
+      height={IMAGE_HEIGHT}
+      borderRadius={radius.lg}
+    />
+    <View
+      style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}
+    >
+      {[1, 2, 3].map((i) => (
+        <SkeletonBlock
+          key={i}
+          width={70}
+          height={70}
+          borderRadius={radius.md}
+        />
+      ))}
+    </View>
+    <View
+      style={{
+        backgroundColor: colors.ui.surface,
+        borderRadius: radius.lg,
+        padding: spacing.md,
+        marginTop: spacing.lg,
+        ...shadows.medium,
+      }}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <SkeletonBlock width="65%" height={24} />
+        <SkeletonBlock width={40} height={40} borderRadius={radius.md} />
+      </View>
+      <SkeletonBlock
+        width="35%"
+        height={12}
+        style={{ marginTop: spacing.sm }}
+      />
+      <View
+        style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}
+      >
+        <SkeletonBlock width="30%" height={16} />
+        <SkeletonBlock width="25%" height={26} borderRadius={radius.full} />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: spacing.md,
+        }}
+      >
+        <SkeletonBlock width="35%" height={28} />
+        <SkeletonBlock width="40%" height={20} />
+      </View>
+    </View>
+    <View
+      style={{
+        backgroundColor: colors.ui.surface,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        marginTop: spacing.md,
+        ...shadows.medium,
+      }}
+    >
+      <SkeletonBlock width="50%" height={20} />
+      {[1, 2, 3].map((i) => (
+        <SkeletonBlock
+          key={i}
+          width="90%"
+          height={14}
+          style={{ marginTop: spacing.sm }}
+        />
+      ))}
+    </View>
+    <View
+      style={{
+        backgroundColor: colors.ui.surface,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        marginTop: spacing.md,
+        ...shadows.medium,
+      }}
+    >
+      <SkeletonBlock width="45%" height={20} />
+      {[1, 2].map((i) => (
+        <View
+          key={i}
+          style={{
+            flexDirection: "row",
+            gap: spacing.md,
+            marginTop: spacing.md,
+          }}
+        >
+          <SkeletonBlock width={20} height={20} borderRadius={10} />
+          <View style={{ flex: 1 }}>
+            <SkeletonBlock width="40%" height={12} />
+            <SkeletonBlock width="60%" height={14} style={{ marginTop: 4 }} />
+          </View>
+        </View>
+      ))}
+    </View>
+    <SkeletonBlock width="45%" height={20} style={{ marginTop: spacing.lg }} />
+    <View
+      style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.md }}
+    >
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={{ width: RELATED_CARD_WIDTH }}>
+          <SkeletonBlock
+            width={RELATED_CARD_WIDTH}
+            height={130}
+            borderRadius={radius.lg}
+          />
+          <SkeletonBlock
+            width="80%"
+            height={14}
+            style={{ marginTop: spacing.sm }}
+          />
+          <SkeletonBlock
+            width="50%"
+            height={14}
+            style={{ marginTop: spacing.xs }}
+          />
+        </View>
+      ))}
+    </View>
+  </ScrollView>
+);
+
+// ─── Service Not Found ──────────────────────────────────────────────────────
+const ServiceNotFound = ({ onBack }: { onBack: () => void }) => (
+  <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.headerButton} onPress={onBack}>
+        <ChevronLeft size={24} color={colors.text.heading} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Service Details</Text>
+      <View style={styles.headerButton} />
+    </View>
+    <View style={styles.notFoundContainer}>
+      <Package size={64} color={colors.ui.disabled} />
+      <Text style={styles.notFoundTitle}>Service Not Found</Text>
+      <Text style={styles.notFoundSubtitle}>
+        This service may no longer be available
+      </Text>
+      <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
+        <Text style={styles.notFoundButtonText}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function ServiceDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -92,7 +303,18 @@ export default function ServiceDetailScreen() {
     updateBooking,
     cancelBooking,
   } = useApp();
+
+  // Image gallery state
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
+  const imageScrollRef = useRef<FlatList>(null);
+
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Related services state
+  const [visibleRelated, setVisibleRelated] = useState(RELATED_BATCH_SIZE);
 
   // Booking modal state
   const [bookingModalVisible, setBookingModalVisible] = useState(false);
@@ -102,114 +324,108 @@ export default function ServiceDetailScreen() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const availableDays = getNextDays();
 
-  // Mock service data - in production, fetch from API based on ID
-  const service: Service = {
-    id: id as string,
-    name: "Home Delivery",
-    description:
-      "Fast and reliable home delivery service for all your purchases. We ensure safe packaging and timely delivery to your doorstep.",
-    active: true,
-    price: 0,
-    image:
-      "https://images.unsplash.com/photo-1427915591429-7f13a6cc2cc3?q=80&w=500",
-    images: [
-      "https://images.unsplash.com/photo-1427915591429-7f13a6cc2cc3?q=80&w=500",
-      "https://images.unsplash.com/photo-1522202176988-a630cebafebc?q=80&w=500",
-      "https://images.unsplash.com/photo-1604507209433-bc10e3c35b08?q=80&w=500",
-    ],
-    category: "Delivery",
-    duration: "24-48 hours",
-    delivery: "24-48 hrs",
-    rating: 4.8,
-    reviewsCount: 1250,
-    storeName: "Sharma Kirana",
-    storeId: "1",
-    features: [
-      "Free delivery over ₹500",
-      "Real-time tracking",
-      "Safe packaging",
-      "Professional delivery agents",
-      "Insured deliveries",
-    ],
-  };
+  // ─── Dynamic service lookup ───────────────────────────────────────────────
+  const service = useMemo(
+    () => mockServices.find((s) => s.id === id) || null,
+    [id],
+  );
 
-  // Related services mock data
-  const relatedServices: Service[] = [
-    {
-      id: "2",
-      name: "Same Day Delivery",
-      description: "Get your order delivered the same day. Order before 5 PM.",
-      active: true,
-      price: 50,
-      image:
-        "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=300",
-      category: "Delivery",
-      duration: "Same day",
-      delivery: "4-6 hrs",
-      rating: 4.7,
-      reviewsCount: 892,
+  const serviceImages = useMemo(() => {
+    if (!service) return [];
+    const imgs =
+      service.images && service.images.length > 0
+        ? service.images
+        : [service.image];
+    return imgs.slice(0, 5);
+  }, [service]);
+
+  const relatedServices = useMemo(() => {
+    if (!service) return [];
+    return mockServices
+      .filter((s) => s.id !== service.id && s.category === service.category)
+      .concat(
+        mockServices.filter(
+          (s) => s.id !== service.id && s.category !== service.category,
+        ),
+      )
+      .slice(0, 12);
+  }, [service]);
+
+  const paginatedRelated = useMemo(
+    () => relatedServices.slice(0, visibleRelated),
+    [relatedServices, visibleRelated],
+  );
+
+  // ─── Load content after navigation transition ────────────────────────────
+  useEffect(() => {
+    setIsLoading(true);
+    fadeAnim.setValue(0);
+    const task = InteractionManager.runAfterInteractions(() => {
+      setIsLoading(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+    return () => task.cancel();
+  }, [id]);
+
+  // ─── Gallery helpers ──────────────────────────────────────────────────────
+  const scrollToImage = useCallback((index: number) => {
+    imageScrollRef.current?.scrollToIndex({ index, animated: true });
+    setMainImageIndex(index);
+  }, []);
+
+  const onImageScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const x = e.nativeEvent.contentOffset.x;
+      const idx = Math.round(x / (SCREEN_WIDTH - spacing.md * 2));
+      if (idx >= 0 && idx < serviceImages.length) setMainImageIndex(idx);
     },
-    {
-      id: "3",
-      name: "Bulk Orders",
-      description: "Special pricing for bulk and wholesale orders.",
-      active: false,
-      price: 0,
-      image:
-        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=300",
-      category: "Special",
-      duration: "1-3 days",
-      delivery: "1-3 days",
-      rating: 4.6,
-      reviewsCount: 456,
+    [serviceImages.length],
+  );
+
+  // ─── Booking state ───────────────────────────────────────────────────────
+  const isBooked = service ? isServiceBooked(service.id) : false;
+  const currentBooking = service
+    ? getBookingByServiceId(service.id)
+    : undefined;
+
+  const openBookingModal = useCallback(
+    (editing: boolean = false) => {
+      setIsEditing(editing);
+      if (editing && currentBooking) {
+        setSelectedDate(currentBooking.bookingDate);
+        setSelectedTime(currentBooking.bookingTime);
+      } else {
+        setSelectedDate(getNextDays()[0].date);
+        setSelectedTime("10:00 AM");
+      }
+      setBookingModalVisible(true);
     },
-    {
-      id: "4",
-      name: "Express Delivery",
-      description: "Ultra-fast delivery for urgent orders.",
-      active: true,
-      price: 100,
-      image:
-        "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=300",
-      category: "Delivery",
-      duration: "2-4 hours",
-      delivery: "2-4 hrs",
-      rating: 4.9,
-      reviewsCount: 678,
-    },
-  ];
+    [currentBooking],
+  );
 
-  // Check if current service is booked
-  const isBooked = isServiceBooked(service.id);
-  const currentBooking = getBookingByServiceId(service.id);
-
-  const openBookingModal = (editing: boolean = false) => {
-    setIsEditing(editing);
-
-    // If editing, load existing booking data
-    if (editing && currentBooking) {
-      setSelectedDate(currentBooking.bookingDate);
-      setSelectedTime(currentBooking.bookingTime);
-    } else {
-      // Reset to default values
-      setSelectedDate(getNextDays()[0].date);
-      setSelectedTime("10:00 AM");
-    }
-
-    setBookingModalVisible(true);
-  };
-
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = useCallback(() => {
+    if (!service) return;
     if (isEditing && currentBooking) {
-      // Update existing booking
       updateBooking(currentBooking.id, {
         bookingDate: selectedDate,
         bookingTime: selectedTime,
       });
+      setBookingModalVisible(false);
+      Toast.show({
+        type: "success",
+        text1: "Booking Updated",
+        text2: "Your booking has been rescheduled",
+        visibilityTime: 2000,
+        position: "top",
+      });
     } else {
-      // Create new booking
+      const LOCK_DURATION = 3 * 60 * 1000; // 3 minutes
       const newBooking: BookedService = {
-        id: `booking-${Date.now()}`,
+        id: "booking-" + Date.now(),
         serviceId: service.id,
         serviceName: service.name,
         storeName: service.storeName || "Store",
@@ -219,30 +435,37 @@ export default function ServiceDetailScreen() {
         bookingTime: selectedTime,
         duration: service.duration,
         image: service.image,
-        status: "confirmed",
+        status: "pending",
+        expiresAt: Date.now() + LOCK_DURATION,
       };
       bookService(newBooking);
+      setBookingModalVisible(false);
+      Toast.show({
+        type: "info",
+        text1: "Slot Locked for 3 Minutes",
+        text2: "Complete payment to confirm your booking",
+        visibilityTime: 3000,
+        position: "top",
+      });
+      // Navigate to cart services tab
+      router.push("/cart/cart" as any);
     }
+  }, [service, isEditing, currentBooking, selectedDate, selectedTime, router]);
 
-    setBookingModalVisible(false);
-    setShowSuccessMessage(true);
-    setTimeout(() => setShowSuccessMessage(false), 3000);
-  };
+  const handleCancelBooking = useCallback(() => {
+    if (currentBooking) cancelBooking(currentBooking.id);
+  }, [currentBooking]);
 
-  const handleCancelBooking = () => {
-    if (currentBooking) {
-      cancelBooking(currentBooking.id);
-    }
-  };
-
-  const handleWishlistToggle = () => {
-    const wishlistId = `service-${service.id}`;
+  // ─── Wishlist handler ─────────────────────────────────────────────────────
+  const toggleWishlist = useCallback(() => {
+    if (!service) return;
+    const wishlistId = "service-" + service.id;
     if (isInWishlist(wishlistId)) {
       removeFromWishlist(wishlistId);
       Toast.show({
         type: "info",
         text1: "Removed from wishlist",
-        text2: `${service.name} removed`,
+        text2: service.name + " removed",
         visibilityTime: 1500,
         position: "top",
       });
@@ -259,55 +482,74 @@ export default function ServiceDetailScreen() {
       Toast.show({
         type: "success",
         text1: "Added to wishlist",
-        text2: `${service.name} saved!`,
+        text2: service.name + " saved!",
         visibilityTime: 1500,
         position: "top",
       });
     }
-  };
+  }, [service, isInWishlist, addToWishlist, removeFromWishlist]);
 
-  const handleNavigateToService = (serviceId: string) => {
-    router.push({
-      pathname: "/service/[id]",
-      params: { id: serviceId },
-    } as any);
-  };
+  // ─── Navigate to related service ──────────────────────────────────────────
+  const handleNavigateToService = useCallback(
+    (serviceId: string) => {
+      router.push({
+        pathname: "/service/[id]",
+        params: { id: serviceId },
+      } as any);
+    },
+    [router],
+  );
 
-  const RelatedServiceCard = ({ item }: { item: Service }) => (
+  const loadMoreRelated = useCallback(() => {
+    setVisibleRelated((prev) =>
+      Math.min(prev + RELATED_BATCH_SIZE, relatedServices.length),
+    );
+  }, [relatedServices.length]);
+
+  // ─── Early returns ────────────────────────────────────────────────────────
+  if (isLoading) return <ServiceSkeleton />;
+  if (!service) return <ServiceNotFound onBack={() => router.back()} />;
+
+  // ─── Description bullets ──────────────────────────────────────────────────
+  const descriptionBullets = service.description
+    ? service.description.split(/\.\s+|\n/).filter(Boolean)
+    : [];
+
+  // ─── Related Service Card renderer ────────────────────────────────────────
+  const renderRelatedCard = ({ item }: { item: ServiceItem }) => (
     <TouchableOpacity
       style={styles.relatedCard}
       onPress={() => handleNavigateToService(item.id)}
       activeOpacity={0.75}
     >
-      {/* Image Container with Badge */}
       <View style={styles.relatedImageContainer}>
-        <Image
-          source={{ uri: item.image || service.image }}
-          style={styles.relatedImage}
-        />
-
-        {/* Category Badge */}
-        <View style={styles.categoryBadgeRelated}>
-          <Text style={styles.categoryBadgeText}>{item.category}</Text>
-        </View>
-
-        {/* Status Indicator */}
+        <Image source={{ uri: item.image }} style={styles.relatedImage} />
+        {item.category && (
+          <View style={styles.categoryBadgeRelated}>
+            <Text style={styles.categoryBadgeText}>{item.category}</Text>
+          </View>
+        )}
         {item.active && (
           <View style={styles.activeBadge}>
-            <Text style={styles.activeBadgeText}>●</Text>
+            <Text style={styles.activeBadgeText}>{"\u25CF"}</Text>
+          </View>
+        )}
+        {item.discount && (
+          <View style={styles.relatedDiscountBadge}>
+            <Text style={styles.relatedDiscountText}>-{item.discount}%</Text>
+          </View>
+        )}
+        {!item.active && (
+          <View style={styles.relatedUnavailable}>
+            <Text style={styles.relatedUnavailableText}>UNAVAILABLE</Text>
           </View>
         )}
       </View>
-
-      {/* Service Info */}
       <View style={styles.relatedInfo}>
-        {/* Service Name */}
         <Text style={styles.relatedName} numberOfLines={2}>
           {item.name}
         </Text>
-
-        {/* Rating Section */}
-        {item.rating && (
+        {item.rating > 0 && (
           <View style={styles.relatedRatingContainer}>
             <View style={styles.relatedRating}>
               <Star
@@ -317,16 +559,14 @@ export default function ServiceDetailScreen() {
               />
               <Text style={styles.relatedRatingText}>{item.rating}</Text>
             </View>
-            {item.reviewsCount && (
+            {item.reviewsCount > 0 && (
               <Text style={styles.relatedReviews}>{item.reviewsCount}</Text>
             )}
           </View>
         )}
-
-        {/* Price & Duration */}
         <View style={styles.priceDeliveryRow}>
           <Text style={styles.relatedPrice}>
-            {item.price > 0 ? `₹${item.price}` : "FREE"}
+            {item.price > 0 ? "\u20B9" + item.price : "FREE"}
           </Text>
           {item.delivery && (
             <Text style={styles.relatedDelivery}>{item.delivery}</Text>
@@ -336,206 +576,365 @@ export default function ServiceDetailScreen() {
     </TouchableOpacity>
   );
 
+  const renderLoadMoreFooter = () => {
+    if (visibleRelated >= relatedServices.length) return null;
+    return (
+      <TouchableOpacity
+        style={styles.loadMoreContainer}
+        onPress={loadMoreRelated}
+      >
+        <View style={styles.loadMoreButton}>
+          <Text style={styles.loadMoreText}>More</Text>
+          <Text style={styles.loadMoreText}>
+            ({relatedServices.length - visibleRelated})
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={colors.ui.surface} />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => router.back()}
+        >
           <ChevronLeft size={24} color={colors.text.heading} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Service Details</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerButton} />
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Service Images */}
-        <View style={styles.imageSection}>
-          <Image
-            source={{
-              uri: service.images?.[mainImageIndex] || service.image,
-            }}
-            style={styles.mainImage}
-          />
-
-          {/* Image Thumbnails */}
-          {service.images && service.images.length > 1 && (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* ─── Image Gallery ──────────────────────────────────────────── */}
+          <View style={styles.galleryCard}>
             <FlatList
+              ref={imageScrollRef}
               horizontal
-              data={service.images}
-              keyExtractor={(_, index) => index.toString()}
+              pagingEnabled
+              data={serviceImages}
+              keyExtractor={(_, i) => "img-" + i}
               renderItem={({ item, index }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.thumbnail,
-                    mainImageIndex === index && styles.activeThumbnail,
-                  ]}
-                  onPress={() => setMainImageIndex(index)}
-                >
-                  <Image source={{ uri: item }} style={styles.thumbnailImage} />
-                </TouchableOpacity>
-              )}
-              contentContainerStyle={styles.thumbnailContainer}
-              showsHorizontalScrollIndicator={false}
-            />
-          )}
-        </View>
-
-        {/* Service Info Card */}
-        <View style={styles.infoCard}>
-          {/* Row 1: Service Name + Wishlist Heart */}
-          <View style={styles.nameAndWishlistRow}>
-            <View style={styles.nameContainer}>
-              <Text style={styles.serviceName}>{service.name}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.wishlistButton}
-              onPress={handleWishlistToggle}
-            >
-              <Heart
-                size={20}
-                color={
-                  isInWishlist(`service-${service.id}`)
-                    ? colors.status.error
-                    : colors.brand.primary
-                }
-                fill={
-                  isInWishlist(`service-${service.id}`)
-                    ? colors.status.error
-                    : "none"
-                }
-              />
-            </TouchableOpacity>
-          </View>
-
-          {/* Row 2: Status */}
-          <Text style={styles.statusAvailability}>
-            {service.active ? "Active • Available" : "Inactive"}
-          </Text>
-
-          {/* Row 3: Ratings (Left) + Category (Right) */}
-          <View style={styles.ratingCategoryRow}>
-            {service.rating && (
-              <View style={styles.ratingSection}>
-                <View style={styles.ratingStars}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      color={
-                        i < Math.floor(service.rating!)
-                          ? colors.brand.star
-                          : colors.ui.disabled
-                      }
-                      fill={
-                        i < Math.floor(service.rating!)
-                          ? colors.brand.star
-                          : "none"
-                      }
-                    />
-                  ))}
+                <View style={styles.galleryImageWrapper}>
+                  {!imageLoaded[index] && (
+                    <View style={styles.imageLoadingOverlay}>
+                      <ActivityIndicator
+                        size="large"
+                        color={colors.brand.primary}
+                      />
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: item }}
+                    style={styles.mainImage}
+                    onLoad={() =>
+                      setImageLoaded((prev) => ({ ...prev, [index]: true }))
+                    }
+                  />
+                  {service.discount && (
+                    <View style={styles.discountBadge}>
+                      <Text style={styles.discountText}>
+                        -{service.discount}%
+                      </Text>
+                    </View>
+                  )}
+                  {!service.active && (
+                    <View style={styles.unavailableBanner}>
+                      <Text style={styles.unavailableBannerText}>
+                        UNAVAILABLE
+                      </Text>
+                    </View>
+                  )}
                 </View>
-                <Text style={styles.ratingText}>
-                  {service.rating} • {service.reviewsCount} reviews
+              )}
+              onMomentumScrollEnd={onImageScroll}
+              showsHorizontalScrollIndicator={false}
+              getItemLayout={(_, index) => ({
+                length: SCREEN_WIDTH - spacing.md * 2,
+                offset: (SCREEN_WIDTH - spacing.md * 2) * index,
+                index,
+              })}
+              decelerationRate="fast"
+              snapToInterval={SCREEN_WIDTH - spacing.md * 2}
+              snapToAlignment="start"
+            />
+
+            {/* Image counter badge */}
+            {serviceImages.length > 1 && (
+              <View style={styles.imageCountBadge}>
+                <Text style={styles.imageCountText}>
+                  {mainImageIndex + 1}/{serviceImages.length}
                 </Text>
               </View>
             )}
-            {service.category && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{service.category}</Text>
+
+            {/* Dot indicators */}
+            {serviceImages.length > 1 && (
+              <View style={styles.dotContainer}>
+                {serviceImages.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.dot,
+                      mainImageIndex === i && styles.dotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+            )}
+
+            {/* Thumbnails row */}
+            {serviceImages.length > 1 && (
+              <FlatList
+                horizontal
+                data={serviceImages}
+                keyExtractor={(_, i) => "thumb-" + i}
+                renderItem={({ item, index }) => (
+                  <TouchableOpacity
+                    style={[
+                      styles.thumbnail,
+                      mainImageIndex === index && styles.activeThumbnail,
+                    ]}
+                    onPress={() => scrollToImage(index)}
+                  >
+                    <Image
+                      source={{ uri: item }}
+                      style={styles.thumbnailImage}
+                    />
+                  </TouchableOpacity>
+                )}
+                contentContainerStyle={styles.thumbnailContainer}
+                showsHorizontalScrollIndicator={false}
+              />
+            )}
+
+            {/* Photo count label */}
+            <Text style={styles.photoCountLabel}>
+              {serviceImages.length} photo{serviceImages.length > 1 ? "s" : ""}{" "}
+              {"\u2022"}{" "}
+              {serviceImages.length < 5
+                ? "up to " + (5 - serviceImages.length) + " more allowed"
+                : "maximum photos"}
+            </Text>
+          </View>
+
+          {/* ─── Service Info Card ──────────────────────────────────────── */}
+          <View style={styles.infoCard}>
+            <View style={styles.nameAndWishlistRow}>
+              <View style={styles.nameContainer}>
+                <Text style={styles.serviceName}>{service.name}</Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.wishlistButton,
+                  isInWishlist("service-" + service.id) &&
+                    styles.wishlistButtonActive,
+                ]}
+                onPress={toggleWishlist}
+              >
+                <Heart
+                  size={20}
+                  color={
+                    isInWishlist("service-" + service.id)
+                      ? colors.status.error
+                      : colors.brand.primary
+                  }
+                  fill={
+                    isInWishlist("service-" + service.id)
+                      ? colors.status.error
+                      : "none"
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Status */}
+            <Text
+              style={[
+                styles.statusAvailability,
+                !service.active && { color: colors.status.error },
+              ]}
+            >
+              {service.active
+                ? "Active \u2022 Available"
+                : "Currently Unavailable"}
+            </Text>
+
+            {/* Rating + Category row */}
+            <View style={styles.ratingCategoryRow}>
+              {service.rating > 0 && (
+                <View style={styles.ratingSection}>
+                  <View style={styles.ratingStars}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        color={
+                          i < Math.floor(service.rating)
+                            ? colors.brand.star
+                            : colors.ui.disabled
+                        }
+                        fill={
+                          i < Math.floor(service.rating)
+                            ? colors.brand.star
+                            : "none"
+                        }
+                      />
+                    ))}
+                  </View>
+                  <Text style={styles.ratingText}>
+                    {service.rating} {"\u2022"} {service.reviewsCount} reviews
+                  </Text>
+                </View>
+              )}
+              {service.category && (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{service.category}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Price + Duration + Provider row */}
+            <View style={styles.priceStoreRow}>
+              <View style={styles.priceColumn}>
+                <Text style={styles.price}>
+                  {service.price > 0 ? "\u20B9" + service.price : "FREE"}
+                </Text>
+                {service.originalPrice &&
+                  service.originalPrice > service.price && (
+                    <Text style={styles.originalPrice}>
+                      {"\u20B9"}
+                      {service.originalPrice}
+                    </Text>
+                  )}
+                <Text style={styles.stockInfo}>
+                  {service.price > 0 ? "Price" : "Complimentary"}
+                </Text>
+              </View>
+              <View style={styles.storeDeliveryColumn}>
+                <View style={styles.storeInfo}>
+                  <Text style={styles.storeLabel}>Offered by</Text>
+                  <Text style={styles.storeName}>{service.storeName}</Text>
+                </View>
+                {service.duration && (
+                  <View style={styles.deliveryInfo}>
+                    <Text style={styles.deliveryLabel}>Duration</Text>
+                    <Text style={styles.deliveryTime}>{service.duration}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+
+          {/* ─── Description Card ──────────────────────────────────────── */}
+          {service.description && (
+            <View style={styles.descriptionCard}>
+              <Text style={styles.sectionTitle}>About Service</Text>
+              {descriptionBullets.length > 1 ? (
+                descriptionBullets.map((bullet, idx) => (
+                  <View key={idx} style={styles.bulletRow}>
+                    <View style={styles.bulletDot} />
+                    <Text style={styles.descriptionText}>{bullet.trim()}</Text>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.descriptionText}>
+                  {service.description}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* ─── Service Details Card ─────────────────────────────────── */}
+          <View style={styles.detailsCard}>
+            <Text style={styles.sectionTitle}>Service Details</Text>
+            {service.duration && (
+              <View style={styles.detailRow}>
+                <Clock size={16} color={colors.brand.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailValue}>{service.duration}</Text>
+                </View>
+              </View>
+            )}
+            <View style={styles.detailRow}>
+              <MapPin size={16} color={colors.brand.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.detailLabel}>Service Provider</Text>
+                <Text style={styles.detailValue}>
+                  {service.storeName} {"\u2022"} {service.distance}
+                </Text>
+              </View>
+            </View>
+            {service.reviewsCount > 0 && (
+              <View style={styles.detailRow}>
+                <Users size={16} color={colors.brand.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>Total Reviews</Text>
+                  <Text style={styles.detailValue}>{service.reviewsCount}</Text>
+                </View>
+              </View>
+            )}
+            {service.delivery && (
+              <View style={styles.detailRow}>
+                <Calendar size={16} color={colors.brand.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.detailLabel}>Service Type</Text>
+                  <Text style={styles.detailValue}>{service.delivery}</Text>
+                </View>
               </View>
             )}
           </View>
 
-          {/* Row 4: Price (Left) + Duration & Provider (Right) */}
-          <View style={styles.priceStoreRow}>
-            <View style={styles.priceColumn}>
-              <Text style={styles.price}>
-                {service.price > 0 ? `₹${service.price}` : "FREE"}
-              </Text>
-              <Text style={styles.stockInfo}>
-                {service.price > 0 ? "Price" : "Complimentary"}
-              </Text>
-            </View>
-            <View style={styles.storeDeliveryColumn}>
-              <View style={styles.storeInfo}>
-                <Text style={styles.storeLabel}>Offered by</Text>
-                <Text style={styles.storeName}>{service.storeName}</Text>
-              </View>
-              <View style={styles.deliveryInfo}>
-                <Text style={styles.deliveryLabel}>Duration</Text>
-                <Text style={styles.deliveryTime}>{service.duration}</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Description */}
-        <View style={styles.descriptionCard}>
-          <Text style={styles.sectionTitle}>About Service</Text>
-          <Text style={styles.descriptionText}>{service.description}</Text>
-        </View>
-
-        {/* Service Details */}
-        <View style={styles.detailsCard}>
-          <Text style={styles.sectionTitle}>Service Details</Text>
-          <View style={styles.detailRow}>
-            <Clock size={16} color={colors.brand.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Delivery Time</Text>
-              <Text style={styles.detailValue}>{service.duration}</Text>
-            </View>
-          </View>
-          <View style={styles.detailRow}>
-            <MapPin size={16} color={colors.brand.primary} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.detailLabel}>Service Provider</Text>
-              <Text style={styles.detailValue}>{service.storeName}</Text>
-            </View>
-          </View>
-          {service.reviewsCount && (
-            <View style={styles.detailRow}>
-              <Users size={16} color={colors.brand.primary} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.detailLabel}>Total Reviews</Text>
-                <Text style={styles.detailValue}>{service.reviewsCount}</Text>
-              </View>
+          {/* ─── Features Card ─────────────────────────────────────────── */}
+          {service.features && service.features.length > 0 && (
+            <View style={styles.featuresCard}>
+              <Text style={styles.sectionTitle}>Key Features</Text>
+              {service.features.map((feature, index) => (
+                <View key={index} style={styles.featureItem}>
+                  <Check size={14} color={colors.status.successDark} />
+                  <Text style={styles.featureText}>{feature}</Text>
+                </View>
+              ))}
             </View>
           )}
-        </View>
 
-        {/* Features */}
-        {service.features && service.features.length > 0 && (
-          <View style={styles.featuresCard}>
-            <Text style={styles.sectionTitle}>Key Features</Text>
-            {service.features.map((feature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <View style={styles.bulletPoint} />
-                <Text style={styles.featureText}>{feature}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+          {/* ─── Related Services ──────────────────────────────────────── */}
+          {relatedServices.length > 0 && (
+            <View style={styles.relatedSection}>
+              <Text style={styles.sectionTitle}>Related Services</Text>
+              <FlatList
+                horizontal
+                data={paginatedRelated}
+                keyExtractor={(item) => item.id}
+                renderItem={renderRelatedCard}
+                contentContainerStyle={styles.relatedList}
+                showsHorizontalScrollIndicator={false}
+                ListFooterComponent={renderLoadMoreFooter}
+                initialNumToRender={4}
+                maxToRenderPerBatch={4}
+                windowSize={5}
+                removeClippedSubviews
+                getItemLayout={(_, index) => ({
+                  length: RELATED_CARD_WIDTH + spacing.md,
+                  offset: (RELATED_CARD_WIDTH + spacing.md) * index,
+                  index,
+                })}
+              />
+            </View>
+          )}
 
-        {/* Related Services */}
-        <View style={styles.relatedSection}>
-          <Text style={styles.sectionTitle}>Related Services</Text>
-          <FlatList
-            horizontal
-            data={relatedServices}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <RelatedServiceCard item={item} />}
-            contentContainerStyle={styles.relatedList}
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      </Animated.View>
 
       {/* Success Message */}
       {showSuccessMessage && (
@@ -547,28 +946,31 @@ export default function ServiceDetailScreen() {
         </View>
       )}
 
-      {/* Book Service Button */}
-      <View style={styles.bottomButton}>
+      {/* ─── Bottom Booking Section ──────────────────────────────────── */}
+      <View style={styles.bottomCard}>
         {service.active ? (
-          isBooked ? (
-            <View style={styles.bookedContainer}>
-              {/* Booking Info */}
-              <View style={styles.bookingInfoCard}>
-                <View style={styles.bookingStatusRow}>
-                  <Check size={16} color={colors.status.successDark} />
-                  <Text style={styles.bookedLabel}>Booked</Text>
-                </View>
-                {currentBooking && (
+          isBooked && currentBooking ? (
+            currentBooking.status === "pending" ? (
+              /* ── Pending: slot locked, awaiting payment ── */
+              <View style={styles.bookedContainer}>
+                <View style={styles.bookingInfoCard}>
+                  <View style={styles.bookingStatusRow}>
+                    <Clock size={16} color={colors.status.warningDark} />
+                    <Text
+                      style={[
+                        styles.bookedLabel,
+                        { color: colors.status.warningDark },
+                      ]}
+                    >
+                      Pending Payment
+                    </Text>
+                  </View>
                   <View style={styles.bookingDateTimeRow}>
                     <Calendar size={14} color={colors.brand.primary} />
                     <Text style={styles.bookingDateText}>
                       {new Date(currentBooking.bookingDate).toLocaleDateString(
                         "en-US",
-                        {
-                          weekday: "short",
-                          month: "short",
-                          day: "numeric",
-                        },
+                        { weekday: "short", month: "short", day: "numeric" },
                       )}
                     </Text>
                     <Clock size={14} color={colors.brand.primary} />
@@ -576,42 +978,91 @@ export default function ServiceDetailScreen() {
                       {currentBooking.bookingTime}
                     </Text>
                   </View>
-                )}
+                  <Text style={styles.expiryHint}>
+                    Slot locked for 3 min — complete payment to confirm
+                  </Text>
+                </View>
+                <View style={styles.bookedActionsRow}>
+                  <TouchableOpacity
+                    style={styles.payNowButton}
+                    onPress={() => router.push("/cart/cart" as any)}
+                  >
+                    <Text style={styles.payNowText}>Pay Now</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cancelBookingButton}
+                    onPress={handleCancelBooking}
+                  >
+                    <X size={16} color={colors.status.error} />
+                    <Text style={styles.cancelBookingText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              {/* Action Buttons */}
-              <View style={styles.bookedActionsRow}>
-                <TouchableOpacity
-                  style={styles.changeBookingButton}
-                  onPress={() => openBookingModal(true)}
-                >
-                  <Edit2 size={16} color={colors.brand.primary} />
-                  <Text style={styles.changeBookingText}>Change</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cancelBookingButton}
-                  onPress={handleCancelBooking}
-                >
-                  <X size={16} color={colors.status.error} />
-                  <Text style={styles.cancelBookingText}>Cancel</Text>
-                </TouchableOpacity>
+            ) : (
+              /* ── Confirmed booking ── */
+              <View style={styles.bookedContainer}>
+                <View style={styles.bookingInfoCard}>
+                  <View style={styles.bookingStatusRow}>
+                    <Check size={16} color={colors.status.successDark} />
+                    <Text style={styles.bookedLabel}>Booked</Text>
+                  </View>
+                  <View style={styles.bookingDateTimeRow}>
+                    <Calendar size={14} color={colors.brand.primary} />
+                    <Text style={styles.bookingDateText}>
+                      {new Date(currentBooking.bookingDate).toLocaleDateString(
+                        "en-US",
+                        { weekday: "short", month: "short", day: "numeric" },
+                      )}
+                    </Text>
+                    <Clock size={14} color={colors.brand.primary} />
+                    <Text style={styles.bookingTimeText}>
+                      {currentBooking.bookingTime}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.bookedActionsRow}>
+                  <TouchableOpacity
+                    style={styles.changeBookingButton}
+                    onPress={() => openBookingModal(true)}
+                  >
+                    <Edit2 size={16} color={colors.brand.primary} />
+                    <Text style={styles.changeBookingText}>Change</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cancelBookingButton}
+                    onPress={handleCancelBooking}
+                  >
+                    <X size={16} color={colors.status.error} />
+                    <Text style={styles.cancelBookingText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )
           ) : (
             <TouchableOpacity
               style={styles.bookButton}
               onPress={() => openBookingModal(false)}
             >
               <Text style={styles.bookButtonText}>Book Service</Text>
+              {service.price > 0 && (
+                <Text style={styles.bookButtonPrice}>
+                  {"\u20B9"}
+                  {service.price}
+                </Text>
+              )}
             </TouchableOpacity>
           )
         ) : (
-          <View style={styles.unavailableButton}>
-            <Text style={styles.unavailableText}>Service Unavailable</Text>
+          <View style={styles.unavailableButtonBottom}>
+            <Text style={styles.unavailableTextBottom}>
+              Service Unavailable
+            </Text>
+            <Text style={styles.unavailableSubtext}>Check back later</Text>
           </View>
         )}
       </View>
 
-      {/* Booking Modal */}
+      {/* ─── Booking Modal ────────────────────────────────────────────── */}
       <Modal
         visible={bookingModalVisible}
         animationType="slide"
@@ -620,7 +1071,6 @@ export default function ServiceDetailScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
                 {isEditing ? "Change Booking" : "Book Service"}
@@ -633,11 +1083,10 @@ export default function ServiceDetailScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Service Info */}
             <View style={styles.modalServiceInfo}>
               <Text style={styles.modalServiceName}>{service.name}</Text>
               <Text style={styles.modalServicePrice}>
-                {service.price > 0 ? `₹${service.price}` : "FREE"}
+                {service.price > 0 ? "\u20B9" + service.price : "FREE"}
               </Text>
             </View>
 
@@ -645,7 +1094,6 @@ export default function ServiceDetailScreen() {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              {/* Date Selection */}
               <Text style={styles.modalSectionTitle}>Select Date</Text>
               <ScrollView
                 horizontal
@@ -689,7 +1137,6 @@ export default function ServiceDetailScreen() {
                 ))}
               </ScrollView>
 
-              {/* Time Selection */}
               <Text style={styles.modalSectionTitle}>Select Time</Text>
               <View style={styles.timeGrid}>
                 {TIME_SLOTS.map((time) => (
@@ -714,7 +1161,6 @@ export default function ServiceDetailScreen() {
               </View>
             </ScrollView>
 
-            {/* Confirm Button */}
             <TouchableOpacity
               style={styles.confirmBookingBtn}
               onPress={handleConfirmBooking}
@@ -732,62 +1178,174 @@ export default function ServiceDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.ui.background,
-  },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
+    ...shadows.small,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+  headerButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.background,
+  },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: colors.text.heading },
+  scrollContent: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+
+  // Not found
+  notFoundContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  notFoundTitle: {
+    fontSize: 22,
+    fontWeight: "800",
     color: colors.text.heading,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
+  notFoundSubtitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text.secondary,
+    textAlign: "center",
   },
-  imageSection: {
-    marginBottom: 16,
+  notFoundButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.brand.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+  },
+  notFoundButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+
+  // Gallery
+  galleryCard: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+    ...shadows.medium,
+  },
+  galleryImageWrapper: {
+    width: SCREEN_WIDTH - spacing.md * 2,
+    height: IMAGE_HEIGHT,
+    position: "relative",
   },
   mainImage: {
     width: "100%",
-    height: 300,
-    borderRadius: radius.md,
+    height: "100%",
     backgroundColor: colors.ui.backgroundAlt,
-    marginBottom: 12,
+  },
+  imageLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.ui.backgroundAlt,
+    zIndex: 1,
+  },
+  discountBadge: {
+    position: "absolute",
+    top: spacing.md,
+    left: spacing.md,
+    backgroundColor: colors.tint.green,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  discountText: { fontSize: 12, fontWeight: "800", color: colors.text.inverse },
+  unavailableBanner: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+  },
+  unavailableBannerText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text.inverse,
+    letterSpacing: 2,
+  },
+  imageCountBadge: {
+    position: "absolute",
+    top: spacing.md,
+    right: spacing.md,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  imageCountText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  dotContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.ui.disabled,
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: colors.brand.primary,
+    borderRadius: 4,
   },
   thumbnailContainer: {
-    paddingBottom: 8,
+    paddingHorizontal: spacing.sm,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   thumbnail: {
-    width: 70,
-    height: 70,
-    borderRadius: radius.sm,
-    marginRight: 8,
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
     borderWidth: 2,
     borderColor: "transparent",
     overflow: "hidden",
   },
-  activeThumbnail: {
-    borderColor: colors.brand.primary,
+  activeThumbnail: { borderColor: colors.brand.primary },
+  thumbnailImage: { width: "100%", height: "100%" },
+  photoCountLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.text.tertiary,
+    textAlign: "center",
+    paddingBottom: spacing.sm,
   },
-  thumbnailImage: {
-    width: "100%",
-    height: "100%",
-  },
+
+  // Info card
   infoCard: {
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
     ...shadows.medium,
@@ -799,14 +1357,26 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
-  nameContainer: {
-    flex: 1,
-  },
+  nameContainer: { flex: 1 },
   serviceName: {
     fontSize: 22,
     fontWeight: "800",
     color: colors.text.heading,
     lineHeight: 28,
+  },
+  wishlistButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
+  },
+  wishlistButtonActive: {
+    borderColor: colors.status.error,
+    backgroundColor: colors.status.errorLight,
   },
   statusAvailability: {
     fontSize: 12,
@@ -827,15 +1397,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     flex: 1,
   },
-  ratingStars: {
-    flexDirection: "row",
-    gap: 2,
-  },
-  ratingText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
+  ratingStars: { flexDirection: "row", gap: 2 },
+  ratingText: { fontSize: 11, fontWeight: "600", color: colors.text.secondary },
   categoryBadge: {
     backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
@@ -853,40 +1416,26 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.md,
   },
-  priceColumn: {
-    flex: 1,
-  },
+  priceColumn: { flex: 1 },
   price: {
     fontSize: 24,
     fontWeight: "800",
     color: colors.brand.primary,
     marginBottom: spacing.xs,
   },
-  stockInfo: {
-    fontSize: 11,
+  originalPrice: {
+    fontSize: 14,
     fontWeight: "600",
-    color: colors.text.secondary,
+    color: colors.text.tertiary,
+    textDecorationLine: "line-through",
+    marginBottom: spacing.xs,
   },
-  storeDeliveryColumn: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  storeInfo: {
-    gap: spacing.xs,
-  },
-  storeLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
-  storeName: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.brand.primary,
-  },
-  deliveryInfo: {
-    gap: spacing.xs,
-  },
+  stockInfo: { fontSize: 11, fontWeight: "600", color: colors.text.secondary },
+  storeDeliveryColumn: { flex: 1, gap: spacing.sm },
+  storeInfo: { gap: spacing.xs },
+  storeLabel: { fontSize: 10, fontWeight: "600", color: colors.text.secondary },
+  storeName: { fontSize: 12, fontWeight: "700", color: colors.brand.primary },
+  deliveryInfo: { gap: spacing.xs },
   deliveryLabel: {
     fontSize: 10,
     fontWeight: "600",
@@ -897,58 +1446,42 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.status.successDark,
   },
-  wishlistButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.ui.border,
-    backgroundColor: colors.ui.surface,
-  },
-  statusBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  badgeActive: {
-    backgroundColor: colors.status.successLight,
-  },
-  badgeInactive: {
-    backgroundColor: colors.status.errorLight,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.status.successDark,
-  },
+
+  // Description
   descriptionCard: {
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.ui.borderLight,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text.heading,
-    marginBottom: 12,
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.brand.primary,
+    marginTop: 7,
   },
   descriptionText: {
     fontSize: 14,
     color: colors.text.caption,
     lineHeight: 21,
+    flex: 1,
   },
+
+  // Details
   detailsCard: {
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.ui.borderLight,
   },
@@ -971,11 +1504,19 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginTop: 2,
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text.heading,
+    marginBottom: 12,
+  },
+
+  // Features
   featuresCard: {
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.ui.borderLight,
   },
@@ -985,31 +1526,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     gap: 12,
   },
-  bulletPoint: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.brand.primary,
-    marginTop: 6,
-  },
   featureText: {
     fontSize: 14,
     color: colors.text.caption,
     flex: 1,
     lineHeight: 20,
   },
-  relatedSection: {
-    marginBottom: 24,
-  },
-  relatedList: {
-    paddingRight: 8,
-  },
+
+  // Related services
+  relatedSection: { marginTop: spacing.md, marginBottom: spacing.md },
+  relatedList: { paddingRight: spacing.sm },
   relatedCard: {
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: "hidden",
-    width: 155,
-    marginRight: 12,
+    width: RELATED_CARD_WIDTH,
+    marginRight: spacing.md,
     ...shadows.medium,
   },
   relatedImageContainer: {
@@ -1026,12 +1558,12 @@ const styles = StyleSheet.create({
   },
   categoryBadgeRelated: {
     position: "absolute",
-    top: 8,
-    left: 8,
+    top: spacing.sm,
+    left: spacing.sm,
     backgroundColor: "rgba(99, 102, 241, 0.9)",
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radius.full,
   },
   categoryBadgeText: {
     fontSize: 8,
@@ -1041,8 +1573,8 @@ const styles = StyleSheet.create({
   },
   activeBadge: {
     position: "absolute",
-    bottom: 8,
-    right: 8,
+    bottom: spacing.sm,
+    right: spacing.sm,
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -1050,35 +1582,55 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  activeBadgeText: {
-    fontSize: 16,
+  activeBadgeText: { fontSize: 16, color: colors.text.inverse },
+  relatedDiscountBadge: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.status.error,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  relatedDiscountText: {
+    fontSize: 9,
+    fontWeight: "800",
     color: colors.text.inverse,
   },
-  relatedInfo: {
-    padding: 12,
-    gap: 6,
+  relatedUnavailable: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
   },
+  relatedUnavailableText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.text.inverse,
+    textAlign: "center",
+  },
+  relatedInfo: { padding: spacing.md, gap: spacing.sm },
   relatedName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.text.heading,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   relatedRatingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: spacing.xs,
     backgroundColor: colors.status.warningLight,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: radius.sm,
     alignSelf: "flex-start",
   },
-  relatedRating: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
+  relatedRating: { flexDirection: "row", alignItems: "center", gap: 3 },
   relatedRatingText: {
     fontSize: 11,
     fontWeight: "700",
@@ -1090,7 +1642,7 @@ const styles = StyleSheet.create({
     color: colors.status.warningDark,
   },
   relatedPrice: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "800",
     color: colors.brand.primary,
   },
@@ -1098,76 +1650,89 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 4,
+    gap: spacing.xs,
   },
   relatedDelivery: {
     fontSize: 9,
     fontWeight: "700",
     color: colors.status.successDark,
     backgroundColor: colors.tint.greenLight,
-    paddingHorizontal: 6,
+    paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
     textAlign: "center",
   },
-  ratingRow: {
-    flexDirection: "row",
+  loadMoreContainer: {
+    justifyContent: "center",
     alignItems: "center",
-    gap: 4,
-    marginBottom: 6,
+    paddingHorizontal: spacing.sm,
   },
-  rating: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.text.primary,
+  loadMoreButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: 130,
+    backgroundColor: colors.ui.backgroundAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderStyle: "dashed",
   },
-  relatedStatus: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-    alignSelf: "flex-start",
+  loadMoreText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.brand.primary,
   },
-  statusActive: {
-    backgroundColor: colors.status.successLight,
-  },
-  statusInactive: {
-    backgroundColor: colors.status.errorLight,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.status.successDark,
-  },
-  bottomButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+
+  // Bottom section
+  bottomCard: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     backgroundColor: colors.ui.surface,
     borderTopWidth: 1,
     borderTopColor: colors.ui.borderLight,
+    ...shadows.large,
   },
   bookButton: {
-    backgroundColor: colors.brand.primaryLight,
-    paddingVertical: 14,
-    borderRadius: radius.md,
+    backgroundColor: colors.brand.primary,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.lg,
+    ...shadows.medium,
   },
   bookButtonText: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,
   },
-  unavailableButton: {
-    backgroundColor: colors.ui.disabled,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    alignItems: "center",
+  bookButtonPrice: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: colors.text.inverse,
   },
-  unavailableText: {
+  unavailableButtonBottom: {
+    backgroundColor: colors.ui.disabled,
+    paddingVertical: spacing.lg,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  unavailableTextBottom: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,
+    marginBottom: spacing.xs,
   },
-  // Success Message
+  unavailableSubtext: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+
+  // Success message
   successMessage: {
     position: "absolute",
     top: 100,
@@ -1189,10 +1754,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.status.successDark,
   },
-  // Booked Container
-  bookedContainer: {
-    gap: 12,
-  },
+
+  // Booked container
+  bookedContainer: { gap: 12 },
   bookingInfoCard: {
     backgroundColor: colors.status.successLight,
     paddingHorizontal: 16,
@@ -1212,11 +1776,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.status.successDark,
   },
-  bookingDateTimeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
+  bookingDateTimeRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   bookingDateText: {
     fontSize: 13,
     fontWeight: "600",
@@ -1228,10 +1788,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.brand.primary,
   },
-  bookedActionsRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
+  bookedActionsRow: { flexDirection: "row", gap: 12 },
   changeBookingButton: {
     flex: 1,
     flexDirection: "row",
@@ -1266,7 +1823,29 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.status.error,
   },
-  // Modal Styles
+  expiryHint: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.status.warningDark,
+    marginTop: spacing.xs,
+  },
+  payNowButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: colors.brand.primary,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+  },
+  payNowText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1288,14 +1867,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.border,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text.heading,
-  },
-  modalCloseBtn: {
-    padding: 4,
-  },
+  modalTitle: { fontSize: 18, fontWeight: "700", color: colors.text.heading },
+  modalCloseBtn: { padding: 4 },
   modalServiceInfo: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1314,10 +1887,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.brand.primary,
   },
-  modalBody: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-  },
+  modalBody: { paddingHorizontal: 20, paddingTop: 16 },
   modalSectionTitle: {
     fontSize: 14,
     fontWeight: "700",
@@ -1325,9 +1895,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
-  dateScrollView: {
-    marginBottom: 16,
-  },
+  dateScrollView: { marginBottom: 16 },
   dateCard: {
     width: 70,
     height: 80,
@@ -1359,9 +1927,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: colors.text.secondary,
   },
-  dateTextSelected: {
-    color: colors.text.inverse,
-  },
+  dateTextSelected: { color: colors.text.inverse },
   timeGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1381,14 +1947,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary,
     borderColor: colors.brand.primary,
   },
-  timeSlotText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.primary,
-  },
-  timeSlotTextSelected: {
-    color: colors.text.inverse,
-  },
+  timeSlotText: { fontSize: 13, fontWeight: "600", color: colors.text.primary },
+  timeSlotTextSelected: { color: colors.text.inverse },
   confirmBookingBtn: {
     flexDirection: "row",
     alignItems: "center",

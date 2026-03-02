@@ -368,6 +368,8 @@ export interface Product {
   originalPrice?: number;
   discount?: number;
   image: string;
+  images?: string[]; // 1-5 product photos for gallery
+  description?: string;
   storeId: string;
   storeName: string;
   rating: number;
@@ -376,6 +378,7 @@ export interface Product {
   inStock: boolean;
   isSubscription?: boolean; // For flash deals - subscription store products
   unit?: string;
+  delivery?: string;
 }
 
 export const PRODUCT_CATEGORIES = [
@@ -412,6 +415,14 @@ export const mockProducts: Product[] = [
     discount: 25,
     image:
       "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=500",
+      "https://images.unsplash.com/photo-1649620407859-bfa6aba76e4f?q=80&w=500",
+      "https://images.unsplash.com/photo-1592063786241-8b7c1fe79f17?q=80&w=500",
+      "https://images.unsplash.com/photo-1558818498-28c1e002b655?q=80&w=500",
+    ],
+    description:
+      "Fresh, organic tomatoes sourced directly from local farmers. Rich in lycopene and vitamin C. Perfect for salads, cooking, or making juices. Hand-picked to ensure quality and freshness.",
     storeId: "1",
     storeName: "Organic Farms",
     rating: 4.5,
@@ -420,6 +431,7 @@ export const mockProducts: Product[] = [
     inStock: true,
     isSubscription: true,
     unit: "1 kg",
+    delivery: "10-15 min",
   },
   {
     id: "p2",
@@ -430,6 +442,12 @@ export const mockProducts: Product[] = [
     discount: 18,
     image:
       "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?q=80&w=500",
+      "https://images.unsplash.com/photo-1592063786241-8b7c1fe79f17?q=80&w=500",
+    ],
+    description:
+      "Crisp and fresh green capsicums perfect for stir-fry, salads, and stuffed recipes. Rich in vitamin C and antioxidants.",
     storeId: "1",
     storeName: "Organic Farms",
     rating: 4.3,
@@ -437,6 +455,7 @@ export const mockProducts: Product[] = [
     distance: "0.4 km",
     inStock: true,
     unit: "500 g",
+    delivery: "10-15 min",
   },
   {
     id: "p3",
@@ -498,6 +517,15 @@ export const mockProducts: Product[] = [
     discount: 18,
     image:
       "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?q=80&w=500",
+      "https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?q=80&w=500",
+      "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?q=80&w=500",
+      "https://images.unsplash.com/photo-1584306670957-acf935f5033c?q=80&w=500",
+      "https://images.unsplash.com/photo-1576179635662-9d1983e97e1e?q=80&w=500",
+    ],
+    description:
+      "Premium Royal Gala apples, sweet and crisp. Imported quality with perfect crunch. Great for snacking, juicing, or baking. Packed with fiber and nutrients.",
     storeId: "1",
     storeName: "Organic Farms",
     rating: 4.7,
@@ -506,6 +534,7 @@ export const mockProducts: Product[] = [
     inStock: true,
     isSubscription: true,
     unit: "1 kg",
+    delivery: "10-15 min",
   },
   {
     id: "p7",
@@ -565,6 +594,13 @@ export const mockProducts: Product[] = [
     discount: 17,
     image:
       "https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1563636619-e9143da7973b?q=80&w=500",
+      "https://images.unsplash.com/photo-1550583724-b2692b85b150?q=80&w=500",
+      "https://images.unsplash.com/photo-1523473827533-2a64d0d36748?q=80&w=500",
+    ],
+    description:
+      "Farm-fresh whole milk delivered daily. Rich in calcium and protein. Sourced from healthy, grass-fed cows with no added preservatives.",
     storeId: "20",
     storeName: "Daily Dairy",
     rating: 4.8,
@@ -573,6 +609,7 @@ export const mockProducts: Product[] = [
     inStock: true,
     isSubscription: true,
     unit: "1 L",
+    delivery: "8-12 min",
   },
   {
     id: "p11",
@@ -617,6 +654,14 @@ export const mockProducts: Product[] = [
     discount: 35,
     image:
       "https://images.unsplash.com/photo-1590658268037-6bf12f032f55?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1590658268037-6bf12f032f55?q=80&w=500",
+      "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?q=80&w=500",
+      "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=500",
+      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=500",
+    ],
+    description:
+      "Premium wireless earbuds with active noise cancellation. 24-hour battery life with charging case. IPX5 waterproof rating. Crystal clear audio quality.",
     storeId: "5",
     storeName: "Auto Masters",
     rating: 4.4,
@@ -624,6 +669,7 @@ export const mockProducts: Product[] = [
     distance: "2.5 km",
     inStock: true,
     isSubscription: false,
+    delivery: "20-30 min",
   },
   {
     id: "p14",
@@ -700,6 +746,13 @@ export const mockProducts: Product[] = [
     discount: 31,
     image:
       "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?q=80&w=500",
+      "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=500",
+      "https://images.unsplash.com/photo-1583391733981-8b530c47db44?q=80&w=500",
+    ],
+    description:
+      "Premium cotton kurta set with beautiful embroidery. Comfortable fit for all occasions. Available in multiple sizes. Machine washable fabric.",
     storeId: "11",
     storeName: "Modern Sari House",
     rating: 4.8,
@@ -707,6 +760,7 @@ export const mockProducts: Product[] = [
     distance: "0.9 km",
     inStock: true,
     isSubscription: true,
+    delivery: "15-25 min",
   },
   {
     id: "p19",
@@ -934,6 +988,15 @@ export const mockProducts: Product[] = [
     discount: 20,
     image:
       "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=500",
+      "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=500",
+      "https://images.unsplash.com/photo-1599643477877-530eb83abc8e?q=80&w=500",
+      "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?q=80&w=500",
+      "https://images.unsplash.com/photo-1515562141589-67f0d4e2f0f1?q=80&w=500",
+    ],
+    description:
+      "Exquisite handcrafted gold jhumka earrings with intricate design. 22K gold with traditional craftsmanship. Perfect for weddings and festive occasions. Hallmarked and certified.",
     storeId: "18",
     storeName: "Glitters Gold",
     rating: 5.0,
@@ -941,6 +1004,7 @@ export const mockProducts: Product[] = [
     distance: "0.7 km",
     inStock: true,
     isSubscription: true,
+    delivery: "Same day",
   },
   {
     id: "p33",
@@ -1119,6 +1183,425 @@ export const mockProducts: Product[] = [
     distance: "4.2 km",
     inStock: true,
     unit: "1 kg",
+  },
+];
+
+// === SERVICE CATEGORIES & MOCK SERVICES ===
+export const SERVICE_CATEGORY_IDS = ["salon", "carpenter", "architecture"];
+
+export interface ServiceItem {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  image: string;
+  images?: string[];
+  description?: string;
+  active: boolean;
+  duration?: string;
+  delivery?: string;
+  rating: number;
+  reviewsCount: number;
+  storeId: string;
+  storeName: string;
+  distance: string;
+  features?: string[];
+  isSubscription?: boolean;
+}
+
+export const SERVICE_CATEGORIES = [
+  { id: "all", name: "All", icon: "🔧", color: "#6366f1" },
+  { id: "salon", name: "Salon & Beauty", icon: "💇", color: "#f97316" },
+  { id: "carpenter", name: "Carpentry", icon: "🪵", color: "#a16207" },
+  { id: "architecture", name: "Architecture", icon: "🏗️", color: "#475569" },
+  { id: "repair", name: "Repair", icon: "🔧", color: "#3b82f6" },
+  { id: "cleaning", name: "Cleaning", icon: "🧹", color: "#10b981" },
+  { id: "delivery", name: "Delivery", icon: "🚚", color: "#8b5cf6" },
+];
+
+export const mockServices: ServiceItem[] = [
+  // Salon & Beauty
+  {
+    id: "s1",
+    name: "Men's Haircut",
+    category: "salon",
+    price: 200,
+    originalPrice: 300,
+    discount: 33,
+    image:
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=500",
+      "https://images.unsplash.com/photo-1585747860019-f3ded18839e1?q=80&w=500",
+      "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=500",
+    ],
+    description:
+      "Professional men's haircut by experienced barbers. Includes hair wash, styling, and grooming consultation. Walk-ins welcome. All age groups served.",
+    active: true,
+    duration: "30 min",
+    delivery: "Walk-in",
+    rating: 4.6,
+    reviewsCount: 567,
+    storeId: "6",
+    storeName: "Glow Up Studio",
+    distance: "0.6 km",
+    features: [
+      "Professional barbers",
+      "Hair wash included",
+      "Styling consultation",
+      "Walk-ins welcome",
+    ],
+    isSubscription: true,
+  },
+  {
+    id: "s2",
+    name: "Bridal Makeup",
+    category: "salon",
+    price: 5000,
+    originalPrice: 7000,
+    discount: 29,
+    image:
+      "https://images.unsplash.com/photo-1457972729786-0411a3b2b626?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1457972729786-0411a3b2b626?q=80&w=500",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=500",
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=500",
+      "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?q=80&w=500",
+      "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?q=80&w=500",
+    ],
+    description:
+      "Complete bridal makeup package including base, eyes, lips, hair styling, and touch-up kit. Premium international products used. Trial session available separately.",
+    active: true,
+    duration: "3-4 hrs",
+    delivery: "Home visit",
+    rating: 4.9,
+    reviewsCount: 345,
+    storeId: "6",
+    storeName: "Glow Up Studio",
+    distance: "0.6 km",
+    features: [
+      "HD/Airbrush makeup",
+      "Hair styling included",
+      "Touch-up kit",
+      "Premium products",
+      "Home visit available",
+    ],
+    isSubscription: true,
+  },
+  {
+    id: "s3",
+    name: "Facial & Cleanup",
+    category: "salon",
+    price: 700,
+    originalPrice: 1000,
+    discount: 30,
+    image:
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=500",
+      "https://images.unsplash.com/photo-1552693673-1bf958298935?q=80&w=500",
+      "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=500",
+    ],
+    description:
+      "Deep cleansing facial with exfoliation, steaming, and hydrating mask. Suitable for all skin types. Relaxing experience with visible results.",
+    active: true,
+    duration: "45 min",
+    delivery: "Walk-in",
+    rating: 4.7,
+    reviewsCount: 412,
+    storeId: "6",
+    storeName: "Glow Up Studio",
+    distance: "0.6 km",
+    features: [
+      "Deep cleansing",
+      "Exfoliation & steaming",
+      "Hydrating mask",
+      "All skin types",
+    ],
+    isSubscription: true,
+  },
+  {
+    id: "s4",
+    name: "Hair Coloring",
+    category: "salon",
+    price: 1500,
+    originalPrice: 2200,
+    discount: 32,
+    image:
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=500",
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=500",
+    ],
+    description:
+      "Professional hair coloring with premium ammonia-free products. Global and highlight options available. Includes post-color treatment.",
+    active: true,
+    duration: "1.5-2 hrs",
+    delivery: "Walk-in",
+    rating: 4.5,
+    reviewsCount: 289,
+    storeId: "6",
+    storeName: "Glow Up Studio",
+    distance: "0.6 km",
+    features: [
+      "Ammonia-free colors",
+      "Global & highlights",
+      "Post-color treatment",
+      "Color consultation",
+    ],
+    isSubscription: true,
+  },
+  // Carpentry
+  {
+    id: "s5",
+    name: "Custom Wooden Door",
+    category: "carpenter",
+    price: 8000,
+    originalPrice: 10000,
+    discount: 20,
+    image:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=500",
+      "https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=500",
+      "https://images.unsplash.com/photo-1600585152220-90363fe7e115?q=80&w=500",
+      "https://images.unsplash.com/photo-1565793298595-6a879b1d9492?q=80&w=500",
+    ],
+    description:
+      "Custom-made wooden doors with premium teak or sheesham wood. Includes design consultation, crafting, polishing, and home installation. Warranty included.",
+    active: true,
+    duration: "5-7 days",
+    delivery: "Home install",
+    rating: 4.7,
+    reviewsCount: 45,
+    storeId: "10",
+    storeName: "Royal Furniture",
+    distance: "2.1 km",
+    features: [
+      "Premium wood selection",
+      "Custom design",
+      "Polishing included",
+      "Home installation",
+      "1-year warranty",
+    ],
+    isSubscription: false,
+  },
+  {
+    id: "s6",
+    name: "Wooden Table Making",
+    category: "carpenter",
+    price: 4500,
+    image:
+      "https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1611269154421-4e27233ac5c7?q=80&w=500",
+      "https://images.unsplash.com/photo-1594620302200-9a762244a156?q=80&w=500",
+    ],
+    description:
+      "Handcrafted wooden tables for dining, study, or office use. Choose from various wood types and designs. Comes with free delivery and assembly.",
+    active: true,
+    duration: "3-5 days",
+    delivery: "Free delivery",
+    rating: 4.5,
+    reviewsCount: 34,
+    storeId: "10",
+    storeName: "Royal Furniture",
+    distance: "2.1 km",
+    features: [
+      "Multiple wood options",
+      "Custom sizing",
+      "Free delivery",
+      "Assembly included",
+    ],
+    isSubscription: false,
+  },
+  // Repair
+  {
+    id: "s7",
+    name: "AC Repair Service",
+    category: "repair",
+    price: 500,
+    originalPrice: 800,
+    discount: 38,
+    image:
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=500",
+      "https://images.unsplash.com/photo-1585771724684-38269d6639fd?q=80&w=500",
+      "https://images.unsplash.com/photo-1631545806609-8aee4c39025e?q=80&w=500",
+    ],
+    description:
+      "Professional AC repair and servicing for all brands. Includes gas refill, filter cleaning, and general maintenance. 30-day service warranty.",
+    active: true,
+    duration: "1-2 hrs",
+    delivery: "Home visit",
+    rating: 4.8,
+    reviewsCount: 678,
+    storeId: "5",
+    storeName: "Auto Masters",
+    distance: "1.2 km",
+    features: [
+      "All brands supported",
+      "Gas refill included",
+      "Filter cleaning",
+      "30-day warranty",
+    ],
+    isSubscription: true,
+  },
+  {
+    id: "s8",
+    name: "Plumbing Service",
+    category: "repair",
+    price: 350,
+    originalPrice: 500,
+    discount: 30,
+    image:
+      "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?q=80&w=500",
+      "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=500",
+    ],
+    description:
+      "Expert plumbing services for leaks, blockages, and installations. Quick response time. All tools and basic materials included in the price.",
+    active: true,
+    duration: "1-3 hrs",
+    delivery: "Home visit",
+    rating: 4.4,
+    reviewsCount: 234,
+    storeId: "5",
+    storeName: "Auto Masters",
+    distance: "1.2 km",
+    features: [
+      "Leak repair",
+      "Pipe installation",
+      "Materials included",
+      "Quick response",
+    ],
+    isSubscription: true,
+  },
+  // Cleaning
+  {
+    id: "s9",
+    name: "Deep Home Cleaning",
+    category: "cleaning",
+    price: 1500,
+    originalPrice: 2500,
+    discount: 40,
+    image:
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=500",
+      "https://images.unsplash.com/photo-1628177142898-93e36e4e3a50?q=80&w=500",
+      "https://images.unsplash.com/photo-1563453392212-326f5e854473?q=80&w=500",
+      "https://images.unsplash.com/photo-1527515545081-5db817172677?q=80&w=500",
+    ],
+    description:
+      "Complete home deep cleaning including all rooms, kitchen, bathrooms, and balconies. Professional equipment and eco-friendly products used. Satisfaction guaranteed.",
+    active: true,
+    duration: "4-6 hrs",
+    delivery: "Home visit",
+    rating: 4.6,
+    reviewsCount: 456,
+    storeId: "5",
+    storeName: "Auto Masters",
+    distance: "1.2 km",
+    features: [
+      "All rooms included",
+      "Eco-friendly products",
+      "Professional equipment",
+      "Satisfaction guaranteed",
+    ],
+    isSubscription: true,
+  },
+  {
+    id: "s10",
+    name: "Sofa Cleaning",
+    category: "cleaning",
+    price: 800,
+    originalPrice: 1200,
+    discount: 33,
+    image:
+      "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85f82e?q=80&w=500",
+    ],
+    description:
+      "Professional sofa and upholstery cleaning with steam technology. Removes stains, dust mites, and allergens. Safe for all fabric types.",
+    active: true,
+    duration: "1-2 hrs",
+    delivery: "Home visit",
+    rating: 4.3,
+    reviewsCount: 189,
+    storeId: "5",
+    storeName: "Auto Masters",
+    distance: "1.2 km",
+    features: [
+      "Steam cleaning",
+      "Stain removal",
+      "Allergen-free",
+      "All fabrics",
+    ],
+    isSubscription: false,
+  },
+  // Delivery
+  {
+    id: "s11",
+    name: "Same Day Delivery",
+    category: "delivery",
+    price: 50,
+    image:
+      "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=500",
+      "https://images.unsplash.com/photo-1604507209433-bc10e3c35b08?q=80&w=500",
+    ],
+    description:
+      "Get your order delivered the same day. Order before 5 PM for guaranteed same-day delivery. Real-time tracking available.",
+    active: true,
+    duration: "4-6 hrs",
+    delivery: "Same day",
+    rating: 4.7,
+    reviewsCount: 892,
+    storeId: "1",
+    storeName: "Organic Farms",
+    distance: "0.4 km",
+    features: [
+      "Same day guarantee",
+      "Real-time tracking",
+      "Safe packaging",
+      "Order before 5 PM",
+    ],
+    isSubscription: false,
+  },
+  {
+    id: "s12",
+    name: "Express Delivery",
+    category: "delivery",
+    price: 100,
+    image:
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=300",
+    images: [
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=500",
+    ],
+    description:
+      "Ultra-fast delivery for urgent orders. 2-4 hour delivery window with priority handling. Insured and tracked.",
+    active: true,
+    duration: "2-4 hrs",
+    delivery: "Express",
+    rating: 4.9,
+    reviewsCount: 678,
+    storeId: "1",
+    storeName: "Organic Farms",
+    distance: "0.4 km",
+    features: [
+      "2-4 hour delivery",
+      "Priority handling",
+      "Insured",
+      "Live tracking",
+    ],
+    isSubscription: true,
   },
 ];
 

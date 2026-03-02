@@ -1,8 +1,11 @@
 ﻿// src/features/dashboard/screens/HomeScreen.tsx
 import {
   mockProducts,
+  mockServices,
   Product,
   PRODUCT_CATEGORIES,
+  SERVICE_CATEGORY_IDS,
+  ServiceItem,
 } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
@@ -13,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   MapPin,
+  Scissors,
   Star,
   TrendingUp,
   Zap,
@@ -80,7 +84,21 @@ export default function HomeScreen() {
   const flashDealProducts = useMemo(
     () =>
       mockProducts
-        .filter((p) => p.isSubscription && p.discount)
+        .filter(
+          (p) =>
+            p.isSubscription &&
+            p.discount &&
+            !SERVICE_CATEGORY_IDS.includes(p.category),
+        )
+        .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+        .slice(0, 10),
+    [],
+  );
+
+  const flashDealServices = useMemo(
+    () =>
+      mockServices
+        .filter((s) => s.active && s.discount)
         .sort((a, b) => (b.discount || 0) - (a.discount || 0))
         .slice(0, 10),
     [],
@@ -128,6 +146,13 @@ export default function HomeScreen() {
     } as any);
   };
 
+  const navigateToService = (serviceId: string) => {
+    router.push({
+      pathname: "/service/[id]",
+      params: { id: serviceId },
+    } as any);
+  };
+
   const QuickPickItem = ({ item }: { item: (typeof QUICK_PICKS)[0] }) => (
     <TouchableOpacity
       style={styles.quickPickItem}
@@ -160,6 +185,45 @@ export default function HomeScreen() {
       <View style={styles.subscriptionBadge}>
         <Zap size={8} color={colors.brand.star} />
         <Text style={styles.subscriptionText}>Subscribe</Text>
+      </View>
+      <View style={styles.flashDealInfo}>
+        <Text style={styles.flashDealName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <Text style={styles.flashDealStore} numberOfLines={1}>
+          {item.storeName} {"\u2022"} {item.distance}
+        </Text>
+        <View style={styles.priceRow}>
+          <Text style={styles.flashPrice}>
+            {"\u20B9"}
+            {item.price}
+          </Text>
+          {item.originalPrice ? (
+            <Text style={styles.flashOriginalPrice}>
+              {"\u20B9"}
+              {item.originalPrice}
+            </Text>
+          ) : null}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const FlashServiceCard = ({ item }: { item: ServiceItem }) => (
+    <TouchableOpacity
+      style={styles.flashDealCard}
+      onPress={() => navigateToService(item.id)}
+      activeOpacity={0.85}
+    >
+      <Image source={{ uri: item.image }} style={styles.flashDealImage} />
+      {item.discount ? (
+        <View style={styles.discountBadge}>
+          <Text style={styles.discountText}>{item.discount}% OFF</Text>
+        </View>
+      ) : null}
+      <View style={styles.serviceBadge}>
+        <Scissors size={8} color={colors.brand.primary} />
+        <Text style={styles.serviceTagText}>Service</Text>
       </View>
       <View style={styles.flashDealInfo}>
         <Text style={styles.flashDealName} numberOfLines={1}>
@@ -343,6 +407,38 @@ export default function HomeScreen() {
             onScrollToIndexFailed={() => {}}
           />
         </View>
+
+        {/* Flash Services */}
+        {flashDealServices.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionTitleContainer}>
+                <View style={styles.serviceIconContainer}>
+                  <Scissors size={16} color={colors.brand.primary} />
+                </View>
+                <View>
+                  <Text style={styles.sectionTitle}>Flash Services</Text>
+                  <Text style={styles.sectionSubLabel}>
+                    Salon, repair & more
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => navigateToCategory("salon")}>
+                <Text style={styles.viewAllText}>View All </Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              horizontal
+              data={flashDealServices}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => <FlashServiceCard item={item} />}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flashDealsList}
+              snapToInterval={156}
+              decelerationRate="fast"
+            />
+          </View>
+        )}
 
         {/* Trending Stores */}
         <View style={styles.section}>
@@ -573,6 +669,31 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: "700",
     color: colors.brand.star,
+  },
+  serviceBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  serviceTagText: {
+    fontSize: 8,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+  serviceIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: colors.brand.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
   },
   flashDealInfo: { padding: spacing.sm },
   flashDealName: {

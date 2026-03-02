@@ -1,211 +1,379 @@
+import { mockProducts } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Check,
-    ChevronLeft,
-    Heart,
-    Minus,
-    Plus,
-    Share2,
-    ShoppingCart,
-    Star,
+  Check,
+  ChevronLeft,
+  Clock,
+  Heart,
+  MapPin,
+  Minus,
+  Package,
+  Plus,
+  Share2,
+  ShoppingCart,
+  Star,
+  Store,
+  Truck,
 } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
-    FlatList,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  InteractionManager,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  displayPrice: string;
-  stock: string;
-  image: string;
-  status: "active" | "out-of-stock";
-  description?: string;
-  images?: string[];
-  storeId?: string;
-  storeName?: string;
-  rating?: number;
-  reviews?: number;
-  delivery?: string;
-}
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const IMAGE_HEIGHT = 380;
+const RELATED_CARD_WIDTH = 165;
+const RELATED_BATCH_SIZE = 4;
 
+// ─── Skeleton Shimmer Component ─────────────────────────────────────────────
+const SkeletonBlock = ({
+  width,
+  height,
+  borderRadius = radius.md,
+  style,
+}: {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  style?: any;
+}) => {
+  const shimmerAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmerAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(shimmerAnim, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [shimmerAnim]);
+
+  const opacity = shimmerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7],
+  });
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: width as any,
+          height,
+          borderRadius,
+          backgroundColor: colors.ui.disabled,
+          opacity,
+        },
+        style,
+      ]}
+    />
+  );
+};
+
+// ─── Skeleton Loading Screen ─────────────────────────────────────────────────
+const ProductSkeleton = () => (
+  <ScrollView
+    style={{ flex: 1, backgroundColor: colors.ui.background }}
+    contentContainerStyle={{ padding: spacing.md }}
+    showsVerticalScrollIndicator={false}
+  >
+    <SkeletonBlock
+      width="100%"
+      height={IMAGE_HEIGHT}
+      borderRadius={radius.lg}
+    />
+    <View
+      style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}
+    >
+      {[1, 2, 3, 4].map((i) => (
+        <SkeletonBlock
+          key={i}
+          width={70}
+          height={70}
+          borderRadius={radius.md}
+        />
+      ))}
+    </View>
+    <View
+      style={{
+        backgroundColor: colors.ui.surface,
+        borderRadius: radius.lg,
+        padding: spacing.md,
+        marginTop: spacing.lg,
+        ...shadows.medium,
+      }}
+    >
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <SkeletonBlock width="65%" height={24} />
+        <SkeletonBlock width={40} height={40} borderRadius={radius.md} />
+      </View>
+      <SkeletonBlock
+        width="40%"
+        height={14}
+        style={{ marginTop: spacing.sm }}
+      />
+      <View
+        style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.md }}
+      >
+        <SkeletonBlock width="30%" height={16} />
+        <SkeletonBlock width="25%" height={26} borderRadius={radius.full} />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          marginTop: spacing.md,
+        }}
+      >
+        <SkeletonBlock width="35%" height={28} />
+        <SkeletonBlock width="40%" height={20} />
+      </View>
+    </View>
+    <View
+      style={{
+        backgroundColor: colors.ui.surface,
+        borderRadius: radius.lg,
+        padding: spacing.lg,
+        marginTop: spacing.md,
+        ...shadows.medium,
+      }}
+    >
+      <SkeletonBlock width="50%" height={20} />
+      {[1, 2, 3].map((i) => (
+        <SkeletonBlock
+          key={i}
+          width="90%"
+          height={14}
+          style={{ marginTop: spacing.sm }}
+        />
+      ))}
+    </View>
+    <SkeletonBlock width="45%" height={20} style={{ marginTop: spacing.lg }} />
+    <View
+      style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.md }}
+    >
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={{ width: RELATED_CARD_WIDTH }}>
+          <SkeletonBlock
+            width={RELATED_CARD_WIDTH}
+            height={130}
+            borderRadius={radius.lg}
+          />
+          <SkeletonBlock
+            width="80%"
+            height={14}
+            style={{ marginTop: spacing.sm }}
+          />
+          <SkeletonBlock
+            width="50%"
+            height={14}
+            style={{ marginTop: spacing.xs }}
+          />
+        </View>
+      ))}
+    </View>
+  </ScrollView>
+);
+
+// ─── Related Product Skeleton Card ───────────────────────────────────────────
+const RelatedProductSkeleton = () => (
+  <View style={[styles.relatedCard, { width: RELATED_CARD_WIDTH }]}>
+    <SkeletonBlock width={RELATED_CARD_WIDTH} height={130} borderRadius={0} />
+    <View style={{ padding: spacing.md, gap: spacing.sm }}>
+      <SkeletonBlock width="85%" height={13} />
+      <SkeletonBlock width="50%" height={12} />
+      <SkeletonBlock width="60%" height={16} />
+    </View>
+  </View>
+);
+
+// ─── Product Not Found ──────────────────────────────────────────────────────
+const ProductNotFound = ({ onBack }: { onBack: () => void }) => (
+  <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.headerButton} onPress={onBack}>
+        <ChevronLeft size={24} color={colors.text.heading} />
+      </TouchableOpacity>
+      <Text style={styles.headerTitle}>Product Details</Text>
+      <View style={styles.headerButton} />
+    </View>
+    <View style={styles.notFoundContainer}>
+      <Package size={64} color={colors.ui.disabled} />
+      <Text style={styles.notFoundTitle}>Product Not Found</Text>
+      <Text style={styles.notFoundSubtitle}>
+        This product may no longer be available
+      </Text>
+      <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
+        <Text style={styles.notFoundButtonText}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  </SafeAreaView>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { addToCart, cart, addToWishlist, removeFromWishlist, isInWishlist } =
-    useApp();
+  const {
+    addToCart,
+    cart,
+    removeFromCart,
+    updateCartQuantity,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+  } = useApp();
+
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [quantity, setQuantity] = useState(1);
-  const [showAddedMessage, setShowAddedMessage] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [relatedBatchCount, setRelatedBatchCount] = useState(1);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState<Record<number, boolean>>({});
 
-  // Mock product data - in production, fetch from API based on ID
-  const product: Product = {
-    id: id as string,
-    name: "Fresh Tomatoes",
-    category: "Vegetables",
-    price: 40,
-    displayPrice: "₹40/kg",
-    stock: "50 kg",
-    image:
-      "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=500",
-    status: "active",
-    rating: 4.5,
-    reviews: 128,
-    description:
-      "Fresh, organic tomatoes sourced directly from local farmers. Rich in lycopene and vitamin C. Perfect for salads, cooking, or making juices. Hand-picked to ensure quality and freshness. These premium vegetables are delivered fresh to your doorstep.",
-    images: [
-      "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=500",
-      "https://images.unsplash.com/photo-1649620407859-bfa6aba76e4f?q=80&w=500",
-      "https://images.unsplash.com/photo-1592063786241-8b7c1fe79f17?q=80&w=500",
-    ],
-    storeId: "1",
-    storeName: "Sharma Kirana",
-  };
+  const imageScrollRef = useRef<FlatList>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Expanded related products mock data with 5+ products
-  const relatedProducts: Product[] = useMemo(
-    () => [
-      {
-        id: "2",
-        name: "Fresh Onions",
-        category: "Vegetables",
-        price: 30,
-        displayPrice: "₹30/kg",
-        stock: "80 kg",
-        image:
-          "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=300",
-        status: "active",
-        rating: 4.3,
-        reviews: 95,
-        delivery: "10-15 min",
-      },
-      {
-        id: "3",
-        name: "Green Chilies",
-        category: "Vegetables",
-        price: 60,
-        displayPrice: "₹60/kg",
-        stock: "0 kg",
-        image:
-          "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
-        status: "out-of-stock",
-        rating: 4.6,
-        reviews: 67,
-        delivery: "8-12 min",
-      },
-      {
-        id: "4",
-        name: "Fresh Potatoes",
-        category: "Vegetables",
-        price: 25,
-        displayPrice: "₹25/kg",
-        stock: "100 kg",
-        image:
-          "https://images.unsplash.com/photo-1590841795199-c70b8abb5166?q=80&w=300",
-        status: "active",
-        rating: 4.4,
-        reviews: 112,
-        delivery: "12-18 min",
-      },
-      {
-        id: "5",
-        name: "Garlic",
-        category: "Vegetables",
-        price: 80,
-        displayPrice: "₹80/kg",
-        stock: "45 kg",
-        image:
-          "https://images.unsplash.com/photo-1599599810694-8eb95bbf08b5?q=80&w=300",
-        status: "active",
-        rating: 4.7,
-        reviews: 143,
-        delivery: "10-15 min",
-      },
-      {
-        id: "6",
-        name: "Bell Peppers",
-        category: "Vegetables",
-        price: 50,
-        displayPrice: "₹50/kg",
-        stock: "60 kg",
-        image:
-          "https://images.unsplash.com/photo-1599599810962-4b706327c735?q=80&w=300",
-        status: "active",
-        rating: 4.5,
-        reviews: 88,
-        delivery: "9-14 min",
-      },
-      {
-        id: "7",
-        name: "Cucumber",
-        category: "Vegetables",
-        price: 20,
-        displayPrice: "₹20/kg",
-        stock: "75 kg",
-        image:
-          "https://images.unsplash.com/photo-1607623488248-da4e0c51c2e4?q=80&w=300",
-        status: "active",
-        rating: 4.2,
-        reviews: 72,
-        delivery: "11-16 min",
-      },
-    ],
-    [],
+  // ─── Look up the actual product by ID ────────────────────────────────────
+  const product = useMemo(() => {
+    return mockProducts.find((p) => p.id === id) ?? null;
+  }, [id]);
+
+  // ─── Product images (1 to 5 photos) ─────────────────────────────────────
+  const productImages = useMemo(() => {
+    if (!product) return [];
+    const imgs = product.images?.length
+      ? product.images.slice(0, 5) // Max 5 photos
+      : [product.image]; // Min 1 photo (fallback to main image)
+    return imgs;
+  }, [product]);
+
+  // ─── Related products: same category, excluding current ──────────────────
+  const allRelatedProducts = useMemo(() => {
+    if (!product) return [];
+    return mockProducts.filter(
+      (p) => p.category === product.category && p.id !== product.id,
+    );
+  }, [product]);
+
+  // ─── Virtualized batch loading for related products ──────────────────────
+  const visibleRelatedProducts = useMemo(
+    () => allRelatedProducts.slice(0, relatedBatchCount * RELATED_BATCH_SIZE),
+    [allRelatedProducts, relatedBatchCount],
   );
 
-  // Check if item is already in cart
+  const hasMoreRelated = useMemo(
+    () => visibleRelatedProducts.length < allRelatedProducts.length,
+    [visibleRelatedProducts, allRelatedProducts],
+  );
+
+  // ─── Load content after navigation transition ───────────────────────────
+  useEffect(() => {
+    setIsLoading(true);
+    setMainImageIndex(0);
+    setRelatedBatchCount(1);
+    setImageLoaded({});
+    fadeAnim.setValue(0);
+
+    const task = InteractionManager.runAfterInteractions(() => {
+      setIsLoading(false);
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => task.cancel();
+  }, [id]);
+
+  // ─── Cart check ──────────────────────────────────────────────────────────
   const cartItem = useMemo(
-    () => cart.find((item: any) => item.id === product.id),
-    [cart, product.id],
+    () => cart.find((item: any) => item.id === product?.id),
+    [cart, product?.id],
   );
 
-  // Parse description into bullet points
+  // ─── Description bullets ─────────────────────────────────────────────────
   const descriptionBullets = useMemo(() => {
-    if (!product.description) return [];
+    if (!product?.description) return [];
     const sentences = product.description.split(". ");
-    return sentences.slice(0, 4).map((s) => s.replace(/\.$/, "") + ".");
-  }, [product.description]);
+    return sentences.slice(0, 5).map((s) => s.replace(/\.$/, "") + ".");
+  }, [product?.description]);
 
+  // ─── Handlers ────────────────────────────────────────────────────────────
   const handleAddToCart = useCallback(() => {
-    for (let i = 0; i < quantity; i++) {
-      addToCart({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        storeName: product.storeName || "Store",
-        storeId: product.storeId,
-      });
-    }
-    setShowAddedMessage(true);
-    setTimeout(() => setShowAddedMessage(false), 2000);
-  }, [quantity, addToCart, product]);
+    if (!product) return;
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      storeName: product.storeName || "Store",
+      storeId: product.storeId,
+    });
+    Toast.show({
+      type: "success",
+      text1: "Added to Cart",
+      text2: `${product.name} added to your cart`,
+      visibilityTime: 1500,
+      position: "top",
+    });
+  }, [addToCart, product]);
 
   const handleIncreaseQuantity = useCallback(() => {
-    setQuantity((prev) => prev + 1);
-  }, []);
+    if (!product || !cartItem) return;
+    updateCartQuantity(product.id, cartItem.quantity + 1);
+  }, [product, cartItem, updateCartQuantity]);
 
   const handleDecreaseQuantity = useCallback(() => {
-    if (quantity > 1) {
-      setQuantity((prev) => prev - 1);
+    if (!product || !cartItem) return;
+    if (cartItem.quantity <= 1) {
+      removeFromCart(product.id);
+      Toast.show({
+        type: "info",
+        text1: "Removed from Cart",
+        text2: `${product.name} removed`,
+        visibilityTime: 1500,
+        position: "top",
+      });
+    } else {
+      updateCartQuantity(product.id, cartItem.quantity - 1);
     }
-  }, [quantity]);
+  }, [product, cartItem, removeFromCart, updateCartQuantity]);
 
   const toggleWishlist = useCallback(() => {
+    if (!product) return;
     const wishlistId = `product-${product.id}`;
     if (isInWishlist(wishlistId)) {
       removeFromWishlist(wishlistId);
@@ -234,97 +402,94 @@ export default function ProductDetailScreen() {
         position: "top",
       });
     }
-  }, [
-    product.id,
-    product.name,
-    product.price,
-    product.image,
-    product.description,
-    product.rating,
-    isInWishlist,
-    addToWishlist,
-    removeFromWishlist,
-  ]);
+  }, [product, isInWishlist, addToWishlist, removeFromWishlist]);
 
-  const handleNavigateToProduct = (productId: string) => {
-    // Reset quantity when navigating to a new product
-    setQuantity(1);
-    router.push({
-      pathname: "/product/[id]",
-      params: { id: productId },
-    } as any);
-  };
-
-  // Lazy load only first 5 products
-  const visibleRelatedProducts = useMemo(
-    () => relatedProducts.slice(0, 5),
-    [relatedProducts],
+  const handleNavigateToProduct = useCallback(
+    (productId: string) => {
+      router.push({
+        pathname: "/product/[id]",
+        params: { id: productId },
+      } as any);
+    },
+    [router],
   );
 
-  const RelatedProductCard = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      style={styles.relatedCard}
-      onPress={() => handleNavigateToProduct(item.id)}
-      activeOpacity={0.75}
-    >
-      {/* Image Container with Badge */}
-      <View style={styles.relatedImageContainer}>
-        <Image source={{ uri: item.image }} style={styles.relatedImage} />
+  const handleOrderNow = useCallback(() => {
+    if (!product) return;
+    // Add to cart if not already in it
+    if (!cartItem) {
+      addToCart({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        storeName: product.storeName || "Store",
+        storeId: product.storeId,
+      });
+    }
+    router.push("/payments/checkout" as any);
+  }, [product, cartItem, addToCart, router]);
 
-        {/* Category Badge */}
-        <View style={styles.categoryBadgeRelated}>
-          <Text style={styles.categoryBadgeText}>{item.category}</Text>
-        </View>
+  const handleLoadMoreRelated = useCallback(() => {
+    if (!hasMoreRelated || isLoadingMore) return;
+    setIsLoadingMore(true);
+    setTimeout(() => {
+      setRelatedBatchCount((prev) => prev + 1);
+      setIsLoadingMore(false);
+    }, 400);
+  }, [hasMoreRelated, isLoadingMore]);
 
-        {/* Out of Stock Overlay */}
-        {item.status === "out-of-stock" && (
-          <View style={styles.relatedOutOfStock}>
-            <Text style={styles.relatedOutOfStockText}>Out of Stock</Text>
-          </View>
-        )}
-
-        {/* Status Indicator */}
-        {item.status === "active" && (
-          <View style={styles.availableBadge}>
-            <Check size={10} color={colors.text.inverse} />
-          </View>
-        )}
-      </View>
-
-      {/* Product Info */}
-      <View style={styles.relatedInfo}>
-        {/* Product Name */}
-        <Text style={styles.relatedName} numberOfLines={2}>
-          {item.name}
-        </Text>
-
-        {/* Rating Section */}
-        {item.rating && (
-          <View style={styles.relatedRatingContainer}>
-            <View style={styles.relatedRating}>
-              <Star
-                size={13}
-                color={colors.brand.star}
-                fill={colors.brand.star}
-              />
-              <Text style={styles.relatedRatingText}>{item.rating}</Text>
-            </View>
-            {item.reviews && (
-              <Text style={styles.relatedReviews}>{item.reviews}</Text>
-            )}
-          </View>
-        )}
-
-        {/* Price & Delivery */}
-        <View style={styles.priceDeliveryRow}>
-          <Text style={styles.relatedPrice}>{item.displayPrice}</Text>
-          {item.delivery && (
-            <Text style={styles.relatedDelivery}>{item.delivery}</Text>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
+  const onImageScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const index = Math.round(
+        e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - spacing.md * 2),
+      );
+      if (
+        index !== mainImageIndex &&
+        index >= 0 &&
+        index < productImages.length
+      ) {
+        setMainImageIndex(index);
+      }
+    },
+    [mainImageIndex, productImages.length],
   );
+
+  const scrollToImage = useCallback((index: number) => {
+    setMainImageIndex(index);
+    imageScrollRef.current?.scrollToIndex({ index, animated: true });
+  }, []);
+
+  // ─── Loading State ────────────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <SafeAreaView
+        style={styles.container}
+        edges={["bottom", "left", "right"]}
+      >
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor={colors.ui.surface}
+        />
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => router.back()}
+          >
+            <ChevronLeft size={24} color={colors.text.heading} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Product Details</Text>
+          <View style={styles.headerButton} />
+        </View>
+        <ProductSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  // ─── Not Found ────────────────────────────────────────────────────────────
+  if (!product) {
+    return <ProductNotFound onBack={() => router.back()} />;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
@@ -344,55 +509,99 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {showAddedMessage && (
-        <View style={styles.successpMessage}>
-          <Check size={18} color={colors.text.inverse} />
-          <Text style={styles.successMessageText}>
-            {quantity} item{quantity > 1 ? "s" : ""} added to cart!
-          </Text>
-        </View>
-      )}
-
-      <ScrollView
+      <Animated.ScrollView
+        style={{ opacity: fadeAnim }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        removeClippedSubviews={true}
       >
-        {/* Product Images */}
+        {/* Image Gallery (swipeable, 1-5 photos) */}
         <View style={styles.imageSection}>
-          <View style={styles.mainImageWrapper}>
-            <Image
-              source={{
-                uri: product.images?.[mainImageIndex] || product.image,
-              }}
-              style={styles.mainImage}
-            />
-            {product.status === "out-of-stock" && (
-              <View style={styles.outOfStockBanner}>
-                <Text style={styles.outOfStockBannerText}>OUT OF STOCK</Text>
+          <FlatList
+            ref={imageScrollRef}
+            horizontal
+            pagingEnabled
+            data={productImages}
+            keyExtractor={(_, i) => `img-${i}`}
+            renderItem={({ item, index }) => (
+              <View style={styles.galleryImageWrapper}>
+                {!imageLoaded[index] && (
+                  <View style={styles.imageLoadingOverlay}>
+                    <ActivityIndicator
+                      size="large"
+                      color={colors.brand.primary}
+                    />
+                  </View>
+                )}
+                <Image
+                  source={{ uri: item }}
+                  style={styles.mainImage}
+                  onLoad={() =>
+                    setImageLoaded((prev) => ({ ...prev, [index]: true }))
+                  }
+                />
+                {product.discount && (
+                  <View style={styles.discountBadge}>
+                    <Text style={styles.discountText}>
+                      -{product.discount}%
+                    </Text>
+                  </View>
+                )}
+                {!product.inStock && (
+                  <View style={styles.outOfStockBanner}>
+                    <Text style={styles.outOfStockBannerText}>
+                      OUT OF STOCK
+                    </Text>
+                  </View>
+                )}
               </View>
             )}
-            {product.images && product.images.length > 1 && (
-              <View style={styles.imageCountBadge}>
-                <Text style={styles.imageCountText}>
-                  {mainImageIndex + 1}/{product.images.length}
-                </Text>
-              </View>
-            )}
-          </View>
+            onMomentumScrollEnd={onImageScroll}
+            showsHorizontalScrollIndicator={false}
+            getItemLayout={(_, index) => ({
+              length: SCREEN_WIDTH - spacing.md * 2,
+              offset: (SCREEN_WIDTH - spacing.md * 2) * index,
+              index,
+            })}
+            decelerationRate="fast"
+            snapToInterval={SCREEN_WIDTH - spacing.md * 2}
+            snapToAlignment="start"
+          />
 
-          {/* Image Thumbnails */}
-          {product.images && product.images.length > 1 && (
+          {/* Image counter badge */}
+          {productImages.length > 1 && (
+            <View style={styles.imageCountBadge}>
+              <Text style={styles.imageCountText}>
+                {mainImageIndex + 1}/{productImages.length}
+              </Text>
+            </View>
+          )}
+
+          {/* Dot indicators */}
+          {productImages.length > 1 && (
+            <View style={styles.dotContainer}>
+              {productImages.map((_, i) => (
+                <View
+                  key={i}
+                  style={[styles.dot, mainImageIndex === i && styles.dotActive]}
+                />
+              ))}
+            </View>
+          )}
+
+          {/* Thumbnails row */}
+          {productImages.length > 1 && (
             <FlatList
               horizontal
-              data={product.images}
-              keyExtractor={(_, index) => index.toString()}
+              data={productImages}
+              keyExtractor={(_, i) => `thumb-${i}`}
               renderItem={({ item, index }) => (
                 <TouchableOpacity
                   style={[
                     styles.thumbnail,
                     mainImageIndex === index && styles.activeThumbnail,
                   ]}
-                  onPress={() => setMainImageIndex(index)}
+                  onPress={() => scrollToImage(index)}
                 >
                   <Image source={{ uri: item }} style={styles.thumbnailImage} />
                 </TouchableOpacity>
@@ -401,14 +610,24 @@ export default function ProductDetailScreen() {
               showsHorizontalScrollIndicator={false}
             />
           )}
+
+          {/* Photo count label */}
+          <Text style={styles.photoCountLabel}>
+            {productImages.length} photo{productImages.length > 1 ? "s" : ""} •{" "}
+            {productImages.length < 5
+              ? `up to ${5 - productImages.length} more allowed`
+              : "maximum photos"}
+          </Text>
         </View>
 
         {/* Product Info Card */}
         <View style={styles.infoCard}>
-          {/* Row 1: Product Name + Wishlist Heart */}
           <View style={styles.nameAndWishlistRow}>
             <View style={styles.nameContainer}>
               <Text style={styles.productName}>{product.name}</Text>
+              {product.unit && (
+                <Text style={styles.unitText}>{product.unit}</Text>
+              )}
             </View>
             <TouchableOpacity
               style={[
@@ -434,60 +653,119 @@ export default function ProductDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Row 2: Stock Availability */}
-          <Text style={styles.stockAvailability}>
-            {product.status === "active"
-              ? `${product.stock} • In Stock`
-              : "Out of Stock"}
-          </Text>
-
-          {/* Row 3: Ratings (Left) + Category (Right) */}
-          <View style={styles.ratingCategoryRow}>
-            {product.rating && (
-              <View style={styles.ratingSection}>
-                <View style={styles.ratingStars}>
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={14}
-                      color={
-                        i < Math.floor(product.rating!)
-                          ? colors.brand.star
-                          : colors.ui.disabled
-                      }
-                      fill={
-                        i < Math.floor(product.rating!)
-                          ? colors.brand.star
-                          : "none"
-                      }
-                    />
-                  ))}
-                </View>
-                <Text style={styles.ratingText}>
-                  {product.rating} • {product.reviews} reviews
-                </Text>
+          <View style={styles.stockRow}>
+            <View
+              style={[
+                styles.stockBadge,
+                product.inStock ? styles.stockInBadge : styles.stockOutBadge,
+              ]}
+            >
+              <View
+                style={[
+                  styles.stockDot,
+                  {
+                    backgroundColor: product.inStock
+                      ? colors.status.successDark
+                      : colors.status.errorDark,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.stockText,
+                  {
+                    color: product.inStock
+                      ? colors.status.successDark
+                      : colors.status.errorDark,
+                  },
+                ]}
+              >
+                {product.inStock ? "In Stock" : "Out of Stock"}
+              </Text>
+            </View>
+            {product.distance && (
+              <View style={styles.distanceTag}>
+                <MapPin size={11} color={colors.text.secondary} />
+                <Text style={styles.distanceText}>{product.distance}</Text>
               </View>
             )}
+          </View>
+
+          <View style={styles.ratingCategoryRow}>
+            <View style={styles.ratingSection}>
+              <View style={styles.ratingStars}>
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={14}
+                    color={
+                      i < Math.floor(product.rating)
+                        ? colors.brand.star
+                        : colors.ui.disabled
+                    }
+                    fill={
+                      i < Math.floor(product.rating)
+                        ? colors.brand.star
+                        : "none"
+                    }
+                  />
+                ))}
+              </View>
+              <Text style={styles.ratingText}>
+                {product.rating} • {product.reviews} reviews
+              </Text>
+            </View>
             <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{product.category}</Text>
+              <Text style={styles.categoryText}>
+                {product.category.charAt(0).toUpperCase() +
+                  product.category.slice(1)}
+              </Text>
             </View>
           </View>
 
-          {/* Row 4: Price (Left) + Store & Delivery (Right) */}
+          <View style={styles.divider} />
+
           <View style={styles.priceStoreRow}>
             <View style={styles.priceColumn}>
-              <Text style={styles.price}>{product.displayPrice}</Text>
-              <Text style={styles.stockInfo}>Stock: {product.stock}</Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "baseline",
+                  gap: spacing.sm,
+                }}
+              >
+                <Text style={styles.price}>₹{product.price}</Text>
+                {product.originalPrice && (
+                  <Text style={styles.originalPrice}>
+                    ₹{product.originalPrice}
+                  </Text>
+                )}
+              </View>
+              {product.discount && (
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveText}>
+                    Save ₹{product.originalPrice! - product.price}
+                  </Text>
+                </View>
+              )}
             </View>
             <View style={styles.storeDeliveryColumn}>
               <View style={styles.storeInfo}>
-                <Text style={styles.storeLabel}>Sold by</Text>
+                <View style={styles.storeIconRow}>
+                  <Store size={12} color={colors.brand.primary} />
+                  <Text style={styles.storeLabel}>Sold by</Text>
+                </View>
                 <Text style={styles.storeName}>{product.storeName}</Text>
               </View>
-              <View style={styles.deliveryInfo}>
-                <Text style={styles.deliveryLabel}>Delivery</Text>
-                <Text style={styles.deliveryTime}>10-15 min </Text>
-              </View>
+              {product.delivery && (
+                <View style={styles.deliveryInfo}>
+                  <View style={styles.storeIconRow}>
+                    <Truck size={12} color={colors.status.successDark} />
+                    <Text style={styles.deliveryLabel}>Delivery</Text>
+                  </View>
+                  <Text style={styles.deliveryTime}>{product.delivery}</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -505,96 +783,252 @@ export default function ProductDetailScreen() {
           </View>
         )}
 
-        {/* Product Details */}
-        {/* <View style={styles.detailsCard}>
+        {/* Product Details Table */}
+        <View style={styles.detailsCard}>
           <Text style={styles.sectionTitle}>Product Details</Text>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Category:</Text>
-            <Text style={styles.detailValue}>{product.category}</Text>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Package size={16} color={colors.brand.primary} />
+              <View>
+                <Text style={styles.detailLabel}>Category</Text>
+                <Text style={styles.detailValue}>
+                  {product.category.charAt(0).toUpperCase() +
+                    product.category.slice(1)}
+                </Text>
+              </View>
+            </View>
+            {product.unit && (
+              <View style={styles.detailItem}>
+                <Clock size={16} color={colors.brand.primary} />
+                <View>
+                  <Text style={styles.detailLabel}>Unit</Text>
+                  <Text style={styles.detailValue}>{product.unit}</Text>
+                </View>
+              </View>
+            )}
+            <View style={styles.detailItem}>
+              <MapPin size={16} color={colors.brand.primary} />
+              <View>
+                <Text style={styles.detailLabel}>Distance</Text>
+                <Text style={styles.detailValue}>{product.distance}</Text>
+              </View>
+            </View>
+            <View style={styles.detailItem}>
+              <Star size={16} color={colors.brand.star} />
+              <View>
+                <Text style={styles.detailLabel}>Rating</Text>
+                <Text style={styles.detailValue}>
+                  {product.rating}/5 ({product.reviews})
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Availability:</Text>
-            <Text style={styles.detailValue}>{product.stock}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Status:</Text>
-            <Text
-              style={[
-                styles.detailValue,
-                product.status === "active"
-                  ? styles.statusSuccess
-                  : styles.statusError,
-              ]}
-            >
-              {product.status === "active" ? "In Stock" : "Out of Stock"}
-            </Text>
-          </View>
-        </View> */}
+        </View>
 
-        {/* Related Products */}
-        {visibleRelatedProducts.length > 0 && (
+        {/* Related Products (Virtualized) */}
+        {allRelatedProducts.length > 0 && (
           <View style={styles.relatedSection}>
-            <Text style={styles.sectionTitle}>Related Products</Text>
-            <Text style={styles.relatedSubtitle}>
-              More from {product.category}
-            </Text>
+            <View style={styles.relatedHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Related Products</Text>
+                <Text style={styles.relatedSubtitle}>
+                  More from{" "}
+                  {product.category.charAt(0).toUpperCase() +
+                    product.category.slice(1)}{" "}
+                  • {allRelatedProducts.length} items
+                </Text>
+              </View>
+            </View>
             <FlatList
               horizontal
               data={visibleRelatedProducts}
               keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <RelatedProductCard item={item} />}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.relatedCard}
+                  onPress={() => handleNavigateToProduct(item.id)}
+                  activeOpacity={0.75}
+                >
+                  <View style={styles.relatedImageContainer}>
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.relatedImage}
+                    />
+                    <View style={styles.categoryBadgeRelated}>
+                      <Text style={styles.categoryBadgeText}>
+                        {item.category.toUpperCase()}
+                      </Text>
+                    </View>
+                    {!item.inStock && (
+                      <View style={styles.relatedOutOfStock}>
+                        <Text style={styles.relatedOutOfStockText}>
+                          Out of Stock
+                        </Text>
+                      </View>
+                    )}
+                    {item.inStock && (
+                      <View style={styles.availableBadge}>
+                        <Check size={10} color={colors.text.inverse} />
+                      </View>
+                    )}
+                    {item.discount && (
+                      <View style={styles.relatedDiscountBadge}>
+                        <Text style={styles.relatedDiscountText}>
+                          -{item.discount}%
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.relatedInfo}>
+                    <Text style={styles.relatedName} numberOfLines={2}>
+                      {item.name}
+                    </Text>
+                    <View style={styles.relatedRatingContainer}>
+                      <View style={styles.relatedRating}>
+                        <Star
+                          size={12}
+                          color={colors.brand.star}
+                          fill={colors.brand.star}
+                        />
+                        <Text style={styles.relatedRatingText}>
+                          {item.rating}
+                        </Text>
+                      </View>
+                      <Text style={styles.relatedReviews}>
+                        ({item.reviews})
+                      </Text>
+                    </View>
+                    <View style={styles.priceDeliveryRow}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Text style={styles.relatedPrice}>₹{item.price}</Text>
+                        {item.originalPrice && (
+                          <Text style={styles.relatedOriginalPrice}>
+                            ₹{item.originalPrice}
+                          </Text>
+                        )}
+                      </View>
+                      {item.delivery && (
+                        <Text style={styles.relatedDelivery}>
+                          {item.delivery}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
               contentContainerStyle={styles.relatedList}
               showsHorizontalScrollIndicator={false}
               scrollEventThrottle={16}
               decelerationRate="fast"
+              onEndReached={handleLoadMoreRelated}
+              onEndReachedThreshold={0.3}
+              ListFooterComponent={() => {
+                if (isLoadingMore) {
+                  return (
+                    <View style={styles.loadMoreContainer}>
+                      <RelatedProductSkeleton />
+                    </View>
+                  );
+                }
+                if (hasMoreRelated) {
+                  return (
+                    <TouchableOpacity
+                      style={styles.loadMoreButton}
+                      onPress={handleLoadMoreRelated}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.loadMoreText}>Load More</Text>
+                    </TouchableOpacity>
+                  );
+                }
+                return null;
+              }}
+              initialNumToRender={3}
+              maxToRenderPerBatch={4}
+              windowSize={5}
+              removeClippedSubviews={true}
+              getItemLayout={(_, index) => ({
+                length: RELATED_CARD_WIDTH + spacing.md,
+                offset: (RELATED_CARD_WIDTH + spacing.md) * index,
+                index,
+              })}
             />
           </View>
         )}
 
         <View style={{ height: 120 }} />
-      </ScrollView>
+      </Animated.ScrollView>
 
-      {/* Add to Cart Section */}
+      {/* Bottom Cart Section */}
       <View style={styles.bottomCard}>
-        {product.status === "active" ? (
-          <>
-            {/* Quantity Control */}
-            <View style={styles.quantitySection}>
-              <Text style={styles.quantityLabel}>Quantity</Text>
-              <View style={styles.quantityControl}>
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={handleDecreaseQuantity}
-                >
-                  <Minus size={18} color={colors.brand.primary} />
-                </TouchableOpacity>
-
-                <View style={styles.quantityDisplay}>
-                  <Text style={styles.quantityValue}>{quantity}</Text>
+        {product.inStock ? (
+          cartItem && cartItem.quantity > 0 ? (
+            /* ── Quantity Control (shown after adding to cart) ── */
+            <>
+              <View style={styles.cartQuantityRow}>
+                <View style={styles.cartQuantityInfo}>
+                  <ShoppingCart size={18} color={colors.brand.primary} />
+                  <Text style={styles.cartQuantityTotal}>
+                    ₹{(product.price * cartItem.quantity).toLocaleString()}
+                  </Text>
                 </View>
-
-                <TouchableOpacity
-                  style={styles.quantityButton}
-                  onPress={handleIncreaseQuantity}
-                >
-                  <Plus size={18} color={colors.brand.primary} />
-                </TouchableOpacity>
+                <View style={styles.cartQuantityControl}>
+                  <TouchableOpacity
+                    style={styles.cartQtyButton}
+                    onPress={handleDecreaseQuantity}
+                    activeOpacity={0.7}
+                  >
+                    <Minus size={20} color={colors.text.inverse} />
+                  </TouchableOpacity>
+                  <View style={styles.cartQtyDisplay}>
+                    <Text style={styles.cartQtyValue}>{cartItem.quantity}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.cartQtyButton}
+                    onPress={handleIncreaseQuantity}
+                    activeOpacity={0.7}
+                  >
+                    <Plus size={20} color={colors.text.inverse} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-
-            {/* Add to Cart Button */}
-            <TouchableOpacity
-              style={styles.addToCartButton}
-              onPress={handleAddToCart}
-              activeOpacity={0.85}
-            >
-              <ShoppingCart size={20} color={colors.text.inverse} />
-              <Text style={styles.addToCartText}>Add {quantity}x to Cart</Text>
-              <Text style={styles.addToCartPrice}>
-                ₹{(product.price * quantity).toLocaleString()}
-              </Text>
-            </TouchableOpacity>
-          </>
+              <TouchableOpacity
+                style={styles.orderNowButton}
+                onPress={handleOrderNow}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.orderNowText}>Order Now</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            /* ── Add to Cart & Order Now Buttons (initial state) ── */
+            <>
+              <TouchableOpacity
+                style={styles.addToCartButton}
+                onPress={handleAddToCart}
+                activeOpacity={0.85}
+              >
+                <ShoppingCart size={20} color={colors.text.inverse} />
+                <Text style={styles.addToCartText}>Add to Cart</Text>
+                <Text style={styles.addToCartPrice}>
+                  ₹{product.price.toLocaleString()}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.orderNowButton}
+                onPress={handleOrderNow}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.orderNowText}>Order Now</Text>
+              </TouchableOpacity>
+            </>
+          )
         ) : (
           <View style={styles.outOfStockButton}>
             <Text style={styles.outOfStockText}>Out of Stock</Text>
@@ -609,10 +1043,7 @@ export default function ProductDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.ui.background,
-  },
+  container: { flex: 1, backgroundColor: colors.ui.background },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -628,46 +1059,78 @@ const styles = StyleSheet.create({
   headerButton: {
     padding: spacing.sm,
     borderRadius: radius.sm,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text.heading,
-  },
-  successpMessage: {
-    flexDirection: "row",
+    width: 40,
+    height: 40,
+    justifyContent: "center",
     alignItems: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.status.success,
-    marginHorizontal: spacing.md,
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
   },
-  successMessageText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.inverse,
-  },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: colors.text.heading },
+
   scrollContent: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
-  imageSection: {
-    marginBottom: spacing.lg,
+  notFoundContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+    gap: spacing.md,
   },
-  mainImageWrapper: {
-    position: "relative",
-    marginBottom: spacing.md,
+  notFoundTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.text.heading,
+    marginTop: spacing.md,
   },
-  mainImage: {
-    width: "100%",
-    height: 360,
+  notFoundSubtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
+  notFoundButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.brand.primary,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     borderRadius: radius.lg,
+  },
+  notFoundButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  imageSection: { marginBottom: spacing.lg },
+  galleryImageWrapper: {
+    width: SCREEN_WIDTH - spacing.md * 2,
+    height: IMAGE_HEIGHT,
+    borderRadius: radius.lg,
+    overflow: "hidden",
     backgroundColor: colors.ui.backgroundAlt,
   },
+  mainImage: { width: "100%", height: "100%" },
+  imageLoadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.ui.backgroundAlt,
+    zIndex: 1,
+  },
+  discountBadge: {
+    position: "absolute",
+    top: spacing.md,
+    left: spacing.md,
+    backgroundColor: colors.status.error,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  discountText: { fontSize: 12, fontWeight: "800", color: colors.text.inverse },
   outOfStockBanner: {
     position: "absolute",
     top: 0,
@@ -687,7 +1150,7 @@ const styles = StyleSheet.create({
   },
   imageCountBadge: {
     position: "absolute",
-    bottom: spacing.md,
+    top: spacing.md,
     right: spacing.md,
     backgroundColor: "rgba(0, 0, 0, 0.6)",
     paddingHorizontal: spacing.md,
@@ -699,26 +1162,46 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  dotContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.ui.disabled,
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: colors.brand.primary,
+    borderRadius: 4,
+  },
   thumbnailContainer: {
+    paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
     gap: spacing.sm,
   },
   thumbnail: {
-    width: 80,
-    height: 80,
+    width: 70,
+    height: 70,
     borderRadius: radius.md,
     borderWidth: 2,
     borderColor: colors.ui.border,
     overflow: "hidden",
     marginRight: spacing.sm,
   },
-  activeThumbnail: {
-    borderColor: colors.brand.primary,
-    borderWidth: 3,
-  },
-  thumbnailImage: {
-    width: "100%",
-    height: "100%",
+  activeThumbnail: { borderColor: colors.brand.primary, borderWidth: 3 },
+  thumbnailImage: { width: "100%", height: "100%" },
+  photoCountLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.text.tertiary,
+    textAlign: "center",
+    marginTop: spacing.xs,
   },
   infoCard: {
     backgroundColor: colors.ui.surface,
@@ -734,20 +1217,50 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
-  nameContainer: {
-    flex: 1,
-  },
+  nameContainer: { flex: 1 },
   productName: {
     fontSize: 22,
     fontWeight: "800",
     color: colors.text.heading,
     lineHeight: 28,
   },
-  stockAvailability: {
-    fontSize: 12,
+  unitText: {
+    fontSize: 13,
     fontWeight: "600",
-    color: colors.status.successDark,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  stockRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
     marginBottom: spacing.md,
+  },
+  stockBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  stockInBadge: { backgroundColor: colors.status.successLight },
+  stockOutBadge: { backgroundColor: colors.status.errorLight },
+  stockDot: { width: 7, height: 7, borderRadius: 4 },
+  stockText: { fontSize: 12, fontWeight: "700" },
+  distanceTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: colors.ui.backgroundAlt,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.text.secondary,
   },
   ratingCategoryRow: {
     flexDirection: "row",
@@ -762,15 +1275,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     flex: 1,
   },
-  ratingStars: {
-    flexDirection: "row",
-    gap: 2,
-  },
-  ratingText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
+  ratingStars: { flexDirection: "row", gap: 2 },
+  ratingText: { fontSize: 11, fontWeight: "600", color: colors.text.secondary },
   categoryBadge: {
     backgroundColor: colors.tint.purpleLight,
     paddingHorizontal: spacing.md,
@@ -782,59 +1288,63 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.brand.primary,
   },
+  divider: {
+    height: 1,
+    backgroundColor: colors.ui.borderLight,
+    marginBottom: spacing.md,
+  },
   priceStoreRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: spacing.md,
   },
-  priceColumn: {
-    flex: 1,
+  priceColumn: { flex: 1 },
+  price: { fontSize: 26, fontWeight: "800", color: colors.brand.primary },
+  originalPrice: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text.tertiary,
+    textDecorationLine: "line-through",
   },
-  price: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: colors.brand.primary,
-    marginBottom: spacing.xs,
+  saveBadge: {
+    backgroundColor: colors.tint.greenLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    alignSelf: "flex-start",
+    marginTop: spacing.xs,
   },
-  stockInfo: {
+  saveText: {
     fontSize: 11,
-    fontWeight: "600",
-    color: colors.text.secondary,
+    fontWeight: "700",
+    color: colors.status.successDark,
   },
-  storeDeliveryColumn: {
-    flex: 1,
-    gap: spacing.sm,
-  },
-  storeInfo: {
-    gap: spacing.xs,
-  },
-  storeLabel: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
+  storeDeliveryColumn: { flex: 1, gap: spacing.sm },
+  storeInfo: { gap: 2 },
+  storeIconRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  storeLabel: { fontSize: 10, fontWeight: "600", color: colors.text.secondary },
   storeName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.brand.primary,
+    marginLeft: 16,
   },
-  deliveryInfo: {
-    gap: spacing.xs,
-  },
+  deliveryInfo: { gap: 2 },
   deliveryLabel: {
     fontSize: 10,
     fontWeight: "600",
     color: colors.text.secondary,
   },
   deliveryTime: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.status.successDark,
+    marginLeft: 16,
   },
   wishlistButton: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: radius.md,
@@ -851,13 +1361,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text.heading,
     marginBottom: spacing.md,
-  },
-  relatedSubtitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.secondary,
-    marginBottom: spacing.md,
-    marginTop: -spacing.sm,
   },
   descriptionCard: {
     backgroundColor: colors.ui.surface,
@@ -892,42 +1395,42 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
     ...shadows.medium,
   },
-  detailRow: {
+  detailsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
+  detailItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.ui.borderLight,
+    gap: spacing.sm,
+    width: "47%",
+    backgroundColor: colors.ui.backgroundAlt,
+    padding: spacing.md,
+    borderRadius: radius.md,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: 10,
     fontWeight: "600",
     color: colors.text.secondary,
   },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text.primary,
+  detailValue: { fontSize: 13, fontWeight: "700", color: colors.text.heading },
+  relatedSection: { marginBottom: spacing.lg },
+  relatedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.xs,
   },
-  statusSuccess: {
-    color: colors.status.successDark,
+  relatedSubtitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
   },
-  statusError: {
-    color: colors.status.errorDark,
-  },
-  relatedSection: {
-    marginBottom: spacing.lg,
-  },
-  relatedList: {
-    paddingRight: spacing.sm,
-    gap: spacing.md,
-  },
+  relatedList: { paddingRight: spacing.sm, gap: spacing.md },
   relatedCard: {
     backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     overflow: "hidden",
-    width: 155,
+    width: RELATED_CARD_WIDTH,
     ...shadows.medium,
   },
   relatedImageContainer: {
@@ -968,6 +1471,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  relatedDiscountBadge: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.status.error,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  relatedDiscountText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: colors.text.inverse,
+  },
   relatedOutOfStock: {
     position: "absolute",
     top: 0,
@@ -984,15 +1501,12 @@ const styles = StyleSheet.create({
     color: colors.text.inverse,
     textAlign: "center",
   },
-  relatedInfo: {
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
+  relatedInfo: { padding: spacing.md, gap: spacing.sm },
   relatedName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: colors.text.heading,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   relatedRatingContainer: {
     flexDirection: "row",
@@ -1004,11 +1518,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     alignSelf: "flex-start",
   },
-  relatedRating: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
+  relatedRating: { flexDirection: "row", alignItems: "center", gap: 3 },
   relatedRatingText: {
     fontSize: 11,
     fontWeight: "700",
@@ -1020,9 +1530,15 @@ const styles = StyleSheet.create({
     color: colors.status.warningDark,
   },
   relatedPrice: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
     color: colors.brand.primary,
+  },
+  relatedOriginalPrice: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.text.tertiary,
+    textDecorationLine: "line-through",
   },
   priceDeliveryRow: {
     flexDirection: "row",
@@ -1040,78 +1556,82 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     textAlign: "center",
   },
+  loadMoreContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+  },
+  loadMoreButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    height: 130,
+    backgroundColor: colors.ui.backgroundAlt,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderStyle: "dashed",
+  },
+  loadMoreText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
   bottomCard: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.ui.surface,
     borderTopWidth: 1,
     borderTopColor: colors.ui.borderLight,
     ...shadows.large,
   },
-  quantitySection: {
-    marginBottom: spacing.md,
-  },
-  quantityLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text.heading,
-    marginBottom: spacing.sm,
-  },
-  quantityControl: {
+  cartQuantityRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.ui.background,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
+    justifyContent: "space-between",
   },
-  quantityButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+  cartQuantityInfo: {
+    flexDirection: "row",
     alignItems: "center",
-    borderRadius: radius.md,
-    backgroundColor: colors.ui.surface,
-    borderWidth: 1,
-    borderColor: colors.ui.border,
+    gap: spacing.sm,
   },
-  quantityDisplay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  quantityValue: {
+  cartQuantityTotal: {
     fontSize: 18,
     fontWeight: "800",
-    color: colors.text.heading,
-  },
-  cartSummary: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: colors.tint.purpleLight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    marginBottom: spacing.md,
-  },
-  cartSummaryLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.secondary,
-  },
-  cartSummaryValue: {
-    fontSize: 14,
-    fontWeight: "700",
     color: colors.brand.primary,
+  },
+  cartQuantityControl: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.brand.primary,
+    borderRadius: radius.lg,
+    overflow: "hidden",
+  },
+  cartQtyButton: {
+    width: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  cartQtyDisplay: {
+    minWidth: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+  },
+  cartQtyValue: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: colors.text.inverse,
   },
   addToCartButton: {
     backgroundColor: colors.brand.primary,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.lg,
     ...shadows.medium,
   },
@@ -1124,6 +1644,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: colors.text.inverse,
+  },
+  orderNowButton: {
+    marginTop: spacing.xs,
+    backgroundColor: colors.ui.surface,
+    borderWidth: 2,
+    borderColor: colors.brand.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.lg,
+  },
+  orderNowText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.brand.primary,
   },
   outOfStockButton: {
     backgroundColor: colors.ui.disabled,
