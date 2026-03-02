@@ -427,7 +427,10 @@ export default function ProductDetailScreen() {
         storeId: product.storeId,
       });
     }
-    router.push("/payments/checkout" as any);
+    router.push({
+      pathname: "/payments/checkout",
+      params: { mode: "product", productId: product.id },
+    } as any);
   }, [product, cartItem, addToCart, router]);
 
   const handleLoadMoreRelated = useCallback(() => {

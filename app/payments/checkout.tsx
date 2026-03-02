@@ -1,18 +1,23 @@
 // app/checkout.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     AlertCircle,
     ArrowLeft,
+    Calendar,
     CheckCircle2,
+    Clock,
     CreditCard,
     MapPin,
+    Package,
     Wallet,
+    Wrench,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
     Alert,
+    Image,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -20,18 +25,60 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import Toast from "react-native-toast-message";
+
+type CheckoutMode = "cart" | "product" | "service";
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { cart, cartTotal, clearCart } = useApp();
+  const { cart, cartTotal, clearCart, bookedServices, cancelBooking, confirmBooking } = useApp();
+  const params = useLocalSearchParams<{
+    mode?: string;
+    productId?: string;
+    serviceId?: string;
+    serviceName?: string;
+    includeProducts?: string;
+    includeServices?: string;
+  }>();
+
+  const mode: CheckoutMode = (params.mode as CheckoutMode) || "cart";
+  const includeProducts = params.includeProducts !== "false";
+  const includeServices = params.includeServices !== "false";
 
   const [selectedPayment, setSelectedPayment] = useState<
     "cod" | "online" | null
   >(null);
   const [selectedAddress, setSelectedAddress] = useState("default");
 
-  const deliveryFee = cartTotal > 500 ? 0 : 40;
-  const totalAmount = cartTotal + deliveryFee;
+  // Derive order items based on checkout mode
+  const orderProducts = useMemo(() => {
+    if (mode === "product" && params.productId) {
+      return cart.filter((item) => item.id === params.productId);
+    }
+    if (mode === "service") return [];
+    return includeProducts ? cart : [];
+  }, [mode, params.productId, cart, includeProducts]);
+
+  const orderServices = useMemo(() => {
+    if (mode === "service" && params.serviceId) {
+      return bookedServices.filter((s) => s.id === params.serviceId);
+    }
+    if (mode === "product") return [];
+    return includeServices ? bookedServices : [];
+  }, [mode, params.serviceId, bookedServices, includeServices]);
+
+  const productsSubtotal = orderProducts.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const servicesSubtotal = orderServices.reduce(
+    (sum, s) => sum + s.price,
+    0,
+  );
+  const itemSubtotal = productsSubtotal + servicesSubtotal;
+  const deliveryFee =
+    orderProducts.length > 0 ? (productsSubtotal > 500 ? 0 : 40) : 0;
+  const totalAmount = itemSubtotal + deliveryFee;
 
   const addresses = [
     {
@@ -67,6 +114,44 @@ export default function CheckoutScreen() {
     },
   ];
 
+  const handlePostOrder = () => {
+    // Show success toast based on mode
+    if (mode === "service") {
+      Toast.show({
+        type: "success",
+        text1: "Booking Confirmed!",
+        text2: params.serviceName
+          ? `${params.serviceName} is now confirmed`
+          : "Your service booking is confirmed",
+        visibilityTime: 2500,
+        position: "top",
+      });
+    } else {
+      Toast.show({
+        type: "success",
+        text1: "Order Placed!",
+        text2: "Your order has been placed successfully",
+        visibilityTime: 2500,
+        position: "top",
+      });
+    }
+
+    // Clear items based on checkout mode
+    if (mode === "cart") {
+      if (includeProducts) clearCart();
+      if (includeServices) {
+        orderServices.forEach((s) => cancelBooking(s.id));
+      }
+    } else if (mode === "product") {
+      // Only remove the ordered product from cart
+      // (leave other cart items intact)
+    } else if (mode === "service") {
+      // Confirm the booking only after payment is complete
+      if (params.serviceId) confirmBooking(params.serviceId);
+    }
+    router.replace("/myorders/orders");
+  };
+
   const handlePlaceOrder = () => {
     if (!selectedPayment) {
       Alert.alert("Payment Required", "Please select a payment method");
@@ -80,15 +165,11 @@ export default function CheckoutScreen() {
         [
           {
             text: "View Orders",
-            onPress: () => {
-              clearCart();
-              router.replace("/myorders/orders");
-            },
+            onPress: handlePostOrder,
           },
         ],
       );
     } else {
-      // For online payment, you would integrate payment gateway here
       Alert.alert("Payment Gateway", "Redirecting to payment gateway...", [
         {
           text: "Cancel",
@@ -97,17 +178,13 @@ export default function CheckoutScreen() {
         {
           text: "Pay Now",
           onPress: () => {
-            // Simulate payment success
             Alert.alert(
               "Payment Successful!",
               `Your payment of ₹${totalAmount} has been processed.`,
               [
                 {
                   text: "Done",
-                  onPress: () => {
-                    clearCart();
-                    router.replace("/myorders/orders");
-                  },
+                  onPress: handlePostOrder,
                 },
               ],
             );
@@ -207,21 +284,118 @@ export default function CheckoutScreen() {
         {/* Order Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Order Summary</Text>
+
+          {/* Product Items */}
+          {orderProducts.length > 0 && (
+            <View style={styles.itemsGroup}>
+              <View style={styles.groupHeader}>
+                <Package size={16} color={colors.brand.primary} />
+                <Text style={styles.groupTitle}>
+                  Products ({orderProducts.length})
+                </Text>
+              </View>
+              {orderProducts.map((item) => (
+                <View key={item.id} style={styles.orderItem}>
+                  {item.image ? (
+                    <Image
+                      source={{ uri: item.image }}
+                      style={styles.itemImage}
+                    />
+                  ) : (
+                    <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                      <Package size={18} color={colors.text.secondary} />
+                    </View>
+                  )}
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    {item.storeName && (
+                      <Text style={styles.itemStore}>{item.storeName}</Text>
+                    )}
+                    <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
+                  </View>
+                  <Text style={styles.itemPrice}>
+                    ₹{item.price * item.quantity}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Service Items */}
+          {orderServices.length > 0 && (
+            <View style={styles.itemsGroup}>
+              <View style={styles.groupHeader}>
+                <Wrench size={16} color={colors.brand.primary} />
+                <Text style={styles.groupTitle}>
+                  Services ({orderServices.length})
+                </Text>
+              </View>
+              {orderServices.map((svc) => (
+                <View key={svc.id} style={styles.orderItem}>
+                  {svc.image ? (
+                    <Image
+                      source={{ uri: svc.image }}
+                      style={styles.itemImage}
+                    />
+                  ) : (
+                    <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                      <Wrench size={18} color={colors.text.secondary} />
+                    </View>
+                  )}
+                  <View style={styles.itemDetails}>
+                    <Text style={styles.itemName} numberOfLines={1}>
+                      {svc.serviceName}
+                    </Text>
+                    <Text style={styles.itemStore}>{svc.storeName}</Text>
+                    <View style={styles.serviceTimingRow}>
+                      <Calendar size={12} color={colors.text.secondary} />
+                      <Text style={styles.serviceTimingText}>
+                        {new Date(svc.bookingDate).toLocaleDateString()}
+                      </Text>
+                      <Clock size={12} color={colors.text.secondary} />
+                      <Text style={styles.serviceTimingText}>
+                        {svc.bookingTime}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.itemPrice}>₹{svc.price}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Price Breakdown */}
           <View style={styles.summaryCard}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Items ({cart.length})</Text>
-              <Text style={styles.summaryValue}>₹{cartTotal}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Delivery Fee</Text>
-              <Text style={styles.summaryValue}>
-                {deliveryFee === 0 ? (
-                  <Text style={styles.freeText}>FREE</Text>
-                ) : (
-                  `₹${deliveryFee}`
-                )}
-              </Text>
-            </View>
+            {orderProducts.length > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Products ({orderProducts.length})
+                </Text>
+                <Text style={styles.summaryValue}>₹{productsSubtotal}</Text>
+              </View>
+            )}
+            {orderServices.length > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Services ({orderServices.length})
+                </Text>
+                <Text style={styles.summaryValue}>₹{servicesSubtotal}</Text>
+              </View>
+            )}
+            {orderProducts.length > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Delivery Fee</Text>
+                <Text style={styles.summaryValue}>
+                  {deliveryFee === 0 ? (
+                    <Text style={styles.freeText}>FREE</Text>
+                  ) : (
+                    `₹${deliveryFee}`
+                  )}
+                </Text>
+              </View>
+            )}
             <View style={styles.divider} />
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
@@ -242,7 +416,11 @@ export default function CheckoutScreen() {
         <View style={styles.infoBox}>
           <AlertCircle size={18} color={colors.status.info} />
           <Text style={styles.infoText}>
-            Your order will be delivered within 30-45 minutes
+            {mode === "service"
+              ? "Your service booking will be confirmed after payment"
+              : orderProducts.length > 0
+                ? "Your order will be delivered within 30-45 minutes"
+                : "Booking confirmation will be sent to your phone"}
           </Text>
         </View>
       </ScrollView>
@@ -362,6 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
     padding: spacing.md,
+    marginTop: spacing.sm,
   },
   summaryRow: {
     flexDirection: "row",
@@ -495,5 +674,75 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,
+  },
+  // Order item styles
+  itemsGroup: {
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  groupTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+  orderItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.ui.backgroundAlt,
+  },
+  itemImage: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+  },
+  itemImagePlaceholder: {
+    backgroundColor: colors.ui.backgroundAlt,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  itemDetails: {
+    flex: 1,
+    marginLeft: spacing.md,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.primary,
+    marginBottom: 2,
+  },
+  itemStore: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginBottom: 2,
+  },
+  itemQty: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.brand.primary,
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+  serviceTimingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  serviceTimingText: {
+    fontSize: 11,
+    color: colors.text.secondary,
+    marginRight: 6,
   },
 });

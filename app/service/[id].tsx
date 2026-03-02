@@ -985,7 +985,12 @@ export default function ServiceDetailScreen() {
                 <View style={styles.bookedActionsRow}>
                   <TouchableOpacity
                     style={styles.payNowButton}
-                    onPress={() => router.push("/cart/cart" as any)}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/cart/cart",
+                        params: { tab: "services" },
+                      } as any)
+                    }
                   >
                     <Text style={styles.payNowText}>Pay Now</Text>
                   </TouchableOpacity>

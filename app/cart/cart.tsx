@@ -1,34 +1,35 @@
 import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Calendar,
-    CheckCircle,
-    Clock,
-    Minus,
-    Plus,
-    ShoppingBag,
-    Square,
-    Store,
-    Trash2,
-    Wrench,
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Square,
+  Store,
+  Trash2,
+  Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Image,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
 export default function CartScreen() {
   const router = useRouter();
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const {
     cart,
     addToCart,
@@ -41,7 +42,7 @@ export default function CartScreen() {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
-    "products",
+    tab === "services" ? "services" : "products",
   );
 
   // Selection state for summary calculation
@@ -286,14 +287,10 @@ export default function CartScreen() {
             <TouchableOpacity
               style={styles.confirmPayBtn}
               onPress={() => {
-                confirmBooking(item.id);
-                Toast.show({
-                  type: "success",
-                  text1: "Booking Confirmed!",
-                  text2: `${item.serviceName} is now confirmed`,
-                  visibilityTime: 2000,
-                  position: "top",
-                });
+                router.push({
+                  pathname: "/payments/checkout",
+                  params: { mode: "service", serviceId: item.id, serviceName: item.serviceName },
+                } as any);
               }}
             >
               <Text style={styles.confirmPayText}>Confirm & Pay</Text>
@@ -531,7 +528,16 @@ export default function CartScreen() {
 
             <TouchableOpacity
               style={styles.checkoutBtn}
-              onPress={() => router.push("/payments/checkout")}
+              onPress={() =>
+                router.push({
+                  pathname: "/payments/checkout",
+                  params: {
+                    mode: "cart",
+                    includeProducts: selectedCategories.products ? "true" : "false",
+                    includeServices: selectedCategories.services ? "true" : "false",
+                  },
+                } as any)
+              }
               disabled={
                 !selectedCategories.products && !selectedCategories.services
               }
@@ -754,7 +760,7 @@ const styles = StyleSheet.create({
     color: colors.brand.primary,
   },
   serviceItemPending: {
-    borderColor: colors.status.warningBorder || "#f59e0b",
+    borderColor: colors.status.warning || "#f59e0b",
   },
   statusBadge: {
     flexDirection: "row",
