@@ -10,6 +10,7 @@ import {
     Menu,
     Search,
     ShoppingCart,
+    Wrench,
     X,
 } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
@@ -67,6 +68,11 @@ export const StickyHeader = () => {
       closeSearch();
       if (result.type === "store") {
         router.push(`/dukaan/${result.id}` as any);
+      } else if (result.type === "service") {
+        router.push({
+          pathname: "/service/[id]",
+          params: { id: result.id },
+        } as any);
       } else if (result.category) {
         router.push({
           pathname: "/category/[id]",
@@ -249,12 +255,16 @@ export const StickyHeader = () => {
                         backgroundColor:
                           item.type === "store"
                             ? colors.status.info
-                            : colors.tint.green,
+                            : item.type === "service"
+                              ? "#7C3AED"
+                              : colors.tint.green,
                       },
                     ]}
                   >
                     {item.type === "store" ? (
                       <MapPin size={8} color={colors.text.inverse} />
+                    ) : item.type === "service" ? (
+                      <Wrench size={8} color={colors.text.inverse} />
                     ) : (
                       <ShoppingCart size={8} color={colors.text.inverse} />
                     )}
@@ -279,7 +289,9 @@ export const StickyHeader = () => {
                       backgroundColor:
                         item.type === "store"
                           ? colors.tint.blueLight
-                          : colors.tint.greenLight,
+                          : item.type === "service"
+                            ? "#EDE9FE"
+                            : colors.tint.greenLight,
                     },
                   ]}
                 >
@@ -290,11 +302,17 @@ export const StickyHeader = () => {
                         color:
                           item.type === "store"
                             ? colors.status.info
-                            : colors.status.successDark,
+                            : item.type === "service"
+                              ? "#7C3AED"
+                              : colors.status.successDark,
                       },
                     ]}
                   >
-                    {item.type === "store" ? "Store" : "Product"}
+                    {item.type === "store"
+                      ? "Store"
+                      : item.type === "service"
+                        ? "Service"
+                        : "Product"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -328,12 +346,16 @@ export const StickyHeader = () => {
                             backgroundColor:
                               item.type === "store"
                                 ? colors.status.info
-                                : colors.tint.green,
+                                : item.type === "service"
+                                  ? "#7C3AED"
+                                  : colors.tint.green,
                           },
                         ]}
                       >
                         {item.type === "store" ? (
                           <MapPin size={8} color={colors.text.inverse} />
+                        ) : item.type === "service" ? (
+                          <Wrench size={8} color={colors.text.inverse} />
                         ) : (
                           <ShoppingCart size={8} color={colors.text.inverse} />
                         )}
@@ -354,7 +376,9 @@ export const StickyHeader = () => {
                           backgroundColor:
                             item.type === "store"
                               ? colors.tint.blueLight
-                              : colors.tint.greenLight,
+                              : item.type === "service"
+                                ? "#EDE9FE"
+                                : colors.tint.greenLight,
                         },
                       ]}
                     >
@@ -365,11 +389,17 @@ export const StickyHeader = () => {
                             color:
                               item.type === "store"
                                 ? colors.status.info
-                                : colors.status.successDark,
+                                : item.type === "service"
+                                  ? "#7C3AED"
+                                  : colors.status.successDark,
                           },
                         ]}
                       >
-                        {item.type === "store" ? "Store" : "Product"}
+                        {item.type === "store"
+                          ? "Store"
+                          : item.type === "service"
+                            ? "Service"
+                            : "Product"}
                       </Text>
                     </View>
                   </TouchableOpacity>

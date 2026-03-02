@@ -1,9 +1,9 @@
 // src/hooks/useDebounceSearch.ts
 import { useCallback, useEffect, useRef, useState } from "react";
-import { mockProducts, mockStores } from "../assets/mockData";
+import { mockProducts, mockServices, mockStores } from "../assets/mockData";
 
 export interface SearchResult {
-  type: "product" | "store";
+  type: "product" | "service" | "store";
   id: string;
   name: string;
   subtitle: string;
@@ -63,7 +63,27 @@ export function useDebounceSearch(delay: number = 300) {
         image: s.image,
       }));
 
-    setResults([...productResults, ...storeResults].slice(0, 8));
+    // Search services
+    const serviceResults: SearchResult[] = mockServices
+      .filter(
+        (s) =>
+          s.name.toLowerCase().includes(lowerQuery) ||
+          s.category.toLowerCase().includes(lowerQuery) ||
+          (s.description && s.description.toLowerCase().includes(lowerQuery)),
+      )
+      .slice(0, 5)
+      .map((s) => ({
+        type: "service" as const,
+        id: s.id,
+        name: s.name,
+        subtitle: `₹${s.price} • ${s.storeName} • ${s.duration || ""}`,
+        image: s.image,
+        category: s.category,
+      }));
+
+    setResults(
+      [...productResults, ...serviceResults, ...storeResults].slice(0, 10),
+    );
     setIsSearching(false);
   }, []);
 
@@ -107,7 +127,7 @@ export function useDebounceSearch(delay: number = 300) {
       })),
     ...mockProducts
       .sort((a, b) => b.rating - a.rating)
-      .slice(0, 5)
+      .slice(0, 3)
       .map((p) => ({
         type: "product" as const,
         id: p.id,
@@ -115,6 +135,17 @@ export function useDebounceSearch(delay: number = 300) {
         subtitle: `₹${p.price} • ${p.storeName}`,
         image: p.image,
         category: p.category,
+      })),
+    ...mockServices
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 3)
+      .map((s) => ({
+        type: "service" as const,
+        id: s.id,
+        name: s.name,
+        subtitle: `₹${s.price} • ${s.storeName}`,
+        image: s.image,
+        category: s.category,
       })),
   ];
 
