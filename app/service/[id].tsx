@@ -292,7 +292,10 @@ const ServiceNotFound = ({ onBack }: { onBack: () => void }) => (
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function ServiceDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, fallbackData } = useLocalSearchParams<{
+    id: string;
+    fallbackData?: string;
+  }>();
   const {
     addToWishlist,
     removeFromWishlist,
@@ -324,11 +327,32 @@ export default function ServiceDetailScreen() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const availableDays = getNextDays();
 
-  // ─── Dynamic service lookup ───────────────────────────────────────────────
-  const service = useMemo(
-    () => mockServices.find((s) => s.id === id) || null,
-    [id],
-  );
+  // ─── Dynamic service lookup (with store fallback) ────────────────────────
+  const service = useMemo(() => {
+    const found = mockServices.find((s) => s.id === id);
+    if (found) return found;
+    // Fallback: item from store's local data passed via params
+    if (fallbackData) {
+      try {
+        const parsed = JSON.parse(fallbackData);
+        return {
+          ...parsed,
+          images: parsed.image ? [parsed.image] : [],
+          originalPrice: parsed.originalPrice || Math.round(parsed.price * 1.2),
+          discount: parsed.discount || 20,
+          description: parsed.description || `${parsed.name} service`,
+          features: parsed.features || [],
+          reviewsCount: parsed.reviewsCount || 0,
+          rating: parsed.rating || 4.5,
+          delivery: parsed.delivery || "Walk-in",
+          distance: parsed.distance || "Nearby",
+        } as ServiceItem;
+      } catch {
+        /* ignore parse error */
+      }
+    }
+    return null;
+  }, [id, fallbackData]);
 
   const serviceImages = useMemo(() => {
     if (!service) return [];
@@ -639,7 +663,7 @@ export default function ServiceDetailScreen() {
                       setImageLoaded((prev) => ({ ...prev, [index]: true }))
                     }
                   />
-                  {service.discount && (
+                  {!!service.discount && (
                     <View style={styles.discountBadge}>
                       <Text style={styles.discountText}>
                         -{service.discount}%
@@ -808,7 +832,7 @@ export default function ServiceDetailScreen() {
                 <Text style={styles.price}>
                   {service.price > 0 ? "\u20B9" + service.price : "FREE"}
                 </Text>
-                {service.originalPrice &&
+                {!!service.originalPrice &&
                   service.originalPrice > service.price && (
                     <Text style={styles.originalPrice}>
                       {"\u20B9"}

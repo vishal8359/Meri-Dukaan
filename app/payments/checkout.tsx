@@ -31,7 +31,14 @@ type CheckoutMode = "cart" | "product" | "service";
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { cart, cartTotal, clearCart, bookedServices, cancelBooking, confirmBooking } = useApp();
+  const {
+    cart,
+    cartTotal,
+    clearCart,
+    bookedServices,
+    cancelBooking,
+    confirmBooking,
+  } = useApp();
   const params = useLocalSearchParams<{
     mode?: string;
     productId?: string;
@@ -71,10 +78,7 @@ export default function CheckoutScreen() {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const servicesSubtotal = orderServices.reduce(
-    (sum, s) => sum + s.price,
-    0,
-  );
+  const servicesSubtotal = orderServices.reduce((sum, s) => sum + s.price, 0);
   const itemSubtotal = productsSubtotal + servicesSubtotal;
   const deliveryFee =
     orderProducts.length > 0 ? (productsSubtotal > 500 ? 0 : 40) : 0;
@@ -302,7 +306,9 @@ export default function CheckoutScreen() {
                       style={styles.itemImage}
                     />
                   ) : (
-                    <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                    <View
+                      style={[styles.itemImage, styles.itemImagePlaceholder]}
+                    >
                       <Package size={18} color={colors.text.secondary} />
                     </View>
                   )}
@@ -340,7 +346,9 @@ export default function CheckoutScreen() {
                       style={styles.itemImage}
                     />
                   ) : (
-                    <View style={[styles.itemImage, styles.itemImagePlaceholder]}>
+                    <View
+                      style={[styles.itemImage, styles.itemImagePlaceholder]}
+                    >
                       <Wrench size={18} color={colors.text.secondary} />
                     </View>
                   )}

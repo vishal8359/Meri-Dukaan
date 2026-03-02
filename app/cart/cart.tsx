@@ -289,7 +289,11 @@ export default function CartScreen() {
               onPress={() => {
                 router.push({
                   pathname: "/payments/checkout",
-                  params: { mode: "service", serviceId: item.id, serviceName: item.serviceName },
+                  params: {
+                    mode: "service",
+                    serviceId: item.id,
+                    serviceName: item.serviceName,
+                  },
                 } as any);
               }}
             >
@@ -533,8 +537,12 @@ export default function CartScreen() {
                   pathname: "/payments/checkout",
                   params: {
                     mode: "cart",
-                    includeProducts: selectedCategories.products ? "true" : "false",
-                    includeServices: selectedCategories.services ? "true" : "false",
+                    includeProducts: selectedCategories.products
+                      ? "true"
+                      : "false",
+                    includeServices: selectedCategories.services
+                      ? "true"
+                      : "false",
                   },
                 } as any)
               }

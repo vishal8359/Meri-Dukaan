@@ -2,26 +2,26 @@ import { BookedService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  Calendar,
-  Check,
-  Clock,
-  Edit2,
-  Heart,
-  Plus,
-  Star,
-  Store,
-  X,
+    Calendar,
+    Check,
+    Clock,
+    Edit2,
+    Heart,
+    Plus,
+    Star,
+    Store,
+    X,
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
-  FlatList,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -108,10 +108,26 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     (service: Service) => {
       router.push({
         pathname: "/service/[id]",
-        params: { id: service.id },
+        params: {
+          id: service.id,
+          fallbackData: JSON.stringify({
+            id: service.id,
+            name: service.name,
+            category: "general",
+            price: service.price,
+            image: service.image || "",
+            description: service.description,
+            active: service.active,
+            duration: service.duration || "",
+            rating: service.rating || 4.5,
+            reviewsCount: 0,
+            storeId: storeId,
+            storeName: storeName,
+          }),
+        },
       } as any);
     },
-    [router],
+    [router, storeId, storeName],
   );
 
   const openBookingModal = useCallback(

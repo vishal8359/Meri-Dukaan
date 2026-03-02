@@ -1,4 +1,4 @@
-import { mockProducts } from "@/src/assets/mockData";
+import { mockProducts, Product } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -245,7 +245,10 @@ const ProductNotFound = ({ onBack }: { onBack: () => void }) => (
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function ProductDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, fallbackData } = useLocalSearchParams<{
+    id: string;
+    fallbackData?: string;
+  }>();
   const {
     addToCart,
     cart,
@@ -265,10 +268,34 @@ export default function ProductDetailScreen() {
   const imageScrollRef = useRef<FlatList>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // ─── Look up the actual product by ID ────────────────────────────────────
+  // ─── Look up the actual product by ID (with store fallback) ──────────────
   const product = useMemo(() => {
-    return mockProducts.find((p) => p.id === id) ?? null;
-  }, [id]);
+    const found = mockProducts.find((p) => p.id === id);
+    if (found) return found;
+    // Fallback: item from store's local data passed via params
+    if (fallbackData) {
+      try {
+        const parsed = JSON.parse(fallbackData);
+        return {
+          ...parsed,
+          images: parsed.image ? [parsed.image] : [],
+          originalPrice: parsed.originalPrice || Math.round(parsed.price * 1.2),
+          discount: parsed.discount || 20,
+          description:
+            parsed.description ||
+            `${parsed.name} from ${parsed.storeName || "Store"}`,
+          distance: parsed.distance || "Nearby",
+          unit: parsed.unit || "1 pc",
+          delivery: parsed.delivery || "30-45 min",
+          reviews: parsed.reviews || 0,
+          rating: parsed.rating || 4.5,
+        } as Product;
+      } catch {
+        /* ignore parse error */
+      }
+    }
+    return null;
+  }, [id, fallbackData]);
 
   // ─── Product images (1 to 5 photos) ─────────────────────────────────────
   const productImages = useMemo(() => {
@@ -543,7 +570,7 @@ export default function ProductDetailScreen() {
                     setImageLoaded((prev) => ({ ...prev, [index]: true }))
                   }
                 />
-                {product.discount && (
+                {!!product.discount && (
                   <View style={styles.discountBadge}>
                     <Text style={styles.discountText}>
                       -{product.discount}%
@@ -738,13 +765,13 @@ export default function ProductDetailScreen() {
                 }}
               >
                 <Text style={styles.price}>₹{product.price}</Text>
-                {product.originalPrice && (
+                {!!product.originalPrice && (
                   <Text style={styles.originalPrice}>
                     ₹{product.originalPrice}
                   </Text>
                 )}
               </View>
-              {product.discount && (
+              {!!product.discount && (
                 <View style={styles.saveBadge}>
                   <Text style={styles.saveText}>
                     Save ₹{product.originalPrice! - product.price}

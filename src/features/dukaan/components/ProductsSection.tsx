@@ -2,22 +2,22 @@ import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  Heart,
-  Minus,
-  Plus,
-  Search,
-  ShoppingCart,
-  Star,
+    Heart,
+    Minus,
+    Plus,
+    Search,
+    ShoppingCart,
+    Star,
 } from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -181,10 +181,25 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
     (product: Product) => {
       router.push({
         pathname: "/product/[id]",
-        params: { id: product.id, storeId: storeId },
+        params: {
+          id: product.id,
+          storeId: storeId,
+          fallbackData: JSON.stringify({
+            id: product.id,
+            name: product.name,
+            category: product.category,
+            price: product.price,
+            image: product.image,
+            storeId: storeId,
+            storeName: storeName,
+            inStock: product.status === "active",
+            rating: 4.5,
+            reviews: 0,
+          }),
+        },
       } as any);
     },
-    [router, storeId],
+    [router, storeId, storeName],
   );
 
   const getItemLayout = useCallback(
