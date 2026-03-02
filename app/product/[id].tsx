@@ -593,8 +593,6 @@ export default function ProductDetailScreen() {
               offset: (SCREEN_WIDTH - spacing.md * 2) * index,
               index,
             })}
-            decelerationRate="fast"
-            snapToInterval={SCREEN_WIDTH - spacing.md * 2}
             snapToAlignment="start"
           />
 
