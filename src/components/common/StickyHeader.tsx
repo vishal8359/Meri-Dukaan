@@ -1,5 +1,6 @@
 // src/components/common/StickyHeader.tsx
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { SearchResult, useDebounceSearch } from "@/src/hooks/useDebounceSearch";
 import { DrawerActions } from "@react-navigation/native";
 import { useNavigation, useRouter } from "expo-router";
@@ -34,6 +35,7 @@ export const StickyHeader = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { cart, wishlist } = useApp();
+  const { t } = useSettings();
 
   const {
     query,
@@ -157,9 +159,7 @@ export const StickyHeader = () => {
         {/* Row 2 — Search Bar (tap to open modal) */}
         <Pressable style={styles.searchBarTrigger} onPress={openSearch}>
           <Search size={17} color={colors.ui.muted} />
-          <Text style={styles.searchPlaceholder}>
-            Search products, stores, services...
-          </Text>
+          <Text style={styles.searchPlaceholder}>{t("header.search")}</Text>
         </Pressable>
       </View>
 

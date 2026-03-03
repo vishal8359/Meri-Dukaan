@@ -1,6 +1,7 @@
 // app/dukaan/reels/[storeId].tsx
 import { EnhancedReel } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import StoreReelsGrid from "@/src/features/dukaan/components/StoreReelsGrid";
 import { router, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Play } from "lucide-react-native";
@@ -17,6 +18,7 @@ import {
 
 export default function StoreReelsPage() {
   const { storeId } = useLocalSearchParams<{ storeId: string }>();
+  const { t } = useSettings();
   const { reels, allStores, getStoreById } = useApp();
 
   // Get store info
@@ -67,7 +69,7 @@ export default function StoreReelsPage() {
           <View style={styles.statItem}>
             <Play size={20} color="#3b82f6" />
             <Text style={styles.statValue}>{storeReels.length}</Text>
-            <Text style={styles.statLabel}>Reels</Text>
+            <Text style={styles.statLabel}>{t("reels.reels")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -77,7 +79,7 @@ export default function StoreReelsPage() {
                 0,
               )}
             </Text>
-            <Text style={styles.statLabel}>Total Likes</Text>
+            <Text style={styles.statLabel}>{t("reels.totalLikes")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -87,12 +89,12 @@ export default function StoreReelsPage() {
                 0,
               )}
             </Text>
-            <Text style={styles.statLabel}>Comments</Text>
+            <Text style={styles.statLabel}>{t("reels.comments")}</Text>
           </View>
         </View>
 
         {/* Section Title */}
-        <Text style={styles.sectionTitle}>All Reels</Text>
+        <Text style={styles.sectionTitle}>{t("reels.allReels")}</Text>
       </View>
     ),
     [store, storeReels],
@@ -107,7 +109,7 @@ export default function StoreReelsPage() {
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <ArrowLeft size={24} color="#1e293b" />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Store Reels</Text>
+        <Text style={styles.navTitle}>{t("reels.storeReels")}</Text>
         <View style={styles.placeholder} />
       </View>
 

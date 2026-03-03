@@ -1,5 +1,6 @@
 import { mockServices, ServiceItem } from "@/src/assets/mockData";
 import { BookedService, useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -267,31 +268,33 @@ const ServiceSkeleton = () => (
 );
 
 // ─── Service Not Found ──────────────────────────────────────────────────────
-const ServiceNotFound = ({ onBack }: { onBack: () => void }) => (
-  <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.headerButton} onPress={onBack}>
-        <ChevronLeft size={24} color={colors.text.heading} />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Service Details</Text>
-      <View style={styles.headerButton} />
-    </View>
-    <View style={styles.notFoundContainer}>
-      <Package size={64} color={colors.ui.disabled} />
-      <Text style={styles.notFoundTitle}>Service Not Found</Text>
-      <Text style={styles.notFoundSubtitle}>
-        This service may no longer be available
-      </Text>
-      <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
-        <Text style={styles.notFoundButtonText}>Go Back</Text>
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
-);
+const ServiceNotFound = ({ onBack }: { onBack: () => void }) => {
+  const { t } = useSettings();
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerButton} onPress={onBack}>
+          <ChevronLeft size={24} color={colors.text.heading} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("service.details")}</Text>
+        <View style={styles.headerButton} />
+      </View>
+      <View style={styles.notFoundContainer}>
+        <Package size={64} color={colors.ui.disabled} />
+        <Text style={styles.notFoundTitle}>{t("service.notFound")}</Text>
+        <Text style={styles.notFoundSubtitle}>{t("service.notFoundDesc")}</Text>
+        <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
+          <Text style={styles.notFoundButtonText}>{t("service.goBack")}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function ServiceDetailScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const { id, fallbackData } = useLocalSearchParams<{
     id: string;
     fallbackData?: string;
@@ -441,8 +444,8 @@ export default function ServiceDetailScreen() {
       setBookingModalVisible(false);
       Toast.show({
         type: "success",
-        text1: "Booking Updated",
-        text2: "Your booking has been rescheduled",
+        text1: t("service.bookingUpdated"),
+        text2: t("service.bookingRescheduled"),
         visibilityTime: 2000,
         position: "top",
       });
@@ -466,8 +469,8 @@ export default function ServiceDetailScreen() {
       setBookingModalVisible(false);
       Toast.show({
         type: "info",
-        text1: "Slot Locked for 3 Minutes",
-        text2: "Complete payment to confirm your booking",
+        text1: t("service.slotLockedToast"),
+        text2: t("service.completePayment"),
         visibilityTime: 3000,
         position: "top",
       });
@@ -488,7 +491,7 @@ export default function ServiceDetailScreen() {
       removeFromWishlist(wishlistId);
       Toast.show({
         type: "info",
-        text1: "Removed from wishlist",
+        text1: t("product.removedFromWishlist"),
         text2: service.name + " removed",
         visibilityTime: 1500,
         position: "top",
@@ -505,7 +508,7 @@ export default function ServiceDetailScreen() {
       });
       Toast.show({
         type: "success",
-        text1: "Added to wishlist",
+        text1: t("product.addedToWishlist"),
         text2: service.name + " saved!",
         visibilityTime: 1500,
         position: "top",
@@ -629,7 +632,7 @@ export default function ServiceDetailScreen() {
         >
           <ChevronLeft size={24} color={colors.text.heading} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Service Details</Text>
+        <Text style={styles.headerTitle}>{t("service.details")}</Text>
         <View style={styles.headerButton} />
       </View>
 
@@ -740,11 +743,17 @@ export default function ServiceDetailScreen() {
 
             {/* Photo count label */}
             <Text style={styles.photoCountLabel}>
-              {serviceImages.length} photo{serviceImages.length > 1 ? "s" : ""}{" "}
+              {serviceImages.length}{" "}
+              {serviceImages.length > 1
+                ? t("service.photos")
+                : t("service.photo")}{" "}
               {"\u2022"}{" "}
               {serviceImages.length < 5
-                ? "up to " + (5 - serviceImages.length) + " more allowed"
-                : "maximum photos"}
+                ? "up to " +
+                  (5 - serviceImages.length) +
+                  " " +
+                  t("service.moreAllowed")
+                : t("service.maxPhotos")}
             </Text>
           </View>
 
@@ -786,8 +795,8 @@ export default function ServiceDetailScreen() {
               ]}
             >
               {service.active
-                ? "Active \u2022 Available"
-                : "Currently Unavailable"}
+                ? `${t("service.active")} \u2022 ${t("service.available")}`
+                : t("service.unavailable")}
             </Text>
 
             {/* Rating + Category row */}
@@ -838,17 +847,23 @@ export default function ServiceDetailScreen() {
                     </Text>
                   )}
                 <Text style={styles.stockInfo}>
-                  {service.price > 0 ? "Price" : "Complimentary"}
+                  {service.price > 0
+                    ? t("service.price")
+                    : t("service.complimentary")}
                 </Text>
               </View>
               <View style={styles.storeDeliveryColumn}>
                 <View style={styles.storeInfo}>
-                  <Text style={styles.storeLabel}>Offered by</Text>
+                  <Text style={styles.storeLabel}>
+                    {t("service.offeredBy")}
+                  </Text>
                   <Text style={styles.storeName}>{service.storeName}</Text>
                 </View>
                 {service.duration && (
                   <View style={styles.deliveryInfo}>
-                    <Text style={styles.deliveryLabel}>Duration</Text>
+                    <Text style={styles.deliveryLabel}>
+                      {t("service.duration")}
+                    </Text>
                     <Text style={styles.deliveryTime}>{service.duration}</Text>
                   </View>
                 )}
@@ -859,7 +874,9 @@ export default function ServiceDetailScreen() {
           {/* ─── Description Card ──────────────────────────────────────── */}
           {service.description && (
             <View style={styles.descriptionCard}>
-              <Text style={styles.sectionTitle}>About Service</Text>
+              <Text style={styles.sectionTitle}>
+                {t("service.aboutService")}
+              </Text>
               {descriptionBullets.length > 1 ? (
                 descriptionBullets.map((bullet, idx) => (
                   <View key={idx} style={styles.bulletRow}>
@@ -877,12 +894,16 @@ export default function ServiceDetailScreen() {
 
           {/* ─── Service Details Card ─────────────────────────────────── */}
           <View style={styles.detailsCard}>
-            <Text style={styles.sectionTitle}>Service Details</Text>
+            <Text style={styles.sectionTitle}>
+              {t("service.serviceDetails")}
+            </Text>
             {service.duration && (
               <View style={styles.detailRow}>
                 <Clock size={16} color={colors.brand.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.detailLabel}>Duration</Text>
+                  <Text style={styles.detailLabel}>
+                    {t("service.duration")}
+                  </Text>
                   <Text style={styles.detailValue}>{service.duration}</Text>
                 </View>
               </View>
@@ -890,7 +911,9 @@ export default function ServiceDetailScreen() {
             <View style={styles.detailRow}>
               <MapPin size={16} color={colors.brand.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.detailLabel}>Service Provider</Text>
+                <Text style={styles.detailLabel}>
+                  {t("service.serviceProvider")}
+                </Text>
                 <Text style={styles.detailValue}>
                   {service.storeName} {"\u2022"} {service.distance}
                 </Text>
@@ -900,7 +923,9 @@ export default function ServiceDetailScreen() {
               <View style={styles.detailRow}>
                 <Users size={16} color={colors.brand.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.detailLabel}>Total Reviews</Text>
+                  <Text style={styles.detailLabel}>
+                    {t("service.totalReviews")}
+                  </Text>
                   <Text style={styles.detailValue}>{service.reviewsCount}</Text>
                 </View>
               </View>
@@ -909,7 +934,9 @@ export default function ServiceDetailScreen() {
               <View style={styles.detailRow}>
                 <Calendar size={16} color={colors.brand.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.detailLabel}>Service Type</Text>
+                  <Text style={styles.detailLabel}>
+                    {t("service.serviceType")}
+                  </Text>
                   <Text style={styles.detailValue}>{service.delivery}</Text>
                 </View>
               </View>
@@ -919,7 +946,9 @@ export default function ServiceDetailScreen() {
           {/* ─── Features Card ─────────────────────────────────────────── */}
           {service.features && service.features.length > 0 && (
             <View style={styles.featuresCard}>
-              <Text style={styles.sectionTitle}>Key Features</Text>
+              <Text style={styles.sectionTitle}>
+                {t("service.keyFeatures")}
+              </Text>
               {service.features.map((feature, index) => (
                 <View key={index} style={styles.featureItem}>
                   <Check size={14} color={colors.status.successDark} />
@@ -932,7 +961,9 @@ export default function ServiceDetailScreen() {
           {/* ─── Related Services ──────────────────────────────────────── */}
           {relatedServices.length > 0 && (
             <View style={styles.relatedSection}>
-              <Text style={styles.sectionTitle}>Related Services</Text>
+              <Text style={styles.sectionTitle}>
+                {t("service.relatedServices")}
+              </Text>
               <FlatList
                 horizontal
                 data={paginatedRelated}
@@ -984,7 +1015,7 @@ export default function ServiceDetailScreen() {
                         { color: colors.status.warningDark },
                       ]}
                     >
-                      Pending Payment
+                      {t("service.pendingPayment")}
                     </Text>
                   </View>
                   <View style={styles.bookingDateTimeRow}>
@@ -1001,7 +1032,7 @@ export default function ServiceDetailScreen() {
                     </Text>
                   </View>
                   <Text style={styles.expiryHint}>
-                    Slot locked for 3 min — complete payment to confirm
+                    {t("service.slotLocked")}
                   </Text>
                 </View>
                 <View style={styles.bookedActionsRow}>
@@ -1014,14 +1045,16 @@ export default function ServiceDetailScreen() {
                       } as any)
                     }
                   >
-                    <Text style={styles.payNowText}>Pay Now</Text>
+                    <Text style={styles.payNowText}>{t("service.payNow")}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.cancelBookingButton}
                     onPress={handleCancelBooking}
                   >
                     <X size={16} color={colors.status.error} />
-                    <Text style={styles.cancelBookingText}>Cancel</Text>
+                    <Text style={styles.cancelBookingText}>
+                      {t("service.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1031,7 +1064,9 @@ export default function ServiceDetailScreen() {
                 <View style={styles.bookingInfoCard}>
                   <View style={styles.bookingStatusRow}>
                     <Check size={16} color={colors.status.successDark} />
-                    <Text style={styles.bookedLabel}>Booked</Text>
+                    <Text style={styles.bookedLabel}>
+                      {t("service.booked")}
+                    </Text>
                   </View>
                   <View style={styles.bookingDateTimeRow}>
                     <Calendar size={14} color={colors.brand.primary} />
@@ -1053,14 +1088,18 @@ export default function ServiceDetailScreen() {
                     onPress={() => openBookingModal(true)}
                   >
                     <Edit2 size={16} color={colors.brand.primary} />
-                    <Text style={styles.changeBookingText}>Change</Text>
+                    <Text style={styles.changeBookingText}>
+                      {t("service.change")}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.cancelBookingButton}
                     onPress={handleCancelBooking}
                   >
                     <X size={16} color={colors.status.error} />
-                    <Text style={styles.cancelBookingText}>Cancel</Text>
+                    <Text style={styles.cancelBookingText}>
+                      {t("service.cancel")}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1070,7 +1109,9 @@ export default function ServiceDetailScreen() {
               style={styles.bookButton}
               onPress={() => openBookingModal(false)}
             >
-              <Text style={styles.bookButtonText}>Book Service</Text>
+              <Text style={styles.bookButtonText}>
+                {t("service.bookService")}
+              </Text>
               {service.price > 0 && (
                 <Text style={styles.bookButtonPrice}>
                   {"\u20B9"}
@@ -1082,9 +1123,11 @@ export default function ServiceDetailScreen() {
         ) : (
           <View style={styles.unavailableButtonBottom}>
             <Text style={styles.unavailableTextBottom}>
-              Service Unavailable
+              {t("service.serviceUnavailable")}
             </Text>
-            <Text style={styles.unavailableSubtext}>Check back later</Text>
+            <Text style={styles.unavailableSubtext}>
+              {t("service.checkBackLater")}
+            </Text>
           </View>
         )}
       </View>
@@ -1100,7 +1143,9 @@ export default function ServiceDetailScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {isEditing ? "Change Booking" : "Book Service"}
+                {isEditing
+                  ? t("service.changeBooking")
+                  : t("service.bookService")}
               </Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
@@ -1121,7 +1166,9 @@ export default function ServiceDetailScreen() {
               style={styles.modalBody}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.modalSectionTitle}>Select Date</Text>
+              <Text style={styles.modalSectionTitle}>
+                {t("service.selectDate")}
+              </Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -1164,7 +1211,9 @@ export default function ServiceDetailScreen() {
                 ))}
               </ScrollView>
 
-              <Text style={styles.modalSectionTitle}>Select Time</Text>
+              <Text style={styles.modalSectionTitle}>
+                {t("service.selectTime")}
+              </Text>
               <View style={styles.timeGrid}>
                 {TIME_SLOTS.map((time) => (
                   <TouchableOpacity
@@ -1194,7 +1243,9 @@ export default function ServiceDetailScreen() {
             >
               <Check size={20} color={colors.text.inverse} />
               <Text style={styles.confirmBookingText}>
-                {isEditing ? "Update Booking" : "Confirm Booking"}
+                {isEditing
+                  ? t("service.updateBooking")
+                  : t("service.confirmBooking")}
               </Text>
             </TouchableOpacity>
           </View>

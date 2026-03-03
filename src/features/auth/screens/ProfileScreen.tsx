@@ -30,11 +30,13 @@ import {
 } from "react-native";
 import { Card } from "../../../components/common/Card";
 import { useApp } from "../../../context/AppContext";
+import { useSettings } from "../../../context/SettingsContext";
 import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, logout, wishlist } = useApp();
+  const { t } = useSettings();
 
   // Sub-component for Info Rows
   const InfoRow = ({ icon: Icon, label, value }: any) => (
@@ -89,7 +91,7 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={styles.userName}>{user?.name || "Vishal Kumar"}</Text>
-          <Text style={styles.memberSince}>Premium Member since Jan 2024</Text>
+          <Text style={styles.memberSince}>{t("profile.premiumMember")}</Text>
 
           <View style={styles.ratingRow}>
             <Star
@@ -97,7 +99,9 @@ export default function ProfileScreen() {
               color={colors.brand.star}
               fill={colors.brand.star}
             />
-            <Text style={styles.ratingText}>4.8 • Verified Member</Text>
+            <Text style={styles.ratingText}>
+              4.8 • {t("profile.verifiedMember")}
+            </Text>
           </View>
 
           <TouchableOpacity
@@ -105,7 +109,7 @@ export default function ProfileScreen() {
             onPress={() => router.push("/Profile/edit-profile")}
           >
             <Edit3 size={16} color="#FFF" />
-            <Text style={styles.editBtnText}>Edit Profile</Text>
+            <Text style={styles.editBtnText}>{t("profile.editProfile")}</Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -119,7 +123,7 @@ export default function ProfileScreen() {
           <EnhancedStatBox
             icon={Package}
             number="12"
-            label="Orders"
+            label={t("profile.orders")}
             color="#3b82f6"
           />
         </TouchableOpacity>
@@ -130,7 +134,7 @@ export default function ProfileScreen() {
           <EnhancedStatBox
             icon={Heart}
             number={String(wishlist.length)}
-            label="Wishlist"
+            label={t("profile.wishlist")}
             color="#ef4444"
           />
         </TouchableOpacity>
@@ -138,7 +142,7 @@ export default function ProfileScreen() {
           <EnhancedStatBox
             icon={Users}
             number="5"
-            label="Following"
+            label={t("profile.following")}
             color="#10b981"
           />
         </TouchableOpacity>
@@ -146,7 +150,7 @@ export default function ProfileScreen() {
           <EnhancedStatBox
             icon={Award}
             number="3"
-            label="Badges"
+            label={t("profile.badges")}
             color="#f59e0b"
           />
         </TouchableOpacity>
@@ -154,19 +158,23 @@ export default function ProfileScreen() {
 
       {/* Account Details Card */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Details</Text>
+        <Text style={styles.sectionTitle}>{t("profile.accountDetails")}</Text>
         <Card style={styles.detailsCard}>
           <InfoRow
             icon={MapPin}
-            label="Address"
+            label={t("profile.address")}
             value="Rajendra Nagar, Patna - 800016"
           />
           <View style={styles.divider} />
-          <InfoRow icon={Phone} label="Phone" value="+91 98765 43210" />
+          <InfoRow
+            icon={Phone}
+            label={t("profile.phone")}
+            value="+91 98765 43210"
+          />
           <View style={styles.divider} />
           <InfoRow
             icon={Mail}
-            label="Email"
+            label={t("profile.email")}
             value={user?.email || "user@example.com"}
           />
         </Card>
@@ -174,7 +182,7 @@ export default function ProfileScreen() {
 
       {/* Quick Actions */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <Text style={styles.sectionTitle}>{t("profile.quickActions")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -187,7 +195,7 @@ export default function ProfileScreen() {
             <View style={styles.qaIconBg}>
               <Package size={24} color={colors.status.info} />
             </View>
-            <Text style={styles.qaLabel}>My Orders</Text>
+            <Text style={styles.qaLabel}>{t("profile.myOrders")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionCard}
@@ -196,7 +204,7 @@ export default function ProfileScreen() {
             <View style={styles.qaIconBg}>
               <Heart size={24} color={colors.status.error} />
             </View>
-            <Text style={styles.qaLabel}>Wishlist</Text>
+            <Text style={styles.qaLabel}>{t("profile.wishlist")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionCard}
@@ -205,7 +213,7 @@ export default function ProfileScreen() {
             <View style={styles.qaIconBg}>
               <Store size={24} color={colors.tint.green} />
             </View>
-            <Text style={styles.qaLabel}>My Dukaan</Text>
+            <Text style={styles.qaLabel}>{t("profile.myDukaan")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.quickActionCard}
@@ -214,14 +222,14 @@ export default function ProfileScreen() {
             <View style={styles.qaIconBg}>
               <Bell size={24} color={colors.status.warning} />
             </View>
-            <Text style={styles.qaLabel}>Notifications</Text>
+            <Text style={styles.qaLabel}>{t("profile.notifications")}</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
 
       {/* Menu List */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>More Options</Text>
+        <Text style={styles.sectionTitle}>{t("profile.moreOptions")}</Text>
         <View style={styles.menuList}>
           <TouchableOpacity
             style={styles.menuItem}
@@ -237,8 +245,10 @@ export default function ProfileScreen() {
                 <Package size={18} color={colors.status.info} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>My Orders</Text>
-                <Text style={styles.menuItemDesc}>Track your orders</Text>
+                <Text style={styles.menuItemText}>{t("profile.myOrders")}</Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.trackOrders")}
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -255,8 +265,10 @@ export default function ProfileScreen() {
                 <Heart size={18} color={colors.status.error} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Wishlist</Text>
-                <Text style={styles.menuItemDesc}>Items you saved</Text>
+                <Text style={styles.menuItemText}>{t("profile.wishlist")}</Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.wishlistDesc")}
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -276,8 +288,10 @@ export default function ProfileScreen() {
                 <Store size={18} color={colors.tint.green} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>My Dukaan</Text>
-                <Text style={styles.menuItemDesc}>Manage your store</Text>
+                <Text style={styles.menuItemText}>{t("profile.myDukaan")}</Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.manageStore")}
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -297,9 +311,9 @@ export default function ProfileScreen() {
                 <CreditCard size={18} color={colors.status.warning} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Payments</Text>
+                <Text style={styles.menuItemText}>{t("profile.payments")}</Text>
                 <Text style={styles.menuItemDesc}>
-                  Receipts & payment history
+                  {t("profile.paymentsDesc")}
                 </Text>
               </View>
             </View>
@@ -317,8 +331,12 @@ export default function ProfileScreen() {
                 <Truck size={18} color={colors.brand.accent} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Transporter</Text>
-                <Text style={styles.menuItemDesc}>Delivery & logistics</Text>
+                <Text style={styles.menuItemText}>
+                  {t("profile.transporter")}
+                </Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.transporterDesc")}
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -335,8 +353,12 @@ export default function ProfileScreen() {
                 <Bell size={18} color={colors.status.warning} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Notifications</Text>
-                <Text style={styles.menuItemDesc}>Alerts & updates</Text>
+                <Text style={styles.menuItemText}>
+                  {t("profile.notifications")}
+                </Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.notificationsDesc")}
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -359,9 +381,11 @@ export default function ProfileScreen() {
                 <Text
                   style={[styles.menuItemText, { color: colors.status.error }]}
                 >
-                  Logout
+                  {t("profile.logout")}
                 </Text>
-                <Text style={styles.menuItemDesc}>Sign out from app</Text>
+                <Text style={styles.menuItemDesc}>
+                  {t("profile.logoutDesc")}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>

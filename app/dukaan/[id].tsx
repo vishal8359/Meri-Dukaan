@@ -1,5 +1,6 @@
 import { EnhancedReel } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
 import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
 import { colors, radius, shadows } from "@/src/theme/colors";
@@ -44,6 +45,7 @@ const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { t } = useSettings();
   const {
     getStoreById,
     reels,
@@ -282,7 +284,7 @@ export default function StoreDetailScreen() {
       removeFromWishlist(wishlistId);
       Toast.show({
         type: "info",
-        text1: "Removed from wishlist",
+        text1: t("store.removedFromWishlist"),
         text2: `${store.name} unsaved`,
         visibilityTime: 1500,
         position: "top",
@@ -301,8 +303,8 @@ export default function StoreDetailScreen() {
       });
       Toast.show({
         type: "success",
-        text1: "Store saved",
-        text2: `${store.name} added to wishlist!`,
+        text1: t("store.storeSaved"),
+        text2: `${store.name} ${t("store.addedToWishlist")}`,
         visibilityTime: 1500,
         position: "top",
       });
@@ -327,9 +329,9 @@ export default function StoreDetailScreen() {
             size={64}
             color={colors.ui.muted}
           />
-          <Text style={styles.errorText}>Store not found</Text>
+          <Text style={styles.errorText}>{t("store.notFound")}</Text>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Text style={styles.backButtonText}>Go Back</Text>
+            <Text style={styles.backButtonText}>{t("store.goBack")}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -428,7 +430,7 @@ export default function StoreDetailScreen() {
             </View>
             <View style={styles.openBadge}>
               <Clock size={10} color={colors.status.successDark} />
-              <Text style={styles.openText}>Open Now</Text>
+              <Text style={styles.openText}>{t("store.openNow")}</Text>
             </View>
           </View>
         </View>
@@ -440,17 +442,17 @@ export default function StoreDetailScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{store?.followers || "2.5K"}</Text>
-            <Text style={styles.statLabel}>Followers</Text>
+            <Text style={styles.statLabel}>{t("store.followers")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{products.length}</Text>
-            <Text style={styles.statLabel}>Products</Text>
+            <Text style={styles.statLabel}>{t("store.products")}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{store?.distance || "1.2 km"}</Text>
-            <Text style={styles.statLabel}>Away</Text>
+            <Text style={styles.statLabel}>{t("store.away")}</Text>
           </View>
         </View>
 
@@ -471,13 +473,13 @@ export default function StoreDetailScreen() {
                 isSaved && styles.actionBtnTextActive,
               ]}
             >
-              {isSaved ? "Saved" : "Save"}
+              {isSaved ? t("store.saved") : t("store.save")}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
             <Share2 size={18} color={colors.status.info} />
-            <Text style={styles.actionBtnText}>Share</Text>
+            <Text style={styles.actionBtnText}>{t("store.share")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -485,7 +487,9 @@ export default function StoreDetailScreen() {
             onPress={handleCall}
           >
             <Phone size={18} color={colors.text.inverse} />
-            <Text style={styles.actionBtnTextPrimary}>Call Store</Text>
+            <Text style={styles.actionBtnTextPrimary}>
+              {t("store.callStore")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -503,7 +507,7 @@ export default function StoreDetailScreen() {
       <View style={styles.quickContactRow}>
         <TouchableOpacity style={styles.quickContactBtn}>
           <MessageCircle size={18} color={colors.status.info} />
-          <Text style={styles.quickContactText}>Chat</Text>
+          <Text style={styles.quickContactText}>{t("store.chat")}</Text>
         </TouchableOpacity>
         <View style={styles.quickContactDivider} />
         <TouchableOpacity style={styles.quickContactBtn}>
@@ -530,7 +534,7 @@ export default function StoreDetailScreen() {
               activeTab === "products" && styles.tabBtnTextActive,
             ]}
           >
-            Products
+            {t("store.products")}
           </Text>
           {activeTab === "products" && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
@@ -551,7 +555,7 @@ export default function StoreDetailScreen() {
               activeTab === "services" && styles.tabBtnTextActive,
             ]}
           >
-            Services
+            {t("store.services")}
           </Text>
           {activeTab === "services" && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
@@ -590,7 +594,7 @@ export default function StoreDetailScreen() {
             <View style={styles.searchInputContainer}>
               <Search size={18} color={colors.text.secondary} />
               <TextInput
-                placeholder="Search products..."
+                placeholder={t("store.searchProducts")}
                 style={styles.searchInput}
                 placeholderTextColor={colors.ui.muted}
                 value={searchQuery}

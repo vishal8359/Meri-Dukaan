@@ -1,24 +1,25 @@
 // app/notifications.tsx
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Bell,
-  BellOff,
-  CheckCheck,
-  Package,
-  ShoppingBag,
-  Store,
-  Truck,
+    ArrowLeft,
+    Bell,
+    BellOff,
+    CheckCheck,
+    Package,
+    ShoppingBag,
+    Store,
+    Truck,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  FlatList,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -158,6 +159,7 @@ const SectionHeader = ({ title }: { title: string }) => (
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useSettings();
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
@@ -224,7 +226,7 @@ export default function NotificationsScreen() {
           <View style={styles.headerIconWrap}>
             <Bell size={18} color="#fff" />
           </View>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={styles.headerTitle}>{t("notif.title")}</Text>
           {unreadCount > 0 && (
             <View style={styles.headerBadge}>
               <Text style={styles.headerBadgeText}>{unreadCount}</Text>
@@ -264,7 +266,7 @@ export default function NotificationsScreen() {
             activeOpacity={0.7}
           >
             <CheckCheck size={14} color={colors.brand.primary} />
-            <Text style={styles.markAllText}>Read all</Text>
+            <Text style={styles.markAllText}>{t("notif.markAllRead")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -287,7 +289,7 @@ export default function NotificationsScreen() {
             <View style={styles.emptyIconCircle}>
               <BellOff size={40} color={colors.text.secondary} />
             </View>
-            <Text style={styles.emptyTitle}>You're all caught up!</Text>
+            <Text style={styles.emptyTitle}>{t("notif.empty")}</Text>
             <Text style={styles.emptySub}>
               No {filter === "unread" ? "unread " : ""}notifications right now.
               {"\n"}Check back later.

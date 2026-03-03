@@ -2,9 +2,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import { StickyHeader } from "../../../src/components/common/StickyHeader";
+import { useSettings } from "../../../src/context/SettingsContext";
 import { colors } from "../../../src/theme/colors";
 
 export default function TabLayout() {
+  const { t } = useSettings();
+
   return (
     <Tabs
       screenOptions={{
@@ -16,7 +19,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: t("tab.home"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="home" size={24} color={color} />
           ),
@@ -25,7 +28,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bazar"
         options={{
-          title: "Bazar",
+          title: t("tab.bazar"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="cart" size={24} color={color} />
           ),
@@ -34,7 +37,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="mybusz"
         options={{
-          title: "myBusz",
+          title: t("tab.mybusz"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="bag-handle" size={24} color={color} />
           ),
@@ -43,7 +46,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="dhindora"
         options={{
-          title: "Dhindora",
+          title: t("tab.dhindora"),
           tabBarIcon: ({ color }) => (
             <Ionicons name="megaphone" size={24} color={color} />
           ),
@@ -55,7 +58,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           href: null, // Hides from tab bar
-          title: "Profile",
+          title: t("tab.profile"),
         }}
       />
     </Tabs>

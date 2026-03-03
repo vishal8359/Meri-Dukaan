@@ -1,4 +1,5 @@
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
@@ -50,6 +51,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   storeName = "Store",
 }) => {
   const router = useRouter();
+  const { t } = useSettings();
   const {
     addToCart,
     cart,
@@ -104,8 +106,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
       // Show toast notification
       Toast.show({
         type: "success",
-        text1: "Added to cart",
-        text2: `${product.name} added successfully!`,
+        text1: t("prodSection.addedToCart"),
+        text2: `${product.name} ${t("prodSection.addedSuccess")}`,
         visibilityTime: 2000,
         position: "top",
       });
@@ -120,8 +122,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         removeFromWishlist(wishlistId);
         Toast.show({
           type: "info",
-          text1: "Removed from wishlist",
-          text2: `${product.name} removed`,
+          text1: t("prodSection.removedFromWishlist"),
+          text2: `${product.name} ${t("prodSection.removed")}`,
           visibilityTime: 1500,
           position: "top",
         });
@@ -138,8 +140,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         });
         Toast.show({
           type: "success",
-          text1: "Added to wishlist",
-          text2: `${product.name} saved!`,
+          text1: t("prodSection.addedToWishlist"),
+          text2: `${product.name} ${t("prodSection.saved")}`,
           visibilityTime: 1500,
           position: "top",
         });
@@ -167,8 +169,8 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         removeFromCart(cartItemId);
         Toast.show({
           type: "info",
-          text1: "Removed from cart",
-          text2: `${product.name} removed`,
+          text1: t("prodSection.removedFromCart"),
+          text2: `${product.name} ${t("prodSection.removed")}`,
           visibilityTime: 1500,
           position: "top",
         });
@@ -260,7 +262,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
                         : styles.textError,
                     ]}
                   >
-                    {item.status === "active" ? "✓ In Stock" : "Out of Stock"}
+                    {item.status === "active"
+                      ? t("prodSection.inStock")
+                      : t("prodSection.outOfStock")}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -300,7 +304,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
             <View style={styles.productFooter}>
               <Text style={styles.productPrice}>{item.displayPrice}</Text>
-              <Text style={styles.deliveryBadge}>📦 Free Delivery</Text>
+              <Text style={styles.deliveryBadge}>
+                {t("prodSection.freeDelivery")}
+              </Text>
             </View>
           </View>
         </View>
@@ -331,7 +337,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
               onPress={() => handleAddToCart(item)}
             >
               <ShoppingCart size={16} color={colors.text.inverse} />
-              <Text style={styles.addToCartBtnText}>Add to Cart</Text>
+              <Text style={styles.addToCartBtnText}>
+                {t("prodSection.addToCart")}
+              </Text>
             </TouchableOpacity>
           ))}
       </TouchableOpacity>
@@ -353,7 +361,9 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         <Text style={styles.bannerTitle} numberOfLines={1}>
           {storeName}
         </Text>
-        <Text style={styles.bannerSubtitle}>Browse our amazing products</Text>
+        <Text style={styles.bannerSubtitle}>
+          {t("prodSection.browseProducts")}
+        </Text>
       </View>
     </View>
   );
@@ -365,7 +375,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         <View style={styles.searchContainer}>
           <Search size={18} color={colors.ui.muted} style={styles.searchIcon} />
           <TextInput
-            placeholder="Search products..."
+            placeholder={t("prodSection.searchProducts")}
             style={styles.searchInput}
             placeholderTextColor={colors.ui.muted}
             value={searchQuery}
@@ -390,7 +400,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         removeClippedSubviews={true}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No products found</Text>
+            <Text style={styles.emptyText}>{t("prodSection.noProducts")}</Text>
           </View>
         }
       />

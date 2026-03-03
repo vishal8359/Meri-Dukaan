@@ -1,4 +1,5 @@
 // app/payments/history.tsx
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -17,7 +18,7 @@ import {
     Search,
     Store,
     Wallet,
-    XCircle
+    XCircle,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
@@ -200,16 +201,17 @@ type FilterType = "all" | "success" | "failed" | "refunded" | "pending";
 // --- Main Component ---
 export default function PaymentHistoryScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filters: { key: FilterType; label: string }[] = [
-    { key: "all", label: "All" },
-    { key: "success", label: "Successful" },
-    { key: "pending", label: "Pending" },
-    { key: "failed", label: "Failed" },
-    { key: "refunded", label: "Refunded" },
+    { key: "all", label: t("payments.all") },
+    { key: "success", label: t("payments.success") },
+    { key: "pending", label: t("payments.pending") },
+    { key: "failed", label: t("payments.failed") },
+    { key: "refunded", label: t("payments.refundedFilter") },
   ];
 
   const filteredPayments = useMemo(() => {
@@ -383,14 +385,18 @@ export default function PaymentHistoryScreen() {
             {/* Breakdown */}
             <View style={styles.breakdownSection}>
               <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownLabel}>Subtotal</Text>
+                <Text style={styles.breakdownLabel}>
+                  {t("payments.subtotal")}
+                </Text>
                 <Text style={styles.breakdownValue}>
                   ₹{item.subtotal.toLocaleString("en-IN")}
                 </Text>
               </View>
               {item.deliveryFee > 0 && (
                 <View style={styles.breakdownRow}>
-                  <Text style={styles.breakdownLabel}>Delivery Fee</Text>
+                  <Text style={styles.breakdownLabel}>
+                    {t("payments.deliveryFee")}
+                  </Text>
                   <Text style={styles.breakdownValue}>₹{item.deliveryFee}</Text>
                 </View>
               )}
@@ -402,7 +408,7 @@ export default function PaymentHistoryScreen() {
                       { color: colors.status.success },
                     ]}
                   >
-                    Discount
+                    {t("payments.discount")}
                   </Text>
                   <Text
                     style={[
@@ -416,7 +422,9 @@ export default function PaymentHistoryScreen() {
               )}
               <View style={styles.breakdownDivider} />
               <View style={styles.breakdownRow}>
-                <Text style={styles.breakdownTotal}>Total Paid</Text>
+                <Text style={styles.breakdownTotal}>
+                  {t("payments.totalPaid")}
+                </Text>
                 <Text style={styles.breakdownTotalValue}>
                   ₹{item.totalAmount.toLocaleString("en-IN")}
                 </Text>
@@ -436,7 +444,7 @@ export default function PaymentHistoryScreen() {
 
             {/* Transaction ID */}
             <View style={styles.txnRow}>
-              <Text style={styles.txnLabel}>Transaction ID</Text>
+              <Text style={styles.txnLabel}>{t("payments.transactionId")}</Text>
               <Text style={styles.txnValue}>{item.transactionId}</Text>
             </View>
 
@@ -444,7 +452,9 @@ export default function PaymentHistoryScreen() {
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionBtn}>
                 <Download size={15} color={colors.brand.primary} />
-                <Text style={styles.actionBtnText}>Receipt</Text>
+                <Text style={styles.actionBtnText}>
+                  {t("payments.downloadReceipt")}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.actionBtn}
@@ -454,7 +464,7 @@ export default function PaymentHistoryScreen() {
                 <Text
                   style={[styles.actionBtnText, { color: colors.tint.green }]}
                 >
-                  Visit Store
+                  {t("payments.visitStore")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -507,7 +517,7 @@ export default function PaymentHistoryScreen() {
             ₹{totals.totalRefunded.toLocaleString("en-IN")}
           </Text>
           <Text style={[styles.sumLabel, { color: colors.tint.purple + "99" }]}>
-            Refunded
+            {t("payments.refunded")}
           </Text>
         </View>
 
@@ -526,7 +536,7 @@ export default function PaymentHistoryScreen() {
             {totals.totalTransactions}
           </Text>
           <Text style={[styles.sumLabel, { color: colors.tint.blue + "99" }]}>
-            Transactions
+            {t("payments.transactions")}
           </Text>
         </View>
       </View>
@@ -536,7 +546,7 @@ export default function PaymentHistoryScreen() {
         <Search size={18} color={colors.text.tertiary} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by store, order, or item..."
+          placeholder={t("payments.searchPlaceholder")}
           placeholderTextColor={colors.text.tertiary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -601,7 +611,7 @@ export default function PaymentHistoryScreen() {
       <View style={styles.emptyIcon}>
         <ReceiptText size={48} color={colors.text.tertiary} />
       </View>
-      <Text style={styles.emptyTitle}>No Payments Found</Text>
+      <Text style={styles.emptyTitle}>{t("payments.noPayments")}</Text>
       <Text style={styles.emptyDesc}>
         {searchQuery
           ? "Try a different search term"
@@ -621,7 +631,7 @@ export default function PaymentHistoryScreen() {
         >
           <ArrowLeft size={22} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.topTitle}>Payment History</Text>
+        <Text style={styles.topTitle}>{t("payments.title")}</Text>
         <TouchableOpacity style={styles.filterBtn} activeOpacity={0.7}>
           <Filter size={20} color={colors.brand.primary} />
         </TouchableOpacity>

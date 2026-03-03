@@ -1,4 +1,5 @@
 import { BookedService, useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
@@ -85,6 +86,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   storeId = "1",
 }) => {
   const router = useRouter();
+  const { t } = useSettings();
   const {
     addToWishlist,
     removeFromWishlist,
@@ -185,8 +187,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     setBookingModalVisible(false);
     Toast.show({
       type: "success",
-      text1: isEditing ? "Booking Updated" : "Service Booked",
-      text2: `${selectedService.name} ${isEditing ? "updated" : "booked"} successfully!`,
+      text1: isEditing
+        ? t("svcSection.bookingUpdated")
+        : t("svcSection.serviceBooked"),
+      text2: `${selectedService.name} ${isEditing ? t("svcSection.updated") : t("svcSection.booked")} successfully!`,
       visibilityTime: 3000,
       position: "top",
     });
@@ -224,8 +228,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         removeFromWishlist(wishlistId);
         Toast.show({
           type: "info",
-          text1: "Removed from wishlist",
-          text2: `${service.name} removed`,
+          text1: t("svcSection.removedFromWishlist"),
+          text2: `${service.name} ${t("svcSection.removed")}`,
           visibilityTime: 1500,
           position: "top",
         });
@@ -244,8 +248,8 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         });
         Toast.show({
           type: "success",
-          text1: "Added to wishlist",
-          text2: `${service.name} saved!`,
+          text1: t("svcSection.addedToWishlist"),
+          text2: `${service.name} ${t("svcSection.saved")}`,
           visibilityTime: 1500,
           position: "top",
         });
@@ -339,10 +343,10 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                   ]}
                 >
                   {isBooked
-                    ? "Booked"
+                    ? t("svcSection.bookedStatus")
                     : item.active
-                      ? "Available"
-                      : "Unavailable"}
+                      ? t("svcSection.available")
+                      : t("svcSection.unavailable")}
                 </Text>
               </View>
             </View>
@@ -393,7 +397,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                     onPress={() => openBookingModal(item, true)}
                   >
                     <Edit2 size={14} color={colors.brand.primary} />
-                    <Text style={styles.editBookingText}>Change</Text>
+                    <Text style={styles.editBookingText}>
+                      {t("svcSection.change")}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.cancelBookingBtn}
@@ -408,7 +414,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
                   onPress={() => openBookingModal(item, false)}
                 >
                   <Plus size={14} color={colors.text.inverse} />
-                  <Text style={styles.bookText}>Book</Text>
+                  <Text style={styles.bookText}>{t("svcSection.book")}</Text>
                 </TouchableOpacity>
               ))}
           </View>
@@ -432,7 +438,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         <Text style={styles.bannerTitle} numberOfLines={1}>
           {storeName}
         </Text>
-        <Text style={styles.bannerSubtitle}>Book our premium services</Text>
+        <Text style={styles.bannerSubtitle}>
+          {t("svcSection.browseServices")}
+        </Text>
       </View>
     </View>
   );
@@ -456,7 +464,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No services available</Text>
+            <Text style={styles.emptyText}>{t("svcSection.noServices")}</Text>
           </View>
         }
       />
@@ -473,7 +481,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {isEditing ? "Change Booking" : "Book Service"}
+                {isEditing
+                  ? t("svcSection.changeBooking")
+                  : t("svcSection.bookService")}
               </Text>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
@@ -502,7 +512,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               showsVerticalScrollIndicator={false}
             >
               {/* Date Selection */}
-              <Text style={styles.modalSectionTitle}>Select Date</Text>
+              <Text style={styles.modalSectionTitle}>
+                {t("svcSection.selectDate")}
+              </Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -546,7 +558,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               </ScrollView>
 
               {/* Time Selection */}
-              <Text style={styles.modalSectionTitle}>Select Time</Text>
+              <Text style={styles.modalSectionTitle}>
+                {t("svcSection.selectTime")}
+              </Text>
               <View style={styles.timeGrid}>
                 {TIME_SLOTS.map((time) => (
                   <TouchableOpacity
@@ -577,7 +591,9 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             >
               <Check size={20} color={colors.text.inverse} />
               <Text style={styles.confirmBookingText}>
-                {isEditing ? "Update Booking" : "Confirm Booking"}
+                {isEditing
+                  ? t("svcSection.updateBooking")
+                  : t("svcSection.confirmBooking")}
               </Text>
             </TouchableOpacity>
           </View>

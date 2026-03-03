@@ -1,5 +1,6 @@
 import { mockProducts, Product } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -220,31 +221,33 @@ const RelatedProductSkeleton = () => (
 );
 
 // ─── Product Not Found ──────────────────────────────────────────────────────
-const ProductNotFound = ({ onBack }: { onBack: () => void }) => (
-  <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.headerButton} onPress={onBack}>
-        <ChevronLeft size={24} color={colors.text.heading} />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Product Details</Text>
-      <View style={styles.headerButton} />
-    </View>
-    <View style={styles.notFoundContainer}>
-      <Package size={64} color={colors.ui.disabled} />
-      <Text style={styles.notFoundTitle}>Product Not Found</Text>
-      <Text style={styles.notFoundSubtitle}>
-        This product may no longer be available
-      </Text>
-      <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
-        <Text style={styles.notFoundButtonText}>Go Back</Text>
-      </TouchableOpacity>
-    </View>
-  </SafeAreaView>
-);
+const ProductNotFound = ({ onBack }: { onBack: () => void }) => {
+  const { t } = useSettings();
+  return (
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.headerButton} onPress={onBack}>
+          <ChevronLeft size={24} color={colors.text.heading} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t("product.details")}</Text>
+        <View style={styles.headerButton} />
+      </View>
+      <View style={styles.notFoundContainer}>
+        <Package size={64} color={colors.ui.disabled} />
+        <Text style={styles.notFoundTitle}>{t("product.notFound")}</Text>
+        <Text style={styles.notFoundSubtitle}>{t("product.notFoundDesc")}</Text>
+        <TouchableOpacity style={styles.notFoundButton} onPress={onBack}>
+          <Text style={styles.notFoundButtonText}>{t("product.goBack")}</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 export default function ProductDetailScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const { id, fallbackData } = useLocalSearchParams<{
     id: string;
     fallbackData?: string;
@@ -371,7 +374,7 @@ export default function ProductDetailScreen() {
     });
     Toast.show({
       type: "success",
-      text1: "Added to Cart",
+      text1: t("product.addedToCart"),
       text2: `${product.name} added to your cart`,
       visibilityTime: 1500,
       position: "top",
@@ -389,7 +392,7 @@ export default function ProductDetailScreen() {
       removeFromCart(product.id);
       Toast.show({
         type: "info",
-        text1: "Removed from Cart",
+        text1: t("product.removedFromCart"),
         text2: `${product.name} removed`,
         visibilityTime: 1500,
         position: "top",
@@ -406,7 +409,7 @@ export default function ProductDetailScreen() {
       removeFromWishlist(wishlistId);
       Toast.show({
         type: "info",
-        text1: "Removed from wishlist",
+        text1: t("product.removedFromWishlist"),
         text2: `${product.name} removed`,
         visibilityTime: 1500,
         position: "top",
@@ -423,7 +426,7 @@ export default function ProductDetailScreen() {
       });
       Toast.show({
         type: "success",
-        text1: "Added to wishlist",
+        text1: t("product.addedToWishlist"),
         text2: `${product.name} saved!`,
         visibilityTime: 1500,
         position: "top",
@@ -508,7 +511,7 @@ export default function ProductDetailScreen() {
           >
             <ChevronLeft size={24} color={colors.text.heading} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Product Details</Text>
+          <Text style={styles.headerTitle}>{t("product.details")}</Text>
           <View style={styles.headerButton} />
         </View>
         <ProductSkeleton />
@@ -533,7 +536,7 @@ export default function ProductDetailScreen() {
         >
           <ChevronLeft size={24} color={colors.text.heading} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Product Details</Text>
+        <Text style={styles.headerTitle}>{t("product.details")}</Text>
         <TouchableOpacity style={styles.headerButton}>
           <Share2 size={20} color={colors.text.heading} />
         </TouchableOpacity>
@@ -641,10 +644,14 @@ export default function ProductDetailScreen() {
 
           {/* Photo count label */}
           <Text style={styles.photoCountLabel}>
-            {productImages.length} photo{productImages.length > 1 ? "s" : ""} •{" "}
+            {productImages.length}{" "}
+            {productImages.length > 1
+              ? t("product.photos")
+              : t("product.photo")}{" "}
+            •{" "}
             {productImages.length < 5
-              ? `up to ${5 - productImages.length} more allowed`
-              : "maximum photos"}
+              ? `up to ${5 - productImages.length} ${t("product.moreAllowed")}`
+              : t("product.maxPhotos")}
           </Text>
         </View>
 
@@ -708,7 +715,9 @@ export default function ProductDetailScreen() {
                   },
                 ]}
               >
-                {product.inStock ? "In Stock" : "Out of Stock"}
+                {product.inStock
+                  ? t("product.inStock")
+                  : t("product.outOfStock")}
               </Text>
             </View>
             {product.distance && (
@@ -781,7 +790,7 @@ export default function ProductDetailScreen() {
               <View style={styles.storeInfo}>
                 <View style={styles.storeIconRow}>
                   <Store size={12} color={colors.brand.primary} />
-                  <Text style={styles.storeLabel}>Sold by</Text>
+                  <Text style={styles.storeLabel}>{t("product.soldBy")}</Text>
                 </View>
                 <Text style={styles.storeName}>{product.storeName}</Text>
               </View>
@@ -789,7 +798,9 @@ export default function ProductDetailScreen() {
                 <View style={styles.deliveryInfo}>
                   <View style={styles.storeIconRow}>
                     <Truck size={12} color={colors.status.successDark} />
-                    <Text style={styles.deliveryLabel}>Delivery</Text>
+                    <Text style={styles.deliveryLabel}>
+                      {t("product.delivery")}
+                    </Text>
                   </View>
                   <Text style={styles.deliveryTime}>{product.delivery}</Text>
                 </View>
@@ -801,7 +812,7 @@ export default function ProductDetailScreen() {
         {/* Description */}
         {descriptionBullets.length > 0 && (
           <View style={styles.descriptionCard}>
-            <Text style={styles.sectionTitle}>About This Product</Text>
+            <Text style={styles.sectionTitle}>{t("product.aboutProduct")}</Text>
             {descriptionBullets.map((bullet, index) => (
               <View key={index} style={styles.bulletPoint}>
                 <Text style={styles.bulletDot}>•</Text>
@@ -813,12 +824,12 @@ export default function ProductDetailScreen() {
 
         {/* Product Details Table */}
         <View style={styles.detailsCard}>
-          <Text style={styles.sectionTitle}>Product Details</Text>
+          <Text style={styles.sectionTitle}>{t("product.productDetails")}</Text>
           <View style={styles.detailsGrid}>
             <View style={styles.detailItem}>
               <Package size={16} color={colors.brand.primary} />
               <View>
-                <Text style={styles.detailLabel}>Category</Text>
+                <Text style={styles.detailLabel}>{t("product.category")}</Text>
                 <Text style={styles.detailValue}>
                   {product.category.charAt(0).toUpperCase() +
                     product.category.slice(1)}
@@ -829,7 +840,7 @@ export default function ProductDetailScreen() {
               <View style={styles.detailItem}>
                 <Clock size={16} color={colors.brand.primary} />
                 <View>
-                  <Text style={styles.detailLabel}>Unit</Text>
+                  <Text style={styles.detailLabel}>{t("product.unit")}</Text>
                   <Text style={styles.detailValue}>{product.unit}</Text>
                 </View>
               </View>
@@ -837,14 +848,14 @@ export default function ProductDetailScreen() {
             <View style={styles.detailItem}>
               <MapPin size={16} color={colors.brand.primary} />
               <View>
-                <Text style={styles.detailLabel}>Distance</Text>
+                <Text style={styles.detailLabel}>{t("product.distance")}</Text>
                 <Text style={styles.detailValue}>{product.distance}</Text>
               </View>
             </View>
             <View style={styles.detailItem}>
               <Star size={16} color={colors.brand.star} />
               <View>
-                <Text style={styles.detailLabel}>Rating</Text>
+                <Text style={styles.detailLabel}>{t("product.rating")}</Text>
                 <Text style={styles.detailValue}>
                   {product.rating}/5 ({product.reviews})
                 </Text>
@@ -858,7 +869,9 @@ export default function ProductDetailScreen() {
           <View style={styles.relatedSection}>
             <View style={styles.relatedHeader}>
               <View>
-                <Text style={styles.sectionTitle}>Related Products</Text>
+                <Text style={styles.sectionTitle}>
+                  {t("product.relatedProducts")}
+                </Text>
                 <Text style={styles.relatedSubtitle}>
                   More from{" "}
                   {product.category.charAt(0).toUpperCase() +
@@ -971,7 +984,9 @@ export default function ProductDetailScreen() {
                       onPress={handleLoadMoreRelated}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.loadMoreText}>Load More</Text>
+                      <Text style={styles.loadMoreText}>
+                        {t("product.loadMore")}
+                      </Text>
                     </TouchableOpacity>
                   );
                 }
@@ -1031,7 +1046,7 @@ export default function ProductDetailScreen() {
                 onPress={handleOrderNow}
                 activeOpacity={0.85}
               >
-                <Text style={styles.orderNowText}>Order Now</Text>
+                <Text style={styles.orderNowText}>{t("product.orderNow")}</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -1043,7 +1058,9 @@ export default function ProductDetailScreen() {
                 activeOpacity={0.85}
               >
                 <ShoppingCart size={20} color={colors.text.inverse} />
-                <Text style={styles.addToCartText}>Add to Cart</Text>
+                <Text style={styles.addToCartText}>
+                  {t("product.addToCart")}
+                </Text>
                 <Text style={styles.addToCartPrice}>
                   ₹{product.price.toLocaleString()}
                 </Text>
@@ -1053,15 +1070,15 @@ export default function ProductDetailScreen() {
                 onPress={handleOrderNow}
                 activeOpacity={0.85}
               >
-                <Text style={styles.orderNowText}>Order Now</Text>
+                <Text style={styles.orderNowText}>{t("product.orderNow")}</Text>
               </TouchableOpacity>
             </>
           )
         ) : (
           <View style={styles.outOfStockButton}>
-            <Text style={styles.outOfStockText}>Out of Stock</Text>
+            <Text style={styles.outOfStockText}>{t("product.outOfStock")}</Text>
             <Text style={styles.outOfStockSubtext}>
-              Notify me when available
+              {t("product.notifyMe")}
             </Text>
           </View>
         )}

@@ -1,34 +1,36 @@
 import { BookedService, useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  AlertTriangle,
-  ArrowLeft,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Minus,
-  Plus,
-  ShoppingBag,
-  Square,
-  Store,
-  Trash2,
-  Wrench,
+    AlertTriangle,
+    ArrowLeft,
+    Calendar,
+    CheckCircle,
+    Clock,
+    Minus,
+    Plus,
+    ShoppingBag,
+    Square,
+    Store,
+    Trash2,
+    Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
 export default function CartScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const { tab } = useLocalSearchParams<{ tab?: string }>();
   const {
     cart,
@@ -61,7 +63,7 @@ export default function CartScreen() {
         removeFromCart(item.id);
         Toast.show({
           type: "info",
-          text1: "Removed from cart",
+          text1: t("cart.removeItem"),
           text2: `${item.name} removed`,
           visibilityTime: 1500,
           position: "top",
@@ -74,8 +76,8 @@ export default function CartScreen() {
     cancelBooking(serviceId);
     Toast.show({
       type: "info",
-      text1: "Service removed",
-      text2: "Booking cancelled",
+      text1: t("cart.serviceRemoved"),
+      text2: t("cart.bookingCancelled"),
       visibilityTime: 1500,
       position: "top",
     });
@@ -152,7 +154,7 @@ export default function CartScreen() {
                 removeFromCart(item.id);
                 Toast.show({
                   type: "info",
-                  text1: "Removed from cart",
+                  text1: t("cart.removeItem"),
                   text2: `${item.name} removed`,
                   visibilityTime: 1500,
                   position: "top",
@@ -181,7 +183,7 @@ export default function CartScreen() {
             </View>
 
             <View style={styles.subtotalContainer}>
-              <Text style={styles.subtotalLabel}>Subtotal:</Text>
+              <Text style={styles.subtotalLabel}>{t("cart.subtotal")}:</Text>
               <Text style={styles.subtotalValue}>
                 ₹{item.price * item.quantity}
               </Text>
@@ -224,7 +226,7 @@ export default function CartScreen() {
                   : { color: colors.status.successDark },
               ]}
             >
-              {isPending ? "Pending Payment" : "Confirmed"}
+              {isPending ? t("cart.pendingPayment") : t("cart.confirmed")}
             </Text>
           </View>
 
@@ -258,7 +260,7 @@ export default function CartScreen() {
               </TouchableOpacity>
 
               <Text style={styles.itemPrice}>
-                {item.price === 0 ? "FREE" : `₹${item.price}`}
+                {item.price === 0 ? t("cart.free") : `₹${item.price}`}
               </Text>
             </View>
 
@@ -297,7 +299,7 @@ export default function CartScreen() {
                 } as any);
               }}
             >
-              <Text style={styles.confirmPayText}>Confirm & Pay</Text>
+              <Text style={styles.confirmPayText}>{t("cart.confirmPay")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -318,7 +320,7 @@ export default function CartScreen() {
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
           <ShoppingBag size={20} color={colors.brand.primary} />
-          <Text style={styles.headerTitle}>My Cart</Text>
+          <Text style={styles.headerTitle}>{t("cart.myCart")}</Text>
         </View>
         <View style={{ width: 24 }} />
       </View>
@@ -332,15 +334,13 @@ export default function CartScreen() {
               strokeWidth={1.5}
             />
           </View>
-          <Text style={styles.emptyText}>Your cart is empty</Text>
-          <Text style={styles.emptySubtext}>
-            Add items from stores to get started
-          </Text>
+          <Text style={styles.emptyText}>{t("cart.empty")}</Text>
+          <Text style={styles.emptySubtext}>{t("cart.emptySubtext")}</Text>
           <TouchableOpacity
             style={styles.shopButton}
             onPress={() => router.push("/(drawer)/(tabs)/bazar")}
           >
-            <Text style={styles.shopButtonText}>Start Shopping</Text>
+            <Text style={styles.shopButtonText}>{t("cart.startShopping")}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -364,7 +364,7 @@ export default function CartScreen() {
                   activeTab === "products" && styles.activeTabText,
                 ]}
               >
-                Products ({cart.length})
+                {t("cart.products")} ({cart.length})
               </Text>
             </TouchableOpacity>
 
@@ -386,7 +386,7 @@ export default function CartScreen() {
                   activeTab === "services" && styles.activeTabText,
                 ]}
               >
-                Services ({bookedServices.length})
+                {t("cart.services")} ({bookedServices.length})
               </Text>
             </TouchableOpacity>
           </View>
@@ -407,8 +407,8 @@ export default function CartScreen() {
               <View style={styles.listHeader}>
                 <Text style={styles.itemCountText}>
                   {activeTab === "products"
-                    ? `${cart.length} ${cart.length === 1 ? "item" : "items"}`
-                    : `${bookedServices.length} ${bookedServices.length === 1 ? "booking" : "bookings"}`}
+                    ? `${cart.length} ${cart.length === 1 ? t("cart.item") : t("cart.items")}`
+                    : `${bookedServices.length} ${bookedServices.length === 1 ? t("cart.booking") : t("cart.bookings")}`}
                 </Text>
               </View>
             }
@@ -439,7 +439,7 @@ export default function CartScreen() {
                     },
                   ]}
                 >
-                  Products
+                  {t("cart.products")}
                 </Text>
               </View>
               <Text
@@ -479,7 +479,7 @@ export default function CartScreen() {
                     },
                   ]}
                 >
-                  Services
+                  {t("cart.services")}
                 </Text>
               </View>
               <Text
@@ -500,7 +500,7 @@ export default function CartScreen() {
             </TouchableOpacity>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Delivery Fee</Text>
+              <Text style={styles.summaryLabel}>{t("cart.deliveryFee")}</Text>
               <Text style={styles.summaryValue}>
                 {deliveryFee === 0 ? (
                   <Text style={styles.freeText}>FREE</Text>
@@ -518,7 +518,7 @@ export default function CartScreen() {
                   fill={colors.status.success}
                 />
                 <Text style={styles.savingsText}>
-                  You saved ₹40 on delivery!
+                  {t("cart.savedDelivery")}
                 </Text>
               </View>
             )}
@@ -526,7 +526,7 @@ export default function CartScreen() {
             <View style={styles.divider} />
 
             <View style={styles.summaryRow}>
-              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalLabel}>{t("cart.total")}</Text>
               <Text style={styles.totalValue}>₹{totalAmount}</Text>
             </View>
 
@@ -550,7 +550,9 @@ export default function CartScreen() {
                 !selectedCategories.products && !selectedCategories.services
               }
             >
-              <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
+              <Text style={styles.checkoutBtnText}>
+                {t("cart.proceedCheckout")}
+              </Text>
               <ArrowLeft
                 size={18}
                 color="#FFF"

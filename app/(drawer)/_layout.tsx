@@ -4,30 +4,31 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
-    ChevronRight,
-    Heart,
-    HelpCircle,
-    Languages,
-    LogOut,
-    Settings,
-    ShoppingBag,
-    Store,
-    Truck,
-    User,
+  ChevronRight,
+  Heart,
+  HelpCircle,
+  Languages,
+  LogOut,
+  Settings,
+  ShoppingBag,
+  Store,
+  Truck,
+  User,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import {
-    Dimensions,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Import your theme configuration
 import { useApp } from "../../src/context/AppContext";
+import { useSettings } from "../../src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "../../src/theme/colors";
 
 const { width } = Dimensions.get("window");
@@ -35,6 +36,7 @@ const { width } = Dimensions.get("window");
 function CustomDrawerContent(props: any) {
   const router = useRouter();
   const { user, logout } = useApp();
+  const { t } = useSettings();
 
   const accountItems: {
     label: string;
@@ -44,21 +46,21 @@ function CustomDrawerContent(props: any) {
     route: Href;
   }[] = [
     {
-      label: "My Profile",
+      label: t("drawer.myProfile"),
       icon: User,
       color: colors.brand.primary,
       bgColor: colors.tint.blueLight,
       route: "/(drawer)/(tabs)/profile",
     },
     {
-      label: "My Orders",
+      label: t("drawer.myOrders"),
       icon: ShoppingBag,
       color: colors.tint.purple,
       bgColor: colors.tint.purpleLight,
       route: "/myorders/orders",
     },
     {
-      label: "Wishlist",
+      label: t("drawer.wishlist"),
       icon: Heart,
       color: colors.brand.like,
       bgColor: colors.tint.pinkLight,
@@ -74,14 +76,14 @@ function CustomDrawerContent(props: any) {
     route: Href;
   }[] = [
     {
-      label: "My Dukaan",
+      label: t("drawer.myDukaan"),
       icon: Store,
       color: colors.tint.green,
       bgColor: colors.tint.greenLight,
       route: "/meri_dukaan/my-dukaan",
     },
     {
-      label: "Join as Transporter",
+      label: t("drawer.transporter"),
       icon: Truck,
       color: colors.brand.accent,
       bgColor: colors.tint.orangeLight,
@@ -97,14 +99,14 @@ function CustomDrawerContent(props: any) {
     route: Href;
   }[] = [
     {
-      label: "Settings",
+      label: t("drawer.settings"),
       icon: Settings,
       color: colors.status.warning,
       bgColor: colors.status.warningLight,
       route: "/Settings/settings",
     },
     {
-      label: "Help & Support",
+      label: t("drawer.help"),
       icon: HelpCircle,
       color: colors.status.info,
       bgColor: colors.status.infoLight,
@@ -191,7 +193,7 @@ function CustomDrawerContent(props: any) {
               {user?.email || "vishal@sangam.in"}
             </Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>Customer</Text>
+              <Text style={styles.roleText}>{t("drawer.customer")}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -206,7 +208,7 @@ function CustomDrawerContent(props: any) {
           transition={{ delay: 80 }}
           style={styles.sectionLabel}
         >
-          Account
+          {t("drawer.account")}
         </MotiText>
         <View style={styles.navGroup}>
           {accountItems.map((item, i) => renderNavItem(item, i, 100))}
@@ -222,7 +224,7 @@ function CustomDrawerContent(props: any) {
           transition={{ delay: 280 }}
           style={styles.sectionLabel}
         >
-          Sangam Business
+          {t("drawer.business")}
         </MotiText>
         <View style={styles.navGroup}>
           {businessItems.map((item, i) => renderNavItem(item, i, 300))}
@@ -238,7 +240,7 @@ function CustomDrawerContent(props: any) {
           transition={{ delay: 450 }}
           style={styles.sectionLabel}
         >
-          Support & Settings
+          {t("drawer.support")}
         </MotiText>
         <View style={styles.navGroup}>
           {supportItems.map((item, i) => renderNavItem(item, i, 470))}
@@ -261,7 +263,7 @@ function CustomDrawerContent(props: any) {
           >
             <Languages size={16} color={colors.tint.purple} />
           </View>
-          <Text style={styles.footerActionText}>English (India)</Text>
+          <Text style={styles.footerActionText}>{t("drawer.langLabel")}</Text>
         </TouchableOpacity>
 
         <View style={styles.footerDivider} />
@@ -272,7 +274,7 @@ function CustomDrawerContent(props: any) {
           onPress={handleLogout}
         >
           <LogOut size={17} color={colors.status.error} />
-          <Text style={styles.logoutText}>Log Out</Text>
+          <Text style={styles.logoutText}>{t("drawer.logout")}</Text>
         </TouchableOpacity>
       </MotiView>
 

@@ -1,46 +1,48 @@
 // app/wishlist/wishlist.tsx
 import { WishlistItem, useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Heart,
-  MapPin,
-  Minus,
-  Package,
-  Plus,
-  ShoppingCart,
-  Star,
-  Store,
-  Trash2,
-  Wrench,
+    ArrowLeft,
+    Calendar,
+    Clock,
+    Heart,
+    MapPin,
+    Minus,
+    Package,
+    Plus,
+    ShoppingCart,
+    Star,
+    Store,
+    Trash2,
+    Wrench,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
 type TabType = "all" | "product" | "service" | "store";
 
 const TABS: { key: TabType; label: string; icon: any }[] = [
-  { key: "all", label: "All", icon: Heart },
-  { key: "product", label: "Products", icon: Package },
-  { key: "service", label: "Services", icon: Wrench },
-  { key: "store", label: "Stores", icon: Store },
+  { key: "all", label: "wishlist.all", icon: Heart },
+  { key: "product", label: "wishlist.products", icon: Package },
+  { key: "service", label: "wishlist.services", icon: Wrench },
+  { key: "store", label: "wishlist.stores", icon: Store },
 ];
 
 export default function WishlistScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const {
     addToCart,
     cart,
@@ -216,7 +218,9 @@ export default function WishlistScreen() {
               onPress={() => handleAddToCart(item)}
             >
               <ShoppingCart size={16} color={colors.text.inverse} />
-              <Text style={styles.cartButtonText}>Add to Cart</Text>
+              <Text style={styles.cartButtonText}>
+                {t("wishlist.addToCart")}
+              </Text>
             </TouchableOpacity>
           );
         })()}
@@ -422,7 +426,7 @@ export default function WishlistScreen() {
             color={colors.status.error}
             fill={colors.status.error}
           />
-          <Text style={styles.headerTitle}>My Wishlist</Text>
+          <Text style={styles.headerTitle}>{t("wishlist.title")}</Text>
         </View>
         <View style={{ width: 24 }} />
       </View>
@@ -443,7 +447,7 @@ export default function WishlistScreen() {
                 color={isActive ? colors.brand.primary : colors.text.secondary}
               />
               <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                {tab.label}
+                {t(tab.label)}
               </Text>
               {tabCounts[tab.key] > 0 && (
                 <View
@@ -467,8 +471,7 @@ export default function WishlistScreen() {
       {/* Stats Bar */}
       <View style={styles.statsBar}>
         <Text style={styles.statsText}>
-          {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}{" "}
-          saved
+          {filteredItems.length} {t("wishlist.items")}
         </Text>
         {wishlist.length > 0 && (
           <TouchableOpacity
@@ -483,7 +486,7 @@ export default function WishlistScreen() {
               });
             }}
           >
-            <Text style={styles.clearAllText}>Clear All</Text>
+            <Text style={styles.clearAllText}>{t("wishlist.clearAll")}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -498,11 +501,7 @@ export default function WishlistScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Heart size={64} color={colors.ui.disabled} />
-            <Text style={styles.emptyText}>
-              {activeTab === "all"
-                ? "Your wishlist is empty"
-                : `No saved ${activeTab === "product" ? "products" : activeTab === "service" ? "services" : "stores"}`}
-            </Text>
+            <Text style={styles.emptyText}>{t("wishlist.empty")}</Text>
             <Text style={styles.emptySubtext}>
               {activeTab === "store"
                 ? "Save stores you love to visit them later"

@@ -1,19 +1,20 @@
 // src/features/dukaan/screens/BazarScreen.tsx
 
 import { useApp } from "@/src/context/AppContext";
+import { useSettings } from "@/src/context/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { STORE_TYPES } from "../../../assets/mockData";
 import { colors, radius, spacing } from "../../../theme/colors";
@@ -22,6 +23,7 @@ import { StoreCardGrid } from "../components/StoreCardVertical";
 export default function BazarScreen() {
   const router = useRouter();
   const { allStores } = useApp();
+  const { t } = useSettings();
 
   // States
   const [selectedType, setSelectedType] = useState("All");
@@ -109,7 +111,7 @@ export default function BazarScreen() {
         >
           <Ionicons name="filter-outline" size={18} color="#FFF" />
           <Text style={styles.mainFilterText} numberOfLines={1}>
-            {selectedType === "All" ? "All Categories" : selectedType}
+            {selectedType === "All" ? t("bazar.allCategories") : selectedType}
           </Text>
           <Ionicons name="chevron-down" size={16} color="#FFF" />
         </TouchableOpacity>
@@ -137,8 +139,9 @@ export default function BazarScreen() {
       {/* Results Count */}
       <View style={styles.resultsBar}>
         <Text style={styles.resultsText}>
-          {filteredData.length} {filteredData.length === 1 ? "store" : "stores"}{" "}
-          found
+          {filteredData.length}{" "}
+          {filteredData.length === 1 ? t("bazar.store") : t("bazar.stores")}{" "}
+          {t("bazar.found")}
         </Text>
         {(selectedType !== "All" || distLimit) && (
           <TouchableOpacity
@@ -147,7 +150,9 @@ export default function BazarScreen() {
               setDistLimit(null);
             }}
           >
-            <Text style={styles.clearFilterText}>Clear filters</Text>
+            <Text style={styles.clearFilterText}>
+              {t("bazar.clearFilters")}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -157,7 +162,7 @@ export default function BazarScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Categories</Text>
+              <Text style={styles.modalTitle}>{t("bazar.categories")}</Text>
               <TouchableOpacity onPress={() => setIsModalVisible(false)}>
                 <Ionicons
                   name="close-circle"
@@ -171,7 +176,7 @@ export default function BazarScreen() {
             <View style={styles.searchBox}>
               <Ionicons name="search" size={20} color={colors.ui.muted} />
               <TextInput
-                placeholder="Search category (e.g. Pizza, Gym)"
+                placeholder={t("bazar.searchCategory")}
                 style={styles.searchInput}
                 value={categorySearch}
                 onChangeText={setCategorySearch}
@@ -205,7 +210,9 @@ export default function BazarScreen() {
                       size={20}
                       color={colors.text.primary}
                     />
-                    <Text style={styles.categoryLabel}>All Stores</Text>
+                    <Text style={styles.categoryLabel}>
+                      {t("bazar.allStores")}
+                    </Text>
                   </View>
                   {selectedType === "All" && (
                     <Ionicons
@@ -246,7 +253,7 @@ export default function BazarScreen() {
 
               {searchedCategories.length === 0 && (
                 <Text style={styles.noResultText}>
-                  No categories found matching "{categorySearch}"
+                  {t("bazar.noCategories")} "{categorySearch}"
                 </Text>
               )}
             </ScrollView>
@@ -286,10 +293,8 @@ export default function BazarScreen() {
               color="#cbd5e1"
               style={{ marginBottom: 16 }}
             />
-            <Text style={styles.emptyText}>
-              No shops found in this category
-            </Text>
-            <Text style={styles.emptySubText}>Try adjusting your filters</Text>
+            <Text style={styles.emptyText}>{t("bazar.noShops")}</Text>
+            <Text style={styles.emptySubText}>{t("bazar.adjustFilters")}</Text>
           </View>
         }
       />

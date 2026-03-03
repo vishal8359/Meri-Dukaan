@@ -1,4 +1,5 @@
 // app/orders.tsx
+import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -74,6 +75,7 @@ const ORDERS = [
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const { t } = useSettings();
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
   const getStatusConfig = (status: string) => {
@@ -83,28 +85,28 @@ export default function OrdersScreen() {
           icon: CheckCircle,
           color: colors.status.success,
           bg: colors.status.successLight,
-          text: "Delivered",
+          text: t("orders.delivered"),
         };
       case "in-transit":
         return {
           icon: Truck,
           color: colors.status.info,
           bg: colors.status.infoLight,
-          text: "In Transit",
+          text: t("orders.inTransit"),
         };
       case "processing":
         return {
           icon: Package,
           color: colors.status.warning,
           bg: colors.status.warningLight,
-          text: "Processing",
+          text: t("orders.processing"),
         };
       case "cancelled":
         return {
           icon: XCircle,
           color: colors.status.error,
           bg: colors.status.errorLight,
-          text: "Cancelled",
+          text: t("orders.cancelled"),
         };
       default:
         return {
@@ -134,7 +136,10 @@ export default function OrdersScreen() {
               style={styles.storeImage}
             />
             <View style={{ flex: 1 }}>
-              <Text style={styles.orderId}>Order #{order.id}</Text>
+              <Text style={styles.orderId}>
+                {t("orders.orderNum")}
+                {order.id}
+              </Text>
               <Text style={styles.storeName}>{order.storeName}</Text>
             </View>
           </View>
@@ -164,7 +169,8 @@ export default function OrdersScreen() {
                 color={colors.text.secondary}
               />
               <Text style={styles.metaText}>
-                Ordered: {new Date(order.orderDate).toLocaleDateString()}
+                {t("orders.ordered")}{" "}
+                {new Date(order.orderDate).toLocaleDateString()}
               </Text>
             </View>
 
@@ -176,7 +182,8 @@ export default function OrdersScreen() {
                   color={colors.text.secondary}
                 />
                 <Text style={styles.metaText}>
-                  Delivery: {new Date(order.deliveryDate).toLocaleDateString()}
+                  {t("orders.delivery")}{" "}
+                  {new Date(order.deliveryDate).toLocaleDateString()}
                 </Text>
               </View>
             )}
@@ -184,12 +191,14 @@ export default function OrdersScreen() {
 
           <View style={styles.orderFooter}>
             <View>
-              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalLabel}>{t("orders.totalAmount")}</Text>
               <Text style={styles.totalAmount}>₹{order.totalAmount}</Text>
             </View>
 
             <TouchableOpacity style={styles.detailsBtn}>
-              <Text style={styles.detailsBtnText}>View Details</Text>
+              <Text style={styles.detailsBtnText}>
+                {t("orders.viewDetails")}
+              </Text>
               <Ionicons
                 name="chevron-forward"
                 size={16}
@@ -212,17 +221,17 @@ export default function OrdersScreen() {
         >
           <ArrowLeft size={24} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Orders</Text>
+        <Text style={styles.headerTitle}>{t("orders.title")}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
         {[
-          { key: "all", label: "All" },
-          { key: "processing", label: "Processing" },
-          { key: "in-transit", label: "In Transit" },
-          { key: "delivered", label: "Delivered" },
+          { key: "all", label: t("orders.all") },
+          { key: "processing", label: t("orders.processing") },
+          { key: "in-transit", label: t("orders.inTransit") },
+          { key: "delivered", label: t("orders.delivered") },
         ].map((filter) => (
           <TouchableOpacity
             key={filter.key}
@@ -253,7 +262,7 @@ export default function OrdersScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Package size={64} color={colors.ui.disabled} />
-            <Text style={styles.emptyText}>No orders found</Text>
+            <Text style={styles.emptyText}>{t("orders.noOrders")}</Text>
             <Text style={styles.emptySubtext}>
               Start shopping to see your orders here
             </Text>
