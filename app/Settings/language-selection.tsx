@@ -7,15 +7,15 @@ import { ArrowLeft, Check, Globe, Languages } from "lucide-react-native";
 import { MotiView } from "moti";
 import React from "react";
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
 interface LangOption {
@@ -40,6 +40,62 @@ const LANGUAGES: LangOption[] = [
     nativeName: "हिन्दी",
     flag: "🇮🇳",
     desc: "भारत की राजभाषा",
+  },
+  {
+    code: "mr",
+    name: "Marathi",
+    nativeName: "मराठी",
+    flag: "🇮🇳",
+    desc: "महाराष्ट्राची भाषा",
+  },
+  {
+    code: "gu",
+    name: "Gujarati",
+    nativeName: "ગુજરાતી",
+    flag: "🇮🇳",
+    desc: "ગુજરાતની ભાષા",
+  },
+  {
+    code: "bn",
+    name: "Bengali",
+    nativeName: "বাংলা",
+    flag: "🇮🇳",
+    desc: "বাংলার ভাষা",
+  },
+  {
+    code: "ta",
+    name: "Tamil",
+    nativeName: "தமிழ்",
+    flag: "🇮🇳",
+    desc: "தமிழ்நாட்டின் மொழி",
+  },
+  {
+    code: "kn",
+    name: "Kannada",
+    nativeName: "ಕನ್ನಡ",
+    flag: "🇮🇳",
+    desc: "ಕರ್ನಾಟಕದ ಭಾಷೆ",
+  },
+  {
+    code: "te",
+    name: "Telugu",
+    nativeName: "తెలుగు",
+    flag: "🇮🇳",
+    desc: "తెలుగు రాష్ట్రాల భాష",
+  },
+  {
+    code: "ml",
+    name: "Malayalam",
+    nativeName: "മലയാളം",
+    flag: "🇮🇳",
+    desc: "കേരളത്തിന്റെ ഭാഷ",
+  },
+  {
+    code: "pa",
+    name: "Punjabi",
+    nativeName: "ਪੰਜਾਬੀ",
+    flag: "🇮🇳",
+    desc: "ਪੰਜਾਬ ਦੀ ਭਾਸ਼ਾ",
   },
 ];
 
@@ -79,7 +135,8 @@ export default function LanguageSelectionScreen() {
             <Text style={styles.headerTitle}>{t("language.title")}</Text>
             <Text style={styles.headerSubtitle}>
               {t("language.current")}:{" "}
-              {language === "en" ? "English" : "हिन्दी"}
+              {LANGUAGES.find((l) => l.code === language)?.nativeName ??
+                language}
             </Text>
           </View>
           <View style={{ width: 40 }} />
@@ -93,11 +150,7 @@ export default function LanguageSelectionScreen() {
         {/* Info */}
         <View style={styles.infoBox}>
           <Languages size={18} color={colors.status.info} />
-          <Text style={styles.infoText}>
-            {language === "en"
-              ? "Select your preferred language. The app interface will update immediately."
-              : "अपनी पसंदीदा भाषा चुनें। ऐप इंटरफ़ेस तुरंत अपडेट हो जाएगा।"}
-          </Text>
+          <Text style={styles.infoText}>{t("language.info")}</Text>
         </View>
 
         {/* Language cards */}
@@ -139,20 +192,6 @@ export default function LanguageSelectionScreen() {
             </MotiView>
           );
         })}
-
-        {/* Coming soon note */}
-        <View style={styles.comingSoon}>
-          <Text style={styles.comingSoonTitle}>
-            {language === "en"
-              ? "More languages coming soon!"
-              : "और भाषाएं जल्द आ रही हैं!"}
-          </Text>
-          <Text style={styles.comingSoonText}>
-            {language === "en"
-              ? "Bengali, Tamil, Telugu, Marathi, and more regional languages will be available in future updates."
-              : "बंगाली, तमिल, तेलुगु, मराठी और अन्य क्षेत्रीय भाषाएं भविष्य के अपडेट में उपलब्ध होंगी।"}
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -271,25 +310,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   } as ViewStyle,
-  comingSoon: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.tint.goldLight,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.tint.gold + "30",
-  } as ViewStyle,
-  comingSoonTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.status.warningDark,
-    marginBottom: spacing.xs,
-  } as TextStyle,
-  comingSoonText: {
-    fontSize: 13,
-    color: colors.status.warningDark,
-    lineHeight: 19,
-    fontWeight: "500",
-    opacity: 0.8,
-  } as TextStyle,
 });

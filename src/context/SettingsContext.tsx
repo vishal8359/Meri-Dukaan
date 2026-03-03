@@ -1,15 +1,35 @@
 // src/context/SettingsContext.tsx
 import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
 } from "react";
 
+// --- i18n imports ---
+import bn from "../i18n/bn";
+import gu from "../i18n/gu";
+import kn from "../i18n/kn";
+import ml from "../i18n/ml";
+import mr from "../i18n/mr";
+import pa from "../i18n/pa";
+import ta from "../i18n/ta";
+import te from "../i18n/te";
+
 // --- Types ---
-export type AppLanguage = "en" | "hi";
+export type AppLanguage =
+  | "en"
+  | "hi"
+  | "mr"
+  | "gu"
+  | "bn"
+  | "ta"
+  | "kn"
+  | "te"
+  | "ml"
+  | "pa";
 export type AppTheme = "light" | "dark" | "system";
 
 export interface NotificationPrefs {
@@ -29,7 +49,10 @@ interface SettingsContextType {
   notificationsEnabled: boolean;
   setNotificationsEnabled: (v: boolean) => void;
   notificationPrefs: NotificationPrefs;
-  updateNotificationPref: (key: keyof NotificationPrefs, value: boolean) => void;
+  updateNotificationPref: (
+    key: keyof NotificationPrefs,
+    value: boolean,
+  ) => void;
   locationEnabled: boolean;
   setLocationEnabled: (v: boolean) => void;
 }
@@ -80,7 +103,17 @@ const en: Record<string, string> = {
   "language.current": "Current Language",
   "language.english": "English",
   "language.hindi": "Hindi",
+  "language.marathi": "Marathi",
+  "language.gujarati": "Gujarati",
+  "language.bengali": "Bengali",
+  "language.tamil": "Tamil",
+  "language.kannada": "Kannada",
+  "language.telugu": "Telugu",
+  "language.malayalam": "Malayalam",
+  "language.punjabi": "Punjabi",
   "language.changed": "Language changed successfully!",
+  "language.info":
+    "Select your preferred language. The app interface will update immediately.",
 
   // ── Notification prefs ──
   "notifications.title": "Notification Preferences",
@@ -314,7 +347,8 @@ const en: Record<string, string> = {
   "service.bookNow": "Book Now",
   "service.booked": "Booked",
   "service.pendingPayment": "Pending Payment",
-  "service.slotLocked": "Slot locked for 3 min \u2014 complete payment to confirm",
+  "service.slotLocked":
+    "Slot locked for 3 min \u2014 complete payment to confirm",
   "service.payNow": "Pay Now",
   "service.cancel": "Cancel",
   "service.change": "Change",
@@ -460,7 +494,16 @@ const hi: Record<string, string> = {
   "language.current": "वर्तमान भाषा",
   "language.english": "अंग्रेज़ी",
   "language.hindi": "हिन्दी",
+  "language.marathi": "मराठी",
+  "language.gujarati": "गुजराती",
+  "language.bengali": "बंगाली",
+  "language.tamil": "तमिल",
+  "language.kannada": "कन्नड़",
+  "language.telugu": "तेलुगु",
+  "language.malayalam": "मलयालम",
+  "language.punjabi": "पंजाबी",
   "language.changed": "भाषा सफलतापूर्वक बदल दी गई!",
+  "language.info": "अपनी पसंदीदा भाषा चुनें। ऐप इंटरफ़ेस तुरंत अपडेट हो जाएगा।",
 
   // ── Notification prefs ──
   "notifications.title": "सूचना प्राथमिकताएं",
@@ -694,7 +737,8 @@ const hi: Record<string, string> = {
   "service.bookNow": "अभी बुक करें",
   "service.booked": "बुक किया गया",
   "service.pendingPayment": "भुगतान बाकी",
-  "service.slotLocked": "स्लॉट 3 मिनट के लिए लॉक \u2014 पुष्टि के लिए भुगतान करें",
+  "service.slotLocked":
+    "स्लॉट 3 मिनट के लिए लॉक \u2014 पुष्टि के लिए भुगतान करें",
   "service.payNow": "अभी भुगतान करें",
   "service.cancel": "रद्द करें",
   "service.change": "बदलें",
@@ -797,23 +841,38 @@ const hi: Record<string, string> = {
   "header.searchShort": "उत्पाद, दुकानें खोजें...",
 };
 
-const translations: Record<AppLanguage, Record<string, string>> = { en, hi };
+const translations: Record<AppLanguage, Record<string, string>> = {
+  en,
+  hi,
+  mr,
+  gu,
+  bn,
+  ta,
+  kn,
+  te,
+  ml,
+  pa,
+};
 
 // ────────────────────────────────────────────
 // Context
 // ────────────────────────────────────────────
-const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+const SettingsContext = createContext<SettingsContextType | undefined>(
+  undefined,
+);
 
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguageState] = useState<AppLanguage>("en");
   const [theme, setThemeState] = useState<AppTheme>("light");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPrefs>({
-    orders: true,
-    promotions: true,
-    chat: true,
-    appUpdates: true,
-  });
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPrefs>(
+    {
+      orders: true,
+      promotions: true,
+      chat: true,
+      appUpdates: true,
+    },
+  );
   const [locationEnabled, setLocationEnabled] = useState(true);
 
   const isDark = theme === "dark";
@@ -877,7 +936,9 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider value={value}>
+      {children}
+    </SettingsContext.Provider>
   );
 };
 
