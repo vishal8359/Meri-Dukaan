@@ -134,8 +134,8 @@ export default function HomeScreen() {
 
   const navigateToCategory = (categoryId: string) => {
     router.push({
-      pathname: "/category/[id]",
-      params: { id: categoryId },
+      pathname: "/(drawer)/(tabs)/mybusz",
+      params: { category: categoryId },
     } as any);
   };
 

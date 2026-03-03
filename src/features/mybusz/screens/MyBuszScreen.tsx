@@ -6,7 +6,7 @@ import {
 } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     Grid2x2,
     Heart,
@@ -20,7 +20,7 @@ import {
     Star,
     X,
 } from "lucide-react-native";
-import React, { memo, useCallback, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     Dimensions,
     FlatList,
@@ -279,6 +279,7 @@ const ProductListCardItem = memo(
 
 export default function MyBuszScreen() {
   const router = useRouter();
+  const { category } = useLocalSearchParams<{ category?: string }>();
   const {
     addToCart,
     cart,
@@ -289,7 +290,18 @@ export default function MyBuszScreen() {
     isInWishlist,
   } = useApp();
 
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(
+    category && PRODUCT_CATEGORIES.some((c) => c.id === category)
+      ? category
+      : "all",
+  );
+
+  // Sync when navigating from HomeScreen with a new category param
+  useEffect(() => {
+    if (category && PRODUCT_CATEGORIES.some((c) => c.id === category)) {
+      setSelectedCategory(category);
+    }
+  }, [category]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isGrid, setIsGrid] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
