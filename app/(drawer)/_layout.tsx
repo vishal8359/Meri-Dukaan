@@ -1,28 +1,28 @@
 // app/(drawer)/_layout.tsx
-import { LinearGradient } from "expo-linear-gradient";
 import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
-  ChevronRight,
-  Heart,
-  HelpCircle,
-  Languages,
-  LogOut,
-  Settings,
-  ShoppingBag,
-  Store,
-  Truck,
-  User,
+    ChevronRight,
+    Heart,
+    HelpCircle,
+    Languages,
+    LogOut,
+    Settings,
+    ShoppingBag,
+    Store,
+    Truck,
+    User,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import {
-  Dimensions,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -123,9 +123,15 @@ function CustomDrawerContent(props: any) {
   };
 
   const renderNavItem = (
-    item: { label: string; icon: any; color: string; bgColor: string; route: Href },
+    item: {
+      label: string;
+      icon: any;
+      color: string;
+      bgColor: string;
+      route: Href;
+    },
     index: number,
-    baseDelay: number
+    baseDelay: number,
   ) => (
     <MotiView
       key={item.label}
@@ -247,7 +253,12 @@ function CustomDrawerContent(props: any) {
         style={styles.footer}
       >
         <TouchableOpacity style={styles.footerAction} activeOpacity={0.7}>
-          <View style={[styles.footerIconBg, { backgroundColor: colors.tint.purpleLight }]}>
+          <View
+            style={[
+              styles.footerIconBg,
+              { backgroundColor: colors.tint.purpleLight },
+            ]}
+          >
             <Languages size={16} color={colors.tint.purple} />
           </View>
           <Text style={styles.footerActionText}>English (India)</Text>

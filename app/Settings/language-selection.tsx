@@ -1,84 +1,159 @@
-// app/language-selection.tsx
+// app/Settings/language-selection.tsx
+import { useSettings, type AppLanguage } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Check } from "lucide-react-native";
-import React, { useState } from "react";
+import { ArrowLeft, Check, Globe, Languages } from "lucide-react-native";
+import { MotiView } from "moti";
+import React from "react";
 import {
-    FlatList,
+    Alert,
     SafeAreaView,
+    ScrollView,
     StyleSheet,
     Text,
+    TextStyle,
     TouchableOpacity,
     View,
+    ViewStyle,
 } from "react-native";
 
-const LANGUAGES = [
-  { code: "en", name: "English", nativeName: "English" },
-  { code: "hi", name: "Hindi", nativeName: "हिन्दी" },
-  { code: "bn", name: "Bengali", nativeName: "বাংলা" },
-  { code: "te", name: "Telugu", nativeName: "తెలుగు" },
-  { code: "mr", name: "Marathi", nativeName: "मराठी" },
-  { code: "ta", name: "Tamil", nativeName: "தமிழ்" },
-  { code: "gu", name: "Gujarati", nativeName: "ગુજરાતી" },
-  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ" },
-  { code: "ml", name: "Malayalam", nativeName: "മലയാളം" },
-  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ" },
-  { code: "or", name: "Odia", nativeName: "ଓଡ଼ିଆ" },
-  { code: "as", name: "Assamese", nativeName: "অসমীয়া" },
+interface LangOption {
+  code: AppLanguage;
+  name: string;
+  nativeName: string;
+  flag: string;
+  desc: string;
+}
+
+const LANGUAGES: LangOption[] = [
+  {
+    code: "en",
+    name: "English",
+    nativeName: "English",
+    flag: "🇬🇧",
+    desc: "International language used globally",
+  },
+  {
+    code: "hi",
+    name: "Hindi",
+    nativeName: "हिन्दी",
+    flag: "🇮🇳",
+    desc: "भारत की राजभाषा",
+  },
 ];
 
 export default function LanguageSelectionScreen() {
   const router = useRouter();
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const { language, setLanguage, t } = useSettings();
 
-  const handleSelectLanguage = (code: string) => {
-    setSelectedLanguage(code);
-    // Save to AsyncStorage or context
-    setTimeout(() => router.back(), 300);
-  };
-
-  const LanguageItem = ({ item }: { item: (typeof LANGUAGES)[0] }) => {
-    const isSelected = selectedLanguage === item.code;
-
-    return (
-      <TouchableOpacity
-        style={[styles.languageItem, isSelected && styles.selectedItem]}
-        onPress={() => handleSelectLanguage(item.code)}
-      >
-        <View style={styles.languageInfo}>
-          <Text style={styles.languageName}>{item.name}</Text>
-          <Text style={styles.nativeName}>{item.nativeName}</Text>
-        </View>
-        {isSelected && (
-          <View style={styles.checkmark}>
-            <Check size={20} color={colors.brand.primary} />
-          </View>
-        )}
-      </TouchableOpacity>
-    );
+  const handleSelect = (code: AppLanguage) => {
+    setLanguage(code);
+    Alert.alert(t("common.success"), t("language.changed"), [
+      { text: "OK", onPress: () => router.back() },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Select Language</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <LinearGradient
+        colors={[colors.gradient.navyStart, colors.gradient.navyEnd]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={22} color="#FFF" />
+          </TouchableOpacity>
+          <View style={styles.headerCenter}>
+            <Globe
+              size={24}
+              color={colors.tint.gold}
+              style={{ marginBottom: 4 }}
+            />
+            <Text style={styles.headerTitle}>{t("language.title")}</Text>
+            <Text style={styles.headerSubtitle}>
+              {t("language.current")}:{" "}
+              {language === "en" ? "English" : "हिन्दी"}
+            </Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+      </LinearGradient>
 
-      {/* Languages List */}
-      <FlatList
-        data={LANGUAGES}
-        keyExtractor={(item) => item.code}
-        renderItem={({ item }) => <LanguageItem item={item} />}
-        contentContainerStyle={styles.listContent}
-      />
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Info */}
+        <View style={styles.infoBox}>
+          <Languages size={18} color={colors.status.info} />
+          <Text style={styles.infoText}>
+            {language === "en"
+              ? "Select your preferred language. The app interface will update immediately."
+              : "अपनी पसंदीदा भाषा चुनें। ऐप इंटरफ़ेस तुरंत अपडेट हो जाएगा।"}
+          </Text>
+        </View>
+
+        {/* Language cards */}
+        {LANGUAGES.map((lang, index) => {
+          const isSelected = language === lang.code;
+          return (
+            <MotiView
+              key={lang.code}
+              from={{ opacity: 0, translateY: 15 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ delay: 100 + index * 80 }}
+            >
+              <TouchableOpacity
+                style={[styles.langCard, isSelected && styles.langCardSelected]}
+                activeOpacity={0.7}
+                onPress={() => handleSelect(lang.code)}
+              >
+                <View style={styles.langLeft}>
+                  <Text style={styles.flag}>{lang.flag}</Text>
+                  <View style={styles.langInfo}>
+                    <Text
+                      style={[
+                        styles.langName,
+                        isSelected && styles.langNameSelected,
+                      ]}
+                    >
+                      {lang.name}
+                    </Text>
+                    <Text style={styles.langNative}>{lang.nativeName}</Text>
+                    <Text style={styles.langDesc}>{lang.desc}</Text>
+                  </View>
+                </View>
+                {isSelected && (
+                  <View style={styles.checkCircle}>
+                    <Check size={18} color="#FFF" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            </MotiView>
+          );
+        })}
+
+        {/* Coming soon note */}
+        <View style={styles.comingSoon}>
+          <Text style={styles.comingSoonTitle}>
+            {language === "en"
+              ? "More languages coming soon!"
+              : "और भाषाएं जल्द आ रही हैं!"}
+          </Text>
+          <Text style={styles.comingSoonText}>
+            {language === "en"
+              ? "Bengali, Tamil, Telugu, Marathi, and more regional languages will be available in future updates."
+              : "बंगाली, तमिल, तेलुगु, मराठी और अन्य क्षेत्रीय भाषाएं भविष्य के अपडेट में उपलब्ध होंगी।"}
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -87,61 +162,134 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.ui.background,
-  },
+  } as ViewStyle,
+  headerGradient: {
+    paddingBottom: spacing.md,
+  } as ViewStyle,
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    backgroundColor: colors.ui.surface,
-    ...shadows.small,
-  },
-  backButton: {
-    padding: 4,
-  },
+  } as ViewStyle,
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    justifyContent: "center",
+    alignItems: "center",
+  } as ViewStyle,
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+  } as ViewStyle,
   headerTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: colors.text.primary,
-  },
-  listContent: {
+    color: "#FFF",
+  } as TextStyle,
+  headerSubtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.6)",
+    marginTop: 2,
+    fontWeight: "500",
+  } as TextStyle,
+  content: {
     padding: spacing.md,
-  },
-  languageItem: {
+    paddingBottom: spacing.xxl,
+  } as ViewStyle,
+  infoBox: {
+    flexDirection: "row",
+    backgroundColor: colors.status.infoLight,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+    alignItems: "flex-start",
+  } as ViewStyle,
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.status.infoDark,
+    lineHeight: 19,
+    fontWeight: "500",
+  } as TextStyle,
+  langCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.ui.surface,
-    padding: spacing.md,
     borderRadius: radius.lg,
-    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 2,
     borderColor: colors.ui.borderLight,
-  },
-  selectedItem: {
+    ...shadows.small,
+  } as ViewStyle,
+  langCardSelected: {
     borderColor: colors.brand.primary,
-    backgroundColor: colors.brand.primary + "05",
-  },
-  languageInfo: {
+    backgroundColor: colors.brand.primary + "08",
+  } as ViewStyle,
+  langLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
-  },
-  languageName: {
-    fontSize: 16,
-    fontWeight: "700",
+  } as ViewStyle,
+  flag: {
+    fontSize: 36,
+    marginRight: spacing.md,
+  } as TextStyle,
+  langInfo: {
+    flex: 1,
+  } as ViewStyle,
+  langName: {
+    fontSize: 17,
+    fontWeight: "800",
     color: colors.text.primary,
     marginBottom: 2,
-  },
-  nativeName: {
+  } as TextStyle,
+  langNameSelected: {
+    color: colors.brand.primary,
+  } as TextStyle,
+  langNative: {
     fontSize: 14,
+    fontWeight: "600",
     color: colors.text.secondary,
-  },
-  checkmark: {
+    marginBottom: 4,
+  } as TextStyle,
+  langDesc: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    fontWeight: "500",
+  } as TextStyle,
+  checkCircle: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: colors.brand.primary + "15",
+    backgroundColor: colors.brand.primary,
     justifyContent: "center",
     alignItems: "center",
-  },
+  } as ViewStyle,
+  comingSoon: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.tint.goldLight,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.tint.gold + "30",
+  } as ViewStyle,
+  comingSoonTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.status.warningDark,
+    marginBottom: spacing.xs,
+  } as TextStyle,
+  comingSoonText: {
+    fontSize: 13,
+    color: colors.status.warningDark,
+    lineHeight: 19,
+    fontWeight: "500",
+    opacity: 0.8,
+  } as TextStyle,
 });

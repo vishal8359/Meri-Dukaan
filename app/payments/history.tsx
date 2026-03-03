@@ -3,37 +3,35 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  ArrowUpRight,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  CreditCard,
-  Download,
-  Filter,
-  IndianRupee,
-  Package,
-  ReceiptText,
-  RefreshCw,
-  Search,
-  Store,
-  Wallet,
-  XCircle,
+    ArrowLeft,
+    ArrowUpRight,
+    CheckCircle2,
+    ChevronRight,
+    Clock,
+    CreditCard,
+    Download,
+    Filter,
+    IndianRupee,
+    ReceiptText,
+    RefreshCw,
+    Search,
+    Store,
+    Wallet,
+    XCircle
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-  FlatList,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    FlatList,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from "react-native";
 
 // --- Types ---
@@ -165,9 +163,7 @@ const MOCK_PAYMENTS: PaymentRecord[] = [
     storeImage:
       "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300",
     storeId: "6",
-    items: [
-      { id: "p11", name: "Hair Spa Treatment", qty: 1, price: 1200 },
-    ],
+    items: [{ id: "p11", name: "Hair Spa Treatment", qty: 1, price: 1200 }],
     subtotal: 1200,
     deliveryFee: 0,
     discount: 100,
@@ -228,11 +224,11 @@ export default function PaymentHistoryScreen() {
           p.storeName.toLowerCase().includes(q) ||
           p.orderId.toLowerCase().includes(q) ||
           p.transactionId.toLowerCase().includes(q) ||
-          p.items.some((i) => i.name.toLowerCase().includes(q))
+          p.items.some((i) => i.name.toLowerCase().includes(q)),
       );
     }
     return data.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
   }, [activeFilter, searchQuery]);
 
@@ -240,9 +236,13 @@ export default function PaymentHistoryScreen() {
     const successful = MOCK_PAYMENTS.filter((p) => p.status === "success");
     const totalSpent = successful.reduce((s, p) => s + p.totalAmount, 0);
     const totalRefunded = MOCK_PAYMENTS.filter(
-      (p) => p.status === "refunded"
+      (p) => p.status === "refunded",
     ).reduce((s, p) => s + (p.refundAmount || 0), 0);
-    return { totalSpent, totalRefunded, totalTransactions: MOCK_PAYMENTS.length };
+    return {
+      totalSpent,
+      totalRefunded,
+      totalTransactions: MOCK_PAYMENTS.length,
+    };
   }, []);
 
   // --- Status Config ---
@@ -358,7 +358,9 @@ export default function PaymentHistoryScreen() {
               {item.items.length} item{item.items.length > 1 ? "s" : ""}
             </Text>
           </View>
-          <Text style={styles.totalAmount}>₹{item.totalAmount.toLocaleString("en-IN")}</Text>
+          <Text style={styles.totalAmount}>
+            ₹{item.totalAmount.toLocaleString("en-IN")}
+          </Text>
         </View>
 
         {/* Expanded Detail Section */}
@@ -382,7 +384,9 @@ export default function PaymentHistoryScreen() {
             <View style={styles.breakdownSection}>
               <View style={styles.breakdownRow}>
                 <Text style={styles.breakdownLabel}>Subtotal</Text>
-                <Text style={styles.breakdownValue}>₹{item.subtotal.toLocaleString("en-IN")}</Text>
+                <Text style={styles.breakdownValue}>
+                  ₹{item.subtotal.toLocaleString("en-IN")}
+                </Text>
               </View>
               {item.deliveryFee > 0 && (
                 <View style={styles.breakdownRow}>
@@ -392,10 +396,20 @@ export default function PaymentHistoryScreen() {
               )}
               {item.discount > 0 && (
                 <View style={styles.breakdownRow}>
-                  <Text style={[styles.breakdownLabel, { color: colors.status.success }]}>
+                  <Text
+                    style={[
+                      styles.breakdownLabel,
+                      { color: colors.status.success },
+                    ]}
+                  >
                     Discount
                   </Text>
-                  <Text style={[styles.breakdownValue, { color: colors.status.success }]}>
+                  <Text
+                    style={[
+                      styles.breakdownValue,
+                      { color: colors.status.success },
+                    ]}
+                  >
                     -₹{item.discount}
                   </Text>
                 </View>
@@ -414,7 +428,8 @@ export default function PaymentHistoryScreen() {
               <View style={styles.refundBanner}>
                 <RefreshCw size={14} color={colors.tint.purple} />
                 <Text style={styles.refundText}>
-                  ₹{item.refundAmount} refunded on {formatDate(item.refundDate!)}
+                  ₹{item.refundAmount} refunded on{" "}
+                  {formatDate(item.refundDate!)}
                 </Text>
               </View>
             )}
@@ -436,7 +451,9 @@ export default function PaymentHistoryScreen() {
                 onPress={() => router.push(`/dukaan/${item.storeId}` as any)}
               >
                 <Store size={15} color={colors.tint.green} />
-                <Text style={[styles.actionBtnText, { color: colors.tint.green }]}>
+                <Text
+                  style={[styles.actionBtnText, { color: colors.tint.green }]}
+                >
                   Visit Store
                 </Text>
               </TouchableOpacity>
@@ -469,28 +486,48 @@ export default function PaymentHistoryScreen() {
           <View style={styles.sumIconBg}>
             <IndianRupee size={18} color="#FFF" />
           </View>
-          <Text style={styles.sumValue}>₹{totals.totalSpent.toLocaleString("en-IN")}</Text>
+          <Text style={styles.sumValue}>
+            ₹{totals.totalSpent.toLocaleString("en-IN")}
+          </Text>
           <Text style={styles.sumLabel}>Total Spent</Text>
         </LinearGradient>
 
-        <View style={[styles.sumCard, { backgroundColor: colors.tint.purpleLight }]}>
-          <View style={[styles.sumIconBg, { backgroundColor: colors.tint.purple + "25" }]}>
+        <View
+          style={[styles.sumCard, { backgroundColor: colors.tint.purpleLight }]}
+        >
+          <View
+            style={[
+              styles.sumIconBg,
+              { backgroundColor: colors.tint.purple + "25" },
+            ]}
+          >
             <RefreshCw size={18} color={colors.tint.purple} />
           </View>
           <Text style={[styles.sumValue, { color: colors.tint.purple }]}>
             ₹{totals.totalRefunded.toLocaleString("en-IN")}
           </Text>
-          <Text style={[styles.sumLabel, { color: colors.tint.purple + "99" }]}>Refunded</Text>
+          <Text style={[styles.sumLabel, { color: colors.tint.purple + "99" }]}>
+            Refunded
+          </Text>
         </View>
 
-        <View style={[styles.sumCard, { backgroundColor: colors.tint.blueLight }]}>
-          <View style={[styles.sumIconBg, { backgroundColor: colors.tint.blue + "20" }]}>
+        <View
+          style={[styles.sumCard, { backgroundColor: colors.tint.blueLight }]}
+        >
+          <View
+            style={[
+              styles.sumIconBg,
+              { backgroundColor: colors.tint.blue + "20" },
+            ]}
+          >
             <ReceiptText size={18} color={colors.tint.blue} />
           </View>
           <Text style={[styles.sumValue, { color: colors.tint.blue }]}>
             {totals.totalTransactions}
           </Text>
-          <Text style={[styles.sumLabel, { color: colors.tint.blue + "99" }]}>Transactions</Text>
+          <Text style={[styles.sumLabel, { color: colors.tint.blue + "99" }]}>
+            Transactions
+          </Text>
         </View>
       </View>
 
@@ -537,9 +574,11 @@ export default function PaymentHistoryScreen() {
               {isActive && f.key !== "all" && (
                 <View style={styles.filterCount}>
                   <Text style={styles.filterCountText}>
-                    {MOCK_PAYMENTS.filter((p) =>
-                      f.key === "all" ? true : p.status === f.key
-                    ).length}
+                    {
+                      MOCK_PAYMENTS.filter((p) =>
+                        f.key === "all" ? true : p.status === f.key,
+                      ).length
+                    }
                   </Text>
                 </View>
               )}
@@ -550,7 +589,8 @@ export default function PaymentHistoryScreen() {
 
       {/* Results count */}
       <Text style={styles.resultsText}>
-        {filteredPayments.length} payment{filteredPayments.length !== 1 ? "s" : ""} found
+        {filteredPayments.length} payment
+        {filteredPayments.length !== 1 ? "s" : ""} found
       </Text>
     </View>
   );

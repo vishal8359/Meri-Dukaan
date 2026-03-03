@@ -112,7 +112,10 @@ export default function ProfileScreen() {
 
       {/* Enhanced Stats Row */}
       <View style={styles.statsContainer}>
-        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push("/myorders/orders")}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => router.push("/myorders/orders")}
+        >
           <EnhancedStatBox
             icon={Package}
             number="12"
@@ -120,7 +123,10 @@ export default function ProfileScreen() {
             color="#3b82f6"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push("/wishlist/wishlist")}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => router.push("/wishlist/wishlist")}
+        >
           <EnhancedStatBox
             icon={Heart}
             number={String(wishlist.length)}
@@ -174,25 +180,37 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.quickActionsGrid}
         >
-          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/myorders/orders")}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/myorders/orders")}
+          >
             <View style={styles.qaIconBg}>
               <Package size={24} color={colors.status.info} />
             </View>
             <Text style={styles.qaLabel}>My Orders</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/wishlist/wishlist")}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/wishlist/wishlist")}
+          >
             <View style={styles.qaIconBg}>
               <Heart size={24} color={colors.status.error} />
             </View>
             <Text style={styles.qaLabel}>Wishlist</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/meri_dukaan/my-dukaan")}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/meri_dukaan/my-dukaan")}
+          >
             <View style={styles.qaIconBg}>
               <Store size={24} color={colors.tint.green} />
             </View>
             <Text style={styles.qaLabel}>My Dukaan</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/notification/notifications")}>
+          <TouchableOpacity
+            style={styles.quickActionCard}
+            onPress={() => router.push("/notification/notifications")}
+          >
             <View style={styles.qaIconBg}>
               <Bell size={24} color={colors.status.warning} />
             </View>
@@ -232,10 +250,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[
-                  styles.menuIconWrapper,
-                  { backgroundColor: "#fde8e8" },
-                ]}
+                style={[styles.menuIconWrapper, { backgroundColor: "#fde8e8" }]}
               >
                 <Heart size={18} color={colors.status.error} />
               </View>
@@ -283,7 +298,9 @@ export default function ProfileScreen() {
               </View>
               <View>
                 <Text style={styles.menuItemText}>Payments</Text>
-                <Text style={styles.menuItemDesc}>Receipts & payment history</Text>
+                <Text style={styles.menuItemDesc}>
+                  Receipts & payment history
+                </Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
@@ -295,10 +312,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[
-                  styles.menuIconWrapper,
-                  { backgroundColor: "#e0e7ff" },
-                ]}
+                style={[styles.menuIconWrapper, { backgroundColor: "#e0e7ff" }]}
               >
                 <Truck size={18} color={colors.brand.accent} />
               </View>
@@ -316,10 +330,7 @@ export default function ProfileScreen() {
           >
             <View style={styles.menuItemLeft}>
               <View
-                style={[
-                  styles.menuIconWrapper,
-                  { backgroundColor: "#fef3c7" },
-                ]}
+                style={[styles.menuIconWrapper, { backgroundColor: "#fef3c7" }]}
               >
                 <Bell size={18} color={colors.status.warning} />
               </View>
