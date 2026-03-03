@@ -20,7 +20,14 @@ import {
     Star,
     X,
 } from "lucide-react-native";
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    memo,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import {
     Dimensions,
     FlatList,

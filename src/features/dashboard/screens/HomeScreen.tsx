@@ -1,11 +1,11 @@
 ﻿// src/features/dashboard/screens/HomeScreen.tsx
 import {
-  mockProducts,
-  mockServices,
-  Product,
-  PRODUCT_CATEGORIES,
-  SERVICE_CATEGORY_IDS,
-  ServiceItem,
+    mockProducts,
+    mockServices,
+    Product,
+    PRODUCT_CATEGORIES,
+    SERVICE_CATEGORY_IDS,
+    ServiceItem,
 } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
@@ -13,24 +13,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-  ChevronDown,
-  ChevronRight,
-  MapPin,
-  Scissors,
-  Star,
-  TrendingUp,
-  Zap,
+    ChevronDown,
+    ChevronRight,
+    MapPin,
+    Scissors,
+    Star,
+    TrendingUp,
+    Zap,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef } from "react";
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -48,6 +48,8 @@ const TOP_OFFERS = [
       string,
       string,
     ],
+    linkType: "product" as const,
+    linkId: "p1",
   },
   {
     id: "2",
@@ -59,6 +61,8 @@ const TOP_OFFERS = [
       string,
       string,
     ],
+    linkType: "store" as const,
+    linkId: "1",
   },
   {
     id: "3",
@@ -70,6 +74,8 @@ const TOP_OFFERS = [
       string,
       string,
     ],
+    linkType: "category" as const,
+    linkId: "grocery",
   },
 ];
 
@@ -78,8 +84,10 @@ export default function HomeScreen() {
   const { cart, allStores } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const flashScrollRef = useRef<FlatList>(null);
-  const flashIndexRef = useRef(0);
+  const bannerScrollRef = useRef<FlatList>(null);
+  const bannerIndexRef = useRef(0);
+  const trendingScrollRef = useRef<FlatList>(null);
+  const trendingIndexRef = useRef(0);
 
   const flashDealProducts = useMemo(
     () =>
@@ -116,17 +124,30 @@ export default function HomeScreen() {
   }, [allStores]);
 
   useEffect(() => {
-    if (flashDealProducts.length <= 1) return;
+    if (TOP_OFFERS.length <= 1) return;
     const interval = setInterval(() => {
-      flashIndexRef.current =
-        (flashIndexRef.current + 1) % flashDealProducts.length;
-      flashScrollRef.current?.scrollToIndex({
-        index: flashIndexRef.current,
+      bannerIndexRef.current =
+        (bannerIndexRef.current + 1) % TOP_OFFERS.length;
+      bannerScrollRef.current?.scrollToIndex({
+        index: bannerIndexRef.current,
         animated: true,
       });
     }, 3000);
     return () => clearInterval(interval);
-  }, [flashDealProducts.length]);
+  }, []);
+
+  useEffect(() => {
+    if (trendingStores.length <= 1) return;
+    const interval = setInterval(() => {
+      trendingIndexRef.current =
+        (trendingIndexRef.current + 1) % trendingStores.length;
+      trendingScrollRef.current?.scrollToIndex({
+        index: trendingIndexRef.current,
+        animated: true,
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [trendingStores.length]);
 
   const navigateToStore = (storeId: string) => {
     router.push(`/dukaan/${storeId}` as any);
@@ -248,8 +269,26 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
+  const handleBannerPress = (item: (typeof TOP_OFFERS)[0]) => {
+    switch (item.linkType) {
+      case "product":
+        navigateToProduct(item.linkId);
+        break;
+      case "store":
+        navigateToStore(item.linkId);
+        break;
+      case "category":
+        navigateToCategory(item.linkId);
+        break;
+    }
+  };
+
   const OfferBanner = ({ item }: { item: (typeof TOP_OFFERS)[0] }) => (
-    <TouchableOpacity style={styles.offerBanner} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={styles.offerBanner}
+      activeOpacity={0.9}
+      onPress={() => handleBannerPress(item)}
+    >
       <LinearGradient
         colors={item.gradient}
         start={{ x: 0, y: 0 }}
@@ -360,15 +399,32 @@ export default function HomeScreen() {
         {/* Top Offers */}
         <View style={styles.section}>
           <FlatList
+            ref={bannerScrollRef}
             horizontal
             data={TOP_OFFERS}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <OfferBanner item={item} />}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.offersList}
-            pagingEnabled
-            snapToInterval={width - 16}
+            pagingEnabled={false}
+            snapToInterval={width - 40 + spacing.md}
+            snapToAlignment="start"
             decelerationRate="fast"
+            windowSize={2}
+            initialNumToRender={2}
+            maxToRenderPerBatch={2}
+            getItemLayout={(_, index) => ({
+              length: width - 40 + spacing.md,
+              offset: (width - 40 + spacing.md) * index,
+              index,
+            })}
+            onScrollToIndexFailed={() => {}}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(
+                e.nativeEvent.contentOffset.x / (width - 40 + spacing.md),
+              );
+              bannerIndexRef.current = idx;
+            }}
           />
         </View>
 
@@ -395,7 +451,6 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <FlatList
-            ref={flashScrollRef}
             horizontal
             data={flashDealProducts}
             keyExtractor={(item) => item.id}
@@ -404,7 +459,9 @@ export default function HomeScreen() {
             contentContainerStyle={styles.flashDealsList}
             snapToInterval={156}
             decelerationRate="fast"
-            onScrollToIndexFailed={() => {}}
+            windowSize={3}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
           />
         </View>
 
@@ -436,6 +493,9 @@ export default function HomeScreen() {
               contentContainerStyle={styles.flashDealsList}
               snapToInterval={156}
               decelerationRate="fast"
+              windowSize={3}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
             />
           </View>
         )}
@@ -461,12 +521,30 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <FlatList
+            ref={trendingScrollRef}
             horizontal
             data={trendingStores}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => <TrendingStoreCard store={item} />}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.storesList}
+            snapToInterval={186}
+            decelerationRate="fast"
+            windowSize={3}
+            initialNumToRender={3}
+            maxToRenderPerBatch={3}
+            getItemLayout={(_, index) => ({
+              length: 186,
+              offset: 186 * index,
+              index,
+            })}
+            onScrollToIndexFailed={() => {}}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(
+                e.nativeEvent.contentOffset.x / 186,
+              );
+              trendingIndexRef.current = idx;
+            }}
           />
         </View>
 
