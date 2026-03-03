@@ -3,17 +3,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
     Award,
+    Bell,
     ChevronRight,
+    CreditCard,
     Edit3,
     Heart,
-    HelpCircle,
     LogOut,
     Mail,
     MapPin,
     Package,
     Phone,
-    Settings,
     Star,
+    Store,
+    Truck,
     Users,
 } from "lucide-react-native";
 import React from "react";
@@ -110,30 +112,38 @@ export default function ProfileScreen() {
 
       {/* Enhanced Stats Row */}
       <View style={styles.statsContainer}>
-        <EnhancedStatBox
-          icon={Package}
-          number="12"
-          label="Orders"
-          color="#3b82f6"
-        />
-        <EnhancedStatBox
-          icon={Heart}
-          number={String(wishlist.length)}
-          label="Wishlist"
-          color="#ef4444"
-        />
-        <EnhancedStatBox
-          icon={Users}
-          number="5"
-          label="Following"
-          color="#10b981"
-        />
-        <EnhancedStatBox
-          icon={Award}
-          number="3"
-          label="Badges"
-          color="#f59e0b"
-        />
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push("/myorders/orders")}>
+          <EnhancedStatBox
+            icon={Package}
+            number="12"
+            label="Orders"
+            color="#3b82f6"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => router.push("/wishlist/wishlist")}>
+          <EnhancedStatBox
+            icon={Heart}
+            number={String(wishlist.length)}
+            label="Wishlist"
+            color="#ef4444"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => {}}>
+          <EnhancedStatBox
+            icon={Users}
+            number="5"
+            label="Following"
+            color="#10b981"
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ flex: 1 }} onPress={() => {}}>
+          <EnhancedStatBox
+            icon={Award}
+            number="3"
+            label="Badges"
+            color="#f59e0b"
+          />
+        </TouchableOpacity>
       </View>
 
       {/* Account Details Card */}
@@ -164,29 +174,29 @@ export default function ProfileScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.quickActionsGrid}
         >
-          <TouchableOpacity style={styles.quickActionCard}>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/myorders/orders")}>
             <View style={styles.qaIconBg}>
               <Package size={24} color={colors.status.info} />
             </View>
             <Text style={styles.qaLabel}>My Orders</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/wishlist/wishlist")}>
             <View style={styles.qaIconBg}>
               <Heart size={24} color={colors.status.error} />
             </View>
             <Text style={styles.qaLabel}>Wishlist</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/meri_dukaan/my-dukaan")}>
             <View style={styles.qaIconBg}>
-              <MapPin size={24} color={colors.tint.green} />
+              <Store size={24} color={colors.tint.green} />
             </View>
-            <Text style={styles.qaLabel}>Addresses</Text>
+            <Text style={styles.qaLabel}>My Dukaan</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickActionCard}>
+          <TouchableOpacity style={styles.quickActionCard} onPress={() => router.push("/notification/notifications")}>
             <View style={styles.qaIconBg}>
-              <Settings size={24} color={colors.status.warning} />
+              <Bell size={24} color={colors.status.warning} />
             </View>
-            <Text style={styles.qaLabel}>Preferences</Text>
+            <Text style={styles.qaLabel}>Notifications</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -197,28 +207,7 @@ export default function ProfileScreen() {
         <View style={styles.menuList}>
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => router.push("/Settings/settings")}
-          >
-            <View style={styles.menuItemLeft}>
-              <View
-                style={[
-                  styles.menuIconWrapper,
-                  { backgroundColor: colors.status.warningLight },
-                ]}
-              >
-                <Settings size={18} color={colors.status.warning} />
-              </View>
-              <View>
-                <Text style={styles.menuItemText}>Settings</Text>
-                <Text style={styles.menuItemDesc}>Manage preferences</Text>
-              </View>
-            </View>
-            <ChevronRight size={20} color={colors.ui.disabled} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push("/HelpCenter/help-support")}
+            onPress={() => router.push("/myorders/orders")}
           >
             <View style={styles.menuItemLeft}>
               <View
@@ -227,11 +216,116 @@ export default function ProfileScreen() {
                   { backgroundColor: colors.status.infoLight },
                 ]}
               >
-                <HelpCircle size={18} color={colors.status.info} />
+                <Package size={18} color={colors.status.info} />
               </View>
               <View>
-                <Text style={styles.menuItemText}>Help & Support</Text>
-                <Text style={styles.menuItemDesc}>Get help anytime</Text>
+                <Text style={styles.menuItemText}>My Orders</Text>
+                <Text style={styles.menuItemDesc}>Track your orders</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.ui.disabled} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/wishlist/wishlist")}
+          >
+            <View style={styles.menuItemLeft}>
+              <View
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: "#fde8e8" },
+                ]}
+              >
+                <Heart size={18} color={colors.status.error} />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Wishlist</Text>
+                <Text style={styles.menuItemDesc}>Items you saved</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.ui.disabled} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/meri_dukaan/my-dukaan")}
+          >
+            <View style={styles.menuItemLeft}>
+              <View
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: colors.status.successLight || "#e6f9ef" },
+                ]}
+              >
+                <Store size={18} color={colors.tint.green} />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>My Dukaan</Text>
+                <Text style={styles.menuItemDesc}>Manage your store</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.ui.disabled} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/payments/history")}
+          >
+            <View style={styles.menuItemLeft}>
+              <View
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: colors.status.warningLight },
+                ]}
+              >
+                <CreditCard size={18} color={colors.status.warning} />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Payments</Text>
+                <Text style={styles.menuItemDesc}>Receipts & payment history</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.ui.disabled} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/Transporter/transporter")}
+          >
+            <View style={styles.menuItemLeft}>
+              <View
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: "#e0e7ff" },
+                ]}
+              >
+                <Truck size={18} color={colors.brand.accent} />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Transporter</Text>
+                <Text style={styles.menuItemDesc}>Delivery & logistics</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.ui.disabled} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/notification/notifications")}
+          >
+            <View style={styles.menuItemLeft}>
+              <View
+                style={[
+                  styles.menuIconWrapper,
+                  { backgroundColor: "#fef3c7" },
+                ]}
+              >
+                <Bell size={18} color={colors.status.warning} />
+              </View>
+              <View>
+                <Text style={styles.menuItemText}>Notifications</Text>
+                <Text style={styles.menuItemDesc}>Alerts & updates</Text>
               </View>
             </View>
             <ChevronRight size={20} color={colors.ui.disabled} />
