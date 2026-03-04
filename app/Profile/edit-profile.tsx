@@ -1,79 +1,76 @@
-// app/edit-profile.tsx
-import { useApp } from "@/src/context/AppContext";
-import { colors, radius, spacing } from "@/src/theme/colors";
-import { LinearGradient } from "expo-linear-gradient";
+// app/Profile/edit-profile.tsx
+import { useApp, UserProfile } from "@/src/context/AppContext";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
-    ArrowLeft,
-    Camera,
-    Check,
-    Mail,
-    MapPin,
-    Phone,
-    User,
-} from "lucide-react-native";
-import React, { useState } from "react";
-import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
+import Toast from "react-native-toast-message";
 
-export default function EditProfileScreen() {
-  const router = useRouter();
-  const { user } = useApp();
+// ─── Modular Sub-Components ─────────────────────────────────
 
-  const [formData, setFormData] = useState({
-    name: user?.name || "Vishal Kumar",
-    email: user?.email || "vishal@sangam.in",
-    phone: "+91 98765 43210",
-    address: "Rajendra Nagar, Patna - 800016",
-    city: "Patna",
-    state: "Bihar",
-    pincode: "800016",
-  });
+/** Reusable section header */
+const SectionHeader = ({ icon, title }: { icon: string; title: string }) => (
+  <View style={styles.sectionHeader}>
+    <View style={styles.sectionIconCircle}>
+      <Ionicons name={icon as any} size={16} color={colors.brand.primaryLight} />
+    </View>
+    <Text style={styles.sectionTitle}>{title}</Text>
+  </View>
+);
 
-  const [focusedField, setFocusedField] = useState<string | null>(null);
-
-  const handleSave = () => {
-    Alert.alert("Success", "Profile updated successfully!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
-  };
-
-  const InputField = ({
+/** Reusable input field */
+const InputField = React.memo(
+  ({
     label,
     value,
     onChangeText,
     placeholder,
-    icon: Icon,
+    icon,
     keyboardType = "default",
     multiline = false,
-    fieldName,
-  }: any) => (
+    isFocused,
+    onFocus,
+    onBlur,
+    editable = true,
+  }: {
+    label: string;
+    value: string;
+    onChangeText: (text: string) => void;
+    placeholder: string;
+    icon: string;
+    keyboardType?: string;
+    multiline?: boolean;
+    isFocused: boolean;
+    onFocus: () => void;
+    onBlur: () => void;
+    editable?: boolean;
+  }) => (
     <View style={styles.inputContainer}>
-      <View style={styles.labelRow}>
-        <Text style={styles.label}>{label}</Text>
-        {focusedField === fieldName && (
-          <Check size={14} color={colors.tint.green} />
-        )}
-      </View>
+      <Text style={styles.inputLabel}>{label}</Text>
       <View
         style={[
           styles.inputWrapper,
-          focusedField === fieldName && styles.inputWrapperFocused,
+          isFocused && styles.inputWrapperFocused,
+          !editable && styles.inputWrapperDisabled,
         ]}
       >
-        <Icon
+        <Ionicons
+          name={icon as any}
           size={18}
-          color={
-            focusedField === fieldName ? colors.status.info : colors.ui.muted
-          }
+          color={isFocused ? colors.brand.primaryLight : colors.ui.muted}
           style={styles.inputIcon}
         />
         <TextInput
@@ -82,375 +79,486 @@ export default function EditProfileScreen() {
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.ui.disabled}
-          keyboardType={keyboardType}
+          keyboardType={keyboardType as any}
           multiline={multiline}
           numberOfLines={multiline ? 3 : 1}
-          onFocus={() => setFocusedField(fieldName)}
-          onBlur={() => setFocusedField(null)}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          editable={editable}
         />
+        {isFocused && (
+          <Ionicons name="create-outline" size={16} color={colors.brand.primaryLight} />
+        )}
       </View>
     </View>
-  );
+  ),
+);
+
+// ─── Main Screen ─────────────────────────────────────────────
+
+export default function EditProfileScreen() {
+  const router = useRouter();
+  const { user, updateProfile } = useApp();
+
+  const [formData, setFormData] = useState({
+    name: user?.name || "Vishal Kumar",
+    email: user?.email || "vishal@sangam.in",
+    phone: user?.phone || "+91 98765 43210",
+    bio: user?.bio || "",
+    address: user?.address || "Rajendra Nagar, Patna - 800016",
+    city: user?.city || "Patna",
+    state: user?.state || "Bihar",
+    pincode: user?.pincode || "800016",
+  });
+
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const updateField = useCallback((field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    const profileUpdate: Partial<UserProfile> = {
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      bio: formData.bio,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      pincode: formData.pincode,
+    };
+    updateProfile(profileUpdate);
+    Toast.show({ type: "success", text1: "Profile updated successfully" });
+    setHasChanges(false);
+    router.back();
+  }, [formData, updateProfile, router]);
+
+  const initials = formData.name
+    .split(" ")
+    .map((w) => w.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.backBtn}
           onPress={() => router.back()}
+          activeOpacity={0.7}
         >
-          <ArrowLeft size={24} color={colors.text.primary} />
+          <Ionicons name="arrow-back" size={22} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity
+          style={[styles.saveHeaderBtn, !hasChanges && styles.saveHeaderBtnDisabled]}
+          onPress={handleSave}
+          disabled={!hasChanges}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.saveHeaderBtnText,
+              !hasChanges && styles.saveHeaderBtnTextDisabled,
+            ]}
+          >
+            Save
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {/* Profile Picture Section */}
-        <LinearGradient
-          colors={[colors.tint.blueLight, colors.ui.surfaceHover]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.profileSection}
-        >
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{formData.name.charAt(0)}</Text>
-            </View>
-            <TouchableOpacity style={styles.cameraButton}>
-              <Camera size={14} color={colors.text.inverse} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.changePhotoText}>Change Profile Photo</Text>
-          <Text style={styles.photoSubText}>JPG or PNG up to 5MB</Text>
-        </LinearGradient>
-
-        {/* Personal Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionIndicator} />
-            <Text style={styles.sectionTitle}>Personal Information</Text>
-          </View>
-
-          <InputField
-            label="Full Name"
-            value={formData.name}
-            onChangeText={(text: string) =>
-              setFormData({ ...formData, name: text })
-            }
-            placeholder="Enter your name"
-            icon={User}
-            fieldName="name"
-          />
-
-          <InputField
-            label="Email Address"
-            value={formData.email}
-            onChangeText={(text: string) =>
-              setFormData({ ...formData, email: text })
-            }
-            placeholder="Enter your email"
-            icon={Mail}
-            keyboardType="email-address"
-            fieldName="email"
-          />
-
-          <InputField
-            label="Phone Number"
-            value={formData.phone}
-            onChangeText={(text: string) =>
-              setFormData({ ...formData, phone: text })
-            }
-            placeholder="Enter your phone"
-            icon={Phone}
-            keyboardType="phone-pad"
-            fieldName="phone"
-          />
-        </View>
-
-        {/* Address Information */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.sectionIndicator} />
-            <Text style={styles.sectionTitle}>Address Information</Text>
-          </View>
-
-          <InputField
-            label="Street Address"
-            value={formData.address}
-            onChangeText={(text: string) =>
-              setFormData({ ...formData, address: text })
-            }
-            placeholder="Enter your address"
-            icon={MapPin}
-            multiline
-            fieldName="address"
-          />
-
-          <View style={styles.row}>
-            <View style={styles.halfWidth}>
-              <InputField
-                label="City"
-                value={formData.city}
-                onChangeText={(text: string) =>
-                  setFormData({ ...formData, city: text })
-                }
-                placeholder="City"
-                icon={MapPin}
-                fieldName="city"
-              />
-            </View>
-
-            <View style={styles.halfWidth}>
-              <InputField
-                label="State"
-                value={formData.state}
-                onChangeText={(text: string) =>
-                  setFormData({ ...formData, state: text })
-                }
-                placeholder="State"
-                icon={MapPin}
-                fieldName="state"
-              />
-            </View>
-          </View>
-
-          <InputField
-            label="PIN Code"
-            value={formData.pincode}
-            onChangeText={(text: string) =>
-              setFormData({ ...formData, pincode: text })
-            }
-            placeholder="Enter PIN code"
-            icon={MapPin}
-            keyboardType="numeric"
-            fieldName="pincode"
-          />
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonSection}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Check size={20} color={colors.text.inverse} />
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => router.back()}
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+            {/* Avatar Section */}
+            <View style={styles.avatarSection}>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarInitials}>{initials}</Text>
+              </View>
+              <TouchableOpacity style={styles.cameraBtn} activeOpacity={0.8}>
+                <Ionicons name="camera" size={16} color={colors.text.inverse} />
+              </TouchableOpacity>
+              <Text style={styles.avatarName}>{formData.name}</Text>
+              <Text style={styles.avatarSubtext}>Tap photo to change</Text>
+            </View>
 
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+            {/* Personal Info */}
+            <View style={styles.section}>
+              <SectionHeader icon="person-outline" title="Personal" />
+
+              <InputField
+                label="Full Name"
+                value={formData.name}
+                onChangeText={(t) => updateField("name", t)}
+                placeholder="Enter your name"
+                icon="person-outline"
+                isFocused={focusedField === "name"}
+                onFocus={() => setFocusedField("name")}
+                onBlur={() => setFocusedField(null)}
+              />
+
+              <InputField
+                label="Bio"
+                value={formData.bio}
+                onChangeText={(t) => updateField("bio", t)}
+                placeholder="Tell us about yourself"
+                icon="document-text-outline"
+                multiline
+                isFocused={focusedField === "bio"}
+                onFocus={() => setFocusedField("bio")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+
+            {/* Contact Info */}
+            <View style={styles.section}>
+              <SectionHeader icon="call-outline" title="Contact" />
+
+              <InputField
+                label="Email"
+                value={formData.email}
+                onChangeText={(t) => updateField("email", t)}
+                placeholder="your@email.com"
+                icon="mail-outline"
+                keyboardType="email-address"
+                isFocused={focusedField === "email"}
+                onFocus={() => setFocusedField("email")}
+                onBlur={() => setFocusedField(null)}
+              />
+
+              <InputField
+                label="Phone"
+                value={formData.phone}
+                onChangeText={(t) => updateField("phone", t)}
+                placeholder="+91 00000 00000"
+                icon="call-outline"
+                keyboardType="phone-pad"
+                isFocused={focusedField === "phone"}
+                onFocus={() => setFocusedField("phone")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+
+            {/* Address */}
+            <View style={styles.section}>
+              <SectionHeader icon="location-outline" title="Address" />
+
+              <InputField
+                label="Street Address"
+                value={formData.address}
+                onChangeText={(t) => updateField("address", t)}
+                placeholder="Enter your address"
+                icon="home-outline"
+                multiline
+                isFocused={focusedField === "address"}
+                onFocus={() => setFocusedField("address")}
+                onBlur={() => setFocusedField(null)}
+              />
+
+              <View style={styles.row}>
+                <View style={styles.halfField}>
+                  <InputField
+                    label="City"
+                    value={formData.city}
+                    onChangeText={(t) => updateField("city", t)}
+                    placeholder="City"
+                    icon="business-outline"
+                    isFocused={focusedField === "city"}
+                    onFocus={() => setFocusedField("city")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+                <View style={styles.halfField}>
+                  <InputField
+                    label="State"
+                    value={formData.state}
+                    onChangeText={(t) => updateField("state", t)}
+                    placeholder="State"
+                    icon="map-outline"
+                    isFocused={focusedField === "state"}
+                    onFocus={() => setFocusedField("state")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                </View>
+              </View>
+
+              <InputField
+                label="PIN Code"
+                value={formData.pincode}
+                onChangeText={(t) => updateField("pincode", t)}
+                placeholder="000000"
+                icon="keypad-outline"
+                keyboardType="numeric"
+                isFocused={focusedField === "pincode"}
+                onFocus={() => setFocusedField("pincode")}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+
+            {/* Bottom Save Button */}
+            <View style={styles.bottomActions}>
+              <TouchableOpacity
+                style={[styles.saveBtn, !hasChanges && styles.saveBtnDisabled]}
+                onPress={handleSave}
+                disabled={!hasChanges}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="checkmark-circle" size={20} color={colors.text.inverse} />
+                <Text style={styles.saveBtnText}>Save Changes</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => router.back()}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
+
+// ─── Styles ──────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.ui.surfaceHover,
+    backgroundColor: colors.ui.background,
   },
+
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 56,
+    paddingBottom: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
     backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
+    ...shadows.small,
   },
-  backButton: {
-    padding: 4,
-    width: 40,
-    height: 40,
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.backgroundAlt,
     justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 17,
     fontWeight: "800",
     color: colors.text.primary,
-    letterSpacing: -0.5,
   },
-  content: {
-    paddingBottom: 40,
+  saveHeaderBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    backgroundColor: colors.brand.primaryLight,
   },
-  profileSection: {
-    alignItems: "center",
-    marginTop: spacing.md,
-    marginHorizontal: spacing.md,
-    paddingVertical: spacing.xl,
-    borderRadius: 16,
-    marginBottom: spacing.xl,
+  saveHeaderBtnDisabled: {
+    backgroundColor: colors.ui.backgroundAlt,
   },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: spacing.md,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.status.info,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 4,
-    borderColor: colors.ui.surface,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: "800",
+  saveHeaderBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
     color: colors.text.inverse,
   },
-  cameraButton: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    backgroundColor: colors.status.error,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  saveHeaderBtnTextDisabled: {
+    color: colors.ui.disabled,
+  },
+
+  scrollContent: {
+    paddingBottom: 40,
+  },
+
+  // Avatar Section
+  avatarSection: {
+    alignItems: "center",
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.ui.surface,
+    marginBottom: spacing.sm,
+  },
+  avatarCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: colors.brand.primaryLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
     borderColor: colors.ui.surface,
-    shadowColor: colors.status.error,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    ...shadows.medium,
   },
-  changePhotoText: {
-    fontSize: 15,
-    fontWeight: "700",
+  avatarInitials: {
+    fontSize: 30,
+    fontWeight: "800",
+    color: colors.text.inverse,
+  },
+  cameraBtn: {
+    position: "absolute",
+    top: spacing.xl + 58,
+    right: "50%",
+    marginRight: -44,
+    backgroundColor: colors.brand.accent,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: colors.ui.surface,
+  },
+  avatarName: {
+    fontSize: 18,
+    fontWeight: "800",
     color: colors.text.primary,
-    marginTop: spacing.sm,
+    marginTop: 12,
   },
-  photoSubText: {
+  avatarSubtext: {
     fontSize: 12,
-    color: colors.ui.muted,
+    color: colors.text.tertiary,
     marginTop: 2,
   },
+
+  // Sections
   section: {
+    backgroundColor: colors.ui.surface,
     marginHorizontal: spacing.md,
-    marginBottom: spacing.lg,
+    marginTop: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    ...shadows.small,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
     marginBottom: spacing.md,
   },
-  sectionIndicator: {
-    width: 4,
-    height: 20,
-    borderRadius: 2,
-    backgroundColor: colors.status.info,
+  sectionIconCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.tint.blueLight,
+    justifyContent: "center",
+    alignItems: "center",
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
-    color: colors.text.primary,
-  },
-  inputContainer: {
-    marginBottom: spacing.lg,
-  },
-  labelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "700",
     color: colors.text.primary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
+
+  // Input
+  inputContainer: {
+    marginBottom: spacing.md,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.ui.surface,
+    backgroundColor: colors.ui.backgroundAlt,
     borderRadius: radius.md,
     borderWidth: 1.5,
-    borderColor: colors.ui.border,
-    paddingHorizontal: spacing.md,
+    borderColor: "transparent",
+    paddingHorizontal: 12,
   },
   inputWrapperFocused: {
-    borderColor: colors.status.info,
+    borderColor: colors.brand.primaryLight,
     backgroundColor: colors.tint.blueLight,
   },
+  inputWrapperDisabled: {
+    opacity: 0.6,
+  },
   inputIcon: {
-    marginRight: spacing.sm,
+    marginRight: 10,
   },
   input: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: 13,
     fontSize: 15,
     color: colors.text.primary,
     fontWeight: "500",
   },
   multilineInput: {
-    paddingVertical: spacing.sm,
-    minHeight: 80,
+    minHeight: 70,
     textAlignVertical: "top",
+    paddingVertical: 10,
   },
   row: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  halfWidth: {
+  halfField: {
     flex: 1,
   },
-  buttonSection: {
+
+  // Bottom Actions
+  bottomActions: {
     marginHorizontal: spacing.md,
-    gap: spacing.md,
     marginTop: spacing.xl,
+    gap: spacing.md,
   },
-  saveButton: {
+  saveBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.sm,
-    backgroundColor: colors.status.info,
-    paddingVertical: spacing.lg,
+    gap: 8,
+    backgroundColor: colors.brand.primaryLight,
+    paddingVertical: 15,
     borderRadius: radius.md,
-    shadowColor: colors.status.info,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    ...shadows.small,
   },
-  saveButtonText: {
-    fontSize: 16,
+  saveBtnDisabled: {
+    backgroundColor: colors.ui.disabled,
+  },
+  saveBtnText: {
+    fontSize: 15,
     fontWeight: "800",
     color: colors.text.inverse,
-    letterSpacing: 0.5,
   },
-  cancelButton: {
-    backgroundColor: colors.ui.surface,
-    paddingVertical: spacing.lg,
+  cancelBtn: {
+    paddingVertical: 14,
     borderRadius: radius.md,
     alignItems: "center",
     borderWidth: 1.5,
     borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
   },
-  cancelButtonText: {
-    fontSize: 16,
+  cancelBtnText: {
+    fontSize: 15,
     fontWeight: "700",
     color: colors.text.secondary,
   },

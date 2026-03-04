@@ -58,11 +58,25 @@ export interface BookedService {
 // Re-export EnhancedReel as Reel for backward compatibility
 export type Reel = EnhancedReel;
 
+// User Profile interface
+export interface UserProfile {
+  name: string;
+  isLoggedIn: boolean;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  bio?: string;
+}
+
 interface AppContextType {
   // User Management
-  user: { name: string; isLoggedIn: boolean; email?: string } | null;
+  user: UserProfile | null;
   login: (name: string) => void;
   logout: () => void;
+  updateProfile: (updates: Partial<UserProfile>) => void;
 
   // Cart Management
   cart: CartItem[];
@@ -127,11 +141,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // --- State Management ---
-  const [user, setUser] = useState<{
-    name: string;
-    isLoggedIn: boolean;
-    email?: string;
-  } | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
@@ -147,6 +157,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setCart([]); // Clear cart on logout
     setWishlist([]); // Clear wishlist on logout
   };
+  const updateProfile = useCallback((updates: Partial<UserProfile>) => {
+    setUser((prev) =>
+      prev
+        ? { ...prev, ...updates }
+        : { name: "", isLoggedIn: true, ...updates },
+    );
+  }, []);
 
   // --- Cart Functions ---
   const addToCart = (product: any) => {
@@ -418,6 +435,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       user,
       login,
       logout,
+      updateProfile,
 
       // Cart
       cart,

@@ -35,8 +35,9 @@ import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, wishlist } = useApp();
+  const { user, logout, wishlist, getFollowedStores } = useApp();
   const { t } = useSettings();
+  const followedStores = getFollowedStores();
 
   // Sub-component for Info Rows
   const InfoRow = ({ icon: Icon, label, value }: any) => (
@@ -138,10 +139,13 @@ export default function ProfileScreen() {
             color="#ef4444"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={{ flex: 1 }} onPress={() => {}}>
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          onPress={() => router.push("/dukaan/following")}
+        >
           <EnhancedStatBox
             icon={Users}
-            number="5"
+            number={String(followedStores.length)}
             label={t("profile.following")}
             color="#10b981"
           />
@@ -163,19 +167,19 @@ export default function ProfileScreen() {
           <InfoRow
             icon={MapPin}
             label={t("profile.address")}
-            value="Rajendra Nagar, Patna - 800016"
+            value={user?.address || "Not set"}
           />
           <View style={styles.divider} />
           <InfoRow
             icon={Phone}
             label={t("profile.phone")}
-            value="+91 98765 43210"
+            value={user?.phone || "Not set"}
           />
           <View style={styles.divider} />
           <InfoRow
             icon={Mail}
             label={t("profile.email")}
-            value={user?.email || "user@example.com"}
+            value={user?.email || "Not set"}
           />
         </Card>
       </View>
