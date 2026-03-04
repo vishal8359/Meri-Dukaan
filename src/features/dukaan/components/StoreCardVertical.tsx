@@ -14,7 +14,7 @@ import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 // Get screen width to calculate exact card width
 const { width } = Dimensions.get("window");
-const CARD_WIDTH = (width - spacing.md * 3) / 2; // Subtracting margins and gaps
+const CARD_WIDTH = (width - spacing.md * 3) / 2;
 
 interface Store {
   id: string;
@@ -31,58 +31,68 @@ interface StoreCardGridProps {
   onPress?: () => void;
 }
 
-export const StoreCardGrid = ({ store, onPress }: StoreCardGridProps) => {
-  const imageSource =
-    typeof store.image === "string" ? { uri: store.image } : store.image;
+// React.memo prevents unnecessary re-renders when parent re-renders
+export const StoreCardGrid = React.memo(
+  ({ store, onPress }: StoreCardGridProps) => {
+    const imageSource =
+      typeof store.image === "string" ? { uri: store.image } : store.image;
 
-  return (
-    <TouchableOpacity
-      activeOpacity={0.75}
-      style={styles.card}
-      onPress={onPress}
-    >
-      {/* Top: Store Image & Rating Overlay */}
-      <View style={styles.imageContainer}>
-        <Image source={imageSource} style={styles.image} resizeMode="cover" />
-        <View style={styles.ratingBadge}>
-          <Ionicons name="star" size={10} color={colors.text.primary} />
-          <Text style={styles.ratingText}>{store.rating}</Text>
-        </View>
-      </View>
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={styles.card}
+        onPress={onPress}
+      >
+        {/* Image with gradient-like overlays */}
+        <View style={styles.imageContainer}>
+          <Image source={imageSource} style={styles.image} resizeMode="cover" />
 
-      {/* Bottom: Store Info */}
-      <View style={styles.infoContainer}>
-        <Text style={styles.name} numberOfLines={1}>
-          {store.name}
-        </Text>
-
-        <Text style={styles.typeText} numberOfLines={1}>
-          {store.type}
-        </Text>
-
-        <View style={styles.footerRow}>
-          <View style={styles.distanceBox}>
-            <Ionicons
-              name="location-sharp"
-              size={12}
-              color={colors.brand.primary}
-            />
-            <Text style={styles.distanceText}>{store.distance}</Text>
+          {/* Rating badge - top right */}
+          <View style={styles.ratingBadge}>
+            <Ionicons name="star" size={10} color="#FFF" />
+            <Text style={styles.ratingText}>{store.rating}</Text>
           </View>
 
-          {/* A smaller, cleaner visit button for grid view */}
-          <View style={styles.miniBtn}>
-            <Ionicons
-              name="arrow-forward"
-              size={12}
-              color={colors.text.inverse}
-            />
+          {/* Category tag - bottom left over image */}
+          <View style={styles.categoryTag}>
+            <Text style={styles.categoryTagText} numberOfLines={1}>
+              {store.type}
+            </Text>
           </View>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
+
+        {/* Store Info */}
+        <View style={styles.infoContainer}>
+          <Text style={styles.name} numberOfLines={1}>
+            {store.name}
+          </Text>
+
+          <View style={styles.metaRow}>
+            <View style={styles.distanceBox}>
+              <Ionicons
+                name="location-sharp"
+                size={11}
+                color={colors.brand.primaryLight}
+              />
+              <Text style={styles.distanceText}>{store.distance}</Text>
+            </View>
+
+            <View style={styles.dot} />
+
+            <View style={styles.followersBox}>
+              <Ionicons
+                name="people-outline"
+                size={11}
+                color={colors.text.tertiary}
+              />
+              <Text style={styles.followersText}>{store.followers}</Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   card: {
@@ -90,14 +100,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     width: CARD_WIDTH,
     marginBottom: spacing.md,
-    ...shadows.medium,
+    ...shadows.small,
     borderWidth: 1,
     borderColor: colors.ui.borderLight,
     overflow: "hidden",
   },
   imageContainer: {
     width: "100%",
-    height: 120,
+    height: 130,
     backgroundColor: colors.ui.surfaceHover,
   },
   image: {
@@ -110,53 +120,72 @@ const styles = StyleSheet.create({
     right: 8,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: colors.brand.star,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    gap: 2,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    gap: 3,
   },
   ratingText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "800",
-    color: colors.text.primary,
+    color: "#FFF",
+  },
+  categoryTag: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    backgroundColor: colors.brand.primary,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderTopRightRadius: radius.sm,
+  },
+  categoryTagText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: colors.text.inverse,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   infoContainer: {
-    padding: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
   },
   name: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
-    color: colors.brand.primary,
-    marginBottom: 2,
+    color: colors.text.primary,
+    marginBottom: 6,
   },
-  typeText: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginBottom: 8,
-  },
-  footerRow: {
+  metaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginTop: "auto",
   },
   distanceBox: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    gap: 3,
   },
   distanceText: {
     fontSize: 11,
-    color: colors.brand.primary,
-    fontWeight: "700",
+    color: colors.brand.primaryLight,
+    fontWeight: "600",
   },
-  miniBtn: {
-    backgroundColor: colors.brand.primary,
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: "center",
+  dot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: colors.ui.disabled,
+    marginHorizontal: 6,
+  },
+  followersBox: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 3,
+  },
+  followersText: {
+    fontSize: 11,
+    color: colors.text.tertiary,
+    fontWeight: "500",
   },
 });

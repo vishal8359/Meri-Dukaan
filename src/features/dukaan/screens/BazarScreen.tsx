@@ -4,20 +4,17 @@ import { useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
-    Modal,
-    ScrollView,
     StyleSheet,
     Text,
-    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
-import { STORE_TYPES } from "../../../assets/mockData";
 import { colors, radius, spacing } from "../../../theme/colors";
+import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
@@ -29,19 +26,10 @@ export default function BazarScreen() {
   const [selectedType, setSelectedType] = useState("All");
   const [distLimit, setDistLimit] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [categorySearch, setCategorySearch] = useState("");
 
   // Lazy Loading States
   const [limit, setLimit] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  // Filter Categories for the Modal
-  const searchedCategories = useMemo(() => {
-    if (!categorySearch) return STORE_TYPES;
-    return STORE_TYPES.filter((type) =>
-      type.toLowerCase().includes(categorySearch.toLowerCase()),
-    );
-  }, [categorySearch]);
 
   // Filter Store Logic
   const filteredData = useMemo(() => {
@@ -72,11 +60,10 @@ export default function BazarScreen() {
     }
   };
 
-  const selectCategory = (type: string) => {
+  const selectCategory = useCallback((type: string) => {
     setSelectedType(type);
-    setCategorySearch("");
     setIsModalVisible(false);
-  };
+  }, []);
 
   // Navigate to individual store detail page
   const navigateToStore = (storeId: string) => {
@@ -136,130 +123,36 @@ export default function BazarScreen() {
         </View>
       </View>
 
-      {/* Results Count */}
-      <View style={styles.resultsBar}>
-        <Text style={styles.resultsText}>
-          {filteredData.length}{" "}
-          {filteredData.length === 1 ? t("bazar.store") : t("bazar.stores")}{" "}
-          {t("bazar.found")}
-        </Text>
-        {(selectedType !== "All" || distLimit) && (
+      {/* Active Filter Chip */}
+      {(selectedType !== "All" || distLimit) && (
+        <View style={styles.activeFilterBar}>
           <TouchableOpacity
+            style={styles.clearFilterChip}
             onPress={() => {
               setSelectedType("All");
               setDistLimit(null);
             }}
           >
+            <Ionicons
+              name="close-circle"
+              size={14}
+              color={colors.brand.primaryLight}
+            />
             <Text style={styles.clearFilterText}>
               {t("bazar.clearFilters")}
             </Text>
           </TouchableOpacity>
-        )}
-      </View>
-
-      {/* POP-UP MODAL WITH SEARCH */}
-      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t("bazar.categories")}</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Ionicons
-                  name="close-circle"
-                  size={28}
-                  color={colors.status.error}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* SEARCH INPUT */}
-            <View style={styles.searchBox}>
-              <Ionicons name="search" size={20} color={colors.ui.muted} />
-              <TextInput
-                placeholder={t("bazar.searchCategory")}
-                style={styles.searchInput}
-                value={categorySearch}
-                onChangeText={setCategorySearch}
-                placeholderTextColor={colors.ui.muted}
-              />
-              {categorySearch !== "" && (
-                <TouchableOpacity onPress={() => setCategorySearch("")}>
-                  <Ionicons
-                    name="close-outline"
-                    size={20}
-                    color={colors.ui.muted}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <ScrollView contentContainerStyle={styles.modalScroll}>
-              {/* Show "All Stores" only if it matches search or search is empty */}
-              {(!categorySearch ||
-                "all stores".includes(categorySearch.toLowerCase())) && (
-                <TouchableOpacity
-                  style={[
-                    styles.categoryItem,
-                    selectedType === "All" && styles.categoryItemSelected,
-                  ]}
-                  onPress={() => selectCategory("All")}
-                >
-                  <View style={styles.categoryItemContent}>
-                    <Ionicons
-                      name="apps-outline"
-                      size={20}
-                      color={colors.text.primary}
-                    />
-                    <Text style={styles.categoryLabel}>
-                      {t("bazar.allStores")}
-                    </Text>
-                  </View>
-                  {selectedType === "All" && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={colors.brand.primaryLight}
-                    />
-                  )}
-                </TouchableOpacity>
-              )}
-
-              {searchedCategories.map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={[
-                    styles.categoryItem,
-                    selectedType === type && styles.categoryItemSelected,
-                  ]}
-                  onPress={() => selectCategory(type)}
-                >
-                  <View style={styles.categoryItemContent}>
-                    <Ionicons
-                      name="storefront-outline"
-                      size={20}
-                      color={colors.text.primary}
-                    />
-                    <Text style={styles.categoryLabel}>{type}</Text>
-                  </View>
-                  {selectedType === type && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={colors.brand.primaryLight}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
-
-              {searchedCategories.length === 0 && (
-                <Text style={styles.noResultText}>
-                  {t("bazar.noCategories")} "{categorySearch}"
-                </Text>
-              )}
-            </ScrollView>
-          </View>
         </View>
-      </Modal>
+      )}
+
+      {/* Category Picker Modal */}
+      <CategoryPickerModal
+        visible={isModalVisible}
+        selectedType={selectedType}
+        onSelectCategory={selectCategory}
+        onClose={() => setIsModalVisible(false)}
+        t={t}
+      />
 
       {/* STORE GRID */}
       <FlatList
@@ -384,78 +277,28 @@ const styles = StyleSheet.create({
   activeDistBtnText: {
     color: colors.brand.primaryLight,
   },
-  resultsBar: {
+  activeFilterBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     backgroundColor: colors.ui.surface,
   },
-  resultsText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.secondary,
+  clearFilterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.tint.blueLight,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.brand.primaryLight,
   },
   clearFilterText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
     color: colors.brand.primaryLight,
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: colors.ui.overlay,
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: colors.ui.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: "75%",
-    paddingTop: spacing.md,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.ui.borderLight,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: colors.text.primary,
-  },
-  modalScroll: { paddingBottom: 40, paddingHorizontal: spacing.md },
-  categoryItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  categoryItemSelected: {
-    backgroundColor: colors.tint.blueLight,
-    borderColor: colors.brand.primary,
-  },
-  categoryItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-    flex: 1,
-  },
-  categoryLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.text.primary,
   },
 
   // List Styles
@@ -481,27 +324,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.tertiary,
     marginTop: 4,
-  },
-  searchBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.ui.backgroundAlt,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.md,
-  },
-  searchInput: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 10,
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  noResultText: {
-    textAlign: "center",
-    marginTop: 30,
-    color: colors.text.tertiary,
-    fontSize: 14,
   },
 });
