@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
+  Calendar,
   ChevronRight,
   Heart,
   HelpCircle,
@@ -58,6 +59,13 @@ function CustomDrawerContent(props: any) {
       color: colors.tint.purple,
       bgColor: colors.tint.purpleLight,
       route: "/myorders/orders",
+    },
+    {
+      label: "Booked Services",
+      icon: Calendar,
+      color: colors.tint.green,
+      bgColor: colors.tint.greenLight,
+      route: "/bookings/services",
     },
     {
       label: t("drawer.wishlist"),

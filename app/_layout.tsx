@@ -130,6 +130,15 @@ export default function RootLayout() {
                 presentation: "card",
               }}
             />
+
+            {/* Booked Services Screen - Path: app/bookings/services.tsx */}
+            <Stack.Screen
+              name="bookings/services"
+              options={{
+                headerShown: false,
+                presentation: "card",
+              }}
+            />
           </Stack>
           <Toast />
         </ReelProvider>

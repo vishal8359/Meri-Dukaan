@@ -11,7 +11,6 @@ import {
     Minus,
     Plus,
     ShoppingBag,
-    Square,
     Store,
     Trash2,
     Wrench,
@@ -47,12 +46,6 @@ export default function CartScreen() {
     tab === "services" ? "services" : "products",
   );
 
-  // Selection state for summary calculation
-  const [selectedCategories, setSelectedCategories] = useState<{
-    products: boolean;
-    services: boolean;
-  }>({ products: true, services: true });
-
   const updateQuantity = (item: any, increment: boolean) => {
     if (increment) {
       addToCart(item);
@@ -83,23 +76,7 @@ export default function CartScreen() {
     });
   };
 
-  const toggleCategory = (category: "products" | "services") => {
-    setSelectedCategories((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }));
-  };
-
-  const servicesTotal = bookedServices.reduce(
-    (sum, service) => sum + service.price,
-    0,
-  );
-
-  // Calculate total based on selection
-  const activeCartTotal = selectedCategories.products ? cartTotal : 0;
-  const activeServicesTotal = selectedCategories.services ? servicesTotal : 0;
-  const deliveryFee = activeCartTotal > 500 || activeCartTotal === 0 ? 0 : 40;
-  const totalAmount = activeCartTotal + activeServicesTotal + deliveryFee;
+  const deliveryFee = cartTotal > 500 || cartTotal === 0 ? 0 : 40;
 
   const ProductCard = ({ item }: { item: any }) => {
     const hasImage = item.image && item.image !== "";
@@ -414,90 +391,14 @@ export default function CartScreen() {
             }
           />
 
+          {/* Show checkout summary only for products tab */}
+          {activeTab === "products" && cart.length > 0 && (
           <View style={styles.summaryCard}>
-            {/* Products Selection Row */}
-            <TouchableOpacity
-              style={styles.summaryRow}
-              onPress={() => toggleCategory("products")}
-              activeOpacity={0.7}
-            >
-              <View style={styles.selectionLabelGroup}>
-                {selectedCategories.products ? (
-                  <CheckCircle
-                    size={20}
-                    color={colors.brand.primary}
-                    fill={colors.brand.primary}
-                  />
-                ) : (
-                  <Square size={20} color={colors.text.secondary} />
-                )}
-                <Text
-                  style={[
-                    styles.summaryLabel,
-                    !selectedCategories.products && {
-                      color: colors.text.secondary,
-                    },
-                  ]}
-                >
-                  {t("cart.products")}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  !selectedCategories.products && {
-                    textDecorationLine: "line-through",
-                    color: colors.text.secondary,
-                  },
-                ]}
-              >
-                ₹{cartTotal}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Services Selection Row */}
-            <TouchableOpacity
-              style={styles.summaryRow}
-              onPress={() => toggleCategory("services")}
-              activeOpacity={0.7}
-            >
-              <View style={styles.selectionLabelGroup}>
-                {selectedCategories.services ? (
-                  <CheckCircle
-                    size={20}
-                    color={colors.brand.primary}
-                    fill={colors.brand.primary}
-                  />
-                ) : (
-                  <Square size={20} color={colors.text.secondary} />
-                )}
-                <Text
-                  style={[
-                    styles.summaryLabel,
-                    !selectedCategories.services && {
-                      color: colors.text.secondary,
-                    },
-                  ]}
-                >
-                  {t("cart.services")}
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.summaryValue,
-                  !selectedCategories.services && {
-                    textDecorationLine: "line-through",
-                    color: colors.text.secondary,
-                  },
-                ]}
-              >
-                {servicesTotal === 0 ? (
-                  <Text style={styles.freeText}>FREE</Text>
-                ) : (
-                  `₹${servicesTotal}`
-                )}
-              </Text>
-            </TouchableOpacity>
+            {/* Products Total Row */}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>{t("cart.products")}</Text>
+              <Text style={styles.summaryValue}>₹{cartTotal}</Text>
+            </View>
 
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{t("cart.deliveryFee")}</Text>
@@ -510,7 +411,7 @@ export default function CartScreen() {
               </Text>
             </View>
 
-            {activeCartTotal > 500 && (
+            {cartTotal > 500 && (
               <View style={styles.savingsRow}>
                 <CheckCircle
                   size={16}
@@ -527,7 +428,7 @@ export default function CartScreen() {
 
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>{t("cart.total")}</Text>
-              <Text style={styles.totalValue}>₹{totalAmount}</Text>
+              <Text style={styles.totalValue}>₹{cartTotal + deliveryFee}</Text>
             </View>
 
             <TouchableOpacity
@@ -537,17 +438,10 @@ export default function CartScreen() {
                   pathname: "/payments/checkout",
                   params: {
                     mode: "cart",
-                    includeProducts: selectedCategories.products
-                      ? "true"
-                      : "false",
-                    includeServices: selectedCategories.services
-                      ? "true"
-                      : "false",
+                    includeProducts: "true",
+                    includeServices: "false",
                   },
                 } as any)
-              }
-              disabled={
-                !selectedCategories.products && !selectedCategories.services
               }
             >
               <Text style={styles.checkoutBtnText}>
@@ -560,6 +454,7 @@ export default function CartScreen() {
               />
             </TouchableOpacity>
           </View>
+          )}
         </View>
       )}
     </SafeAreaView>

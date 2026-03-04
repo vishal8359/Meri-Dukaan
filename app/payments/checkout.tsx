@@ -153,13 +153,21 @@ export default function CheckoutScreen() {
     }
 
     // Show success toast based on mode
-    if (mode === "service") {
+    if (mode === "service" || (mode === "cart" && !includeProducts && includeServices)) {
       Toast.show({
         type: "success",
         text1: "Booking Confirmed!",
         text2: params.serviceName
           ? `${params.serviceName} is now confirmed`
           : "Your service booking is confirmed",
+        visibilityTime: 2500,
+        position: "top",
+      });
+    } else if (mode === "cart" && includeProducts && includeServices) {
+      Toast.show({
+        type: "success",
+        text1: "Order & Booking Confirmed!",
+        text2: "Your order is placed and services are booked",
         visibilityTime: 2500,
         position: "top",
       });
@@ -177,7 +185,7 @@ export default function CheckoutScreen() {
     if (mode === "cart") {
       if (includeProducts) clearCart();
       if (includeServices) {
-        orderServices.forEach((s) => cancelBooking(s.id));
+        orderServices.forEach((s) => confirmBooking(s.id));
       }
     } else if (mode === "product") {
       // Remove only the ordered product from cart
@@ -186,7 +194,19 @@ export default function CheckoutScreen() {
       // Confirm the booking only after payment is complete
       if (params.serviceId) confirmBooking(params.serviceId);
     }
-    router.replace("/myorders/orders");
+
+    // Navigate to appropriate page based on what was checked out
+    const hasProducts = mode === "product" || (mode === "cart" && includeProducts && orderProducts.length > 0);
+    const hasServices = mode === "service" || (mode === "cart" && includeServices && orderServices.length > 0);
+
+    if (hasProducts && !hasServices) {
+      router.replace("/myorders/orders");
+    } else if (hasServices && !hasProducts) {
+      router.replace("/bookings/services");
+    } else {
+      // Both products and services — go to orders (primary)
+      router.replace("/myorders/orders");
+    }
   };
 
   const handlePlaceOrder = () => {
