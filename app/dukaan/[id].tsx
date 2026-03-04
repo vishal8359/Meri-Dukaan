@@ -17,8 +17,8 @@ import {
     Search,
     Share2,
     Star,
-    UserPlus,
     UserCheck,
+    UserPlus,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -47,12 +47,7 @@ export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { t } = useSettings();
-  const {
-    getStoreById,
-    reels,
-    isFollowingStore,
-    toggleFollowStore,
-  } = useApp();
+  const { getStoreById, reels, isFollowingStore, toggleFollowStore } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
 

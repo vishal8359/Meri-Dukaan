@@ -382,16 +382,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- Follow Store Functions ---
-  const toggleFollowStore = useCallback(
-    (storeId: string) => {
-      setFollowedStoreIds((prev) =>
-        prev.includes(storeId)
-          ? prev.filter((id) => id !== storeId)
-          : [...prev, storeId],
-      );
-    },
-    [],
-  );
+  const toggleFollowStore = useCallback((storeId: string) => {
+    setFollowedStoreIds((prev) =>
+      prev.includes(storeId)
+        ? prev.filter((id) => id !== storeId)
+        : [...prev, storeId],
+    );
+  }, []);
 
   const isFollowingStore = useCallback(
     (storeId: string): boolean => {
@@ -482,7 +479,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       toggleLikeReel,
       updateReelComments,
     }),
-    [user, cart, cartTotal, allStores, reels, wishlist, bookedServices, followedStoreIds],
+    [
+      user,
+      cart,
+      cartTotal,
+      allStores,
+      reels,
+      wishlist,
+      bookedServices,
+      followedStoreIds,
+    ],
   );
 
   return (

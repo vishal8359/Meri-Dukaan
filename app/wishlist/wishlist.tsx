@@ -426,8 +426,8 @@ export default function WishlistScreen() {
             <Text style={styles.emptyText}>{t("wishlist.empty")}</Text>
             <Text style={styles.emptySubtext}>
               {activeTab === "service"
-                  ? "Save services you want to book later"
-                  : "Save items you love to buy them later"}
+                ? "Save services you want to book later"
+                : "Save items you love to buy them later"}
             </Text>
             <TouchableOpacity
               style={styles.shopButton}

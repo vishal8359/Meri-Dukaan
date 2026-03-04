@@ -110,14 +110,42 @@ export default function BazarScreen() {
 
         {/* Distance Dropdown */}
         <TouchableOpacity
-          style={[styles.distDropdownBtn, distLimit !== null && styles.distDropdownBtnActive]}
+          style={[
+            styles.distDropdownBtn,
+            distLimit !== null && styles.distDropdownBtnActive,
+          ]}
           onPress={() => setIsDistModalVisible(true)}
         >
-          <Ionicons name="location-outline" size={14} color={distLimit !== null ? colors.brand.primaryLight : colors.text.secondary} />
-          <Text style={[styles.distDropdownText, distLimit !== null && styles.distDropdownTextActive]}>
-            {distLimit !== null ? (distLimit < 1 ? "500m" : distLimit + "km") : "Dist"}
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={
+              distLimit !== null
+                ? colors.brand.primaryLight
+                : colors.text.secondary
+            }
+          />
+          <Text
+            style={[
+              styles.distDropdownText,
+              distLimit !== null && styles.distDropdownTextActive,
+            ]}
+          >
+            {distLimit !== null
+              ? distLimit < 1
+                ? "500m"
+                : distLimit + "km"
+              : "Dist"}
           </Text>
-          <Ionicons name="chevron-down" size={12} color={distLimit !== null ? colors.brand.primaryLight : colors.text.secondary} />
+          <Ionicons
+            name="chevron-down"
+            size={12}
+            color={
+              distLimit !== null
+                ? colors.brand.primaryLight
+                : colors.text.secondary
+            }
+          />
         </TouchableOpacity>
 
         {/* Following Stores Button */}
@@ -139,22 +167,58 @@ export default function BazarScreen() {
           <View style={styles.distModalContent}>
             <Text style={styles.distModalTitle}>Distance</Text>
             <TouchableOpacity
-              style={[styles.distModalItem, distLimit === null && styles.distModalItemActive]}
-              onPress={() => { setDistLimit(null); setIsDistModalVisible(false); }}
+              style={[
+                styles.distModalItem,
+                distLimit === null && styles.distModalItemActive,
+              ]}
+              onPress={() => {
+                setDistLimit(null);
+                setIsDistModalVisible(false);
+              }}
             >
-              <Text style={[styles.distModalItemText, distLimit === null && styles.distModalItemTextActive]}>Any distance</Text>
-              {distLimit === null && <Ionicons name="checkmark" size={18} color={colors.brand.primaryLight} />}
+              <Text
+                style={[
+                  styles.distModalItemText,
+                  distLimit === null && styles.distModalItemTextActive,
+                ]}
+              >
+                Any distance
+              </Text>
+              {distLimit === null && (
+                <Ionicons
+                  name="checkmark"
+                  size={18}
+                  color={colors.brand.primaryLight}
+                />
+              )}
             </TouchableOpacity>
             {[0.5, 1, 3, 5].map((d) => (
               <TouchableOpacity
                 key={d}
-                style={[styles.distModalItem, distLimit === d && styles.distModalItemActive]}
-                onPress={() => { setDistLimit(d); setIsDistModalVisible(false); }}
+                style={[
+                  styles.distModalItem,
+                  distLimit === d && styles.distModalItemActive,
+                ]}
+                onPress={() => {
+                  setDistLimit(d);
+                  setIsDistModalVisible(false);
+                }}
               >
-                <Text style={[styles.distModalItemText, distLimit === d && styles.distModalItemTextActive]}>
+                <Text
+                  style={[
+                    styles.distModalItemText,
+                    distLimit === d && styles.distModalItemTextActive,
+                  ]}
+                >
                   {d < 1 ? "500m" : d + " km"}
                 </Text>
-                {distLimit === d && <Ionicons name="checkmark" size={18} color={colors.brand.primaryLight} />}
+                {distLimit === d && (
+                  <Ionicons
+                    name="checkmark"
+                    size={18}
+                    color={colors.brand.primaryLight}
+                  />
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -421,5 +485,4 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 4,
   },
-
 });

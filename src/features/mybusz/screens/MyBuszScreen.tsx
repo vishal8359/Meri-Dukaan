@@ -29,6 +29,7 @@ import React, {
     useState,
 } from "react";
 import {
+    Animated,
     Dimensions,
     FlatList,
     Image,
@@ -313,7 +314,19 @@ export default function MyBuszScreen() {
   const [isGrid, setIsGrid] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [showSortModal, setShowSortModal] = useState(false);
+  const [showCategories, setShowCategories] = useState(true);
+  const categoryAnim = useRef(new Animated.Value(1)).current;
   const productListRef = useRef<FlatList>(null);
+
+  const toggleCategories = useCallback(() => {
+    const toValue = showCategories ? 0 : 1;
+    setShowCategories(!showCategories);
+    Animated.timing(categoryAnim, {
+      toValue,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  }, [showCategories, categoryAnim]);
 
   const handleCategoryChange = useCallback((catId: string) => {
     setSelectedCategory(catId);
@@ -564,18 +577,42 @@ export default function MyBuszScreen() {
             <Grid2x2 size={18} color={colors.brand.primary} />
           )}
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.categoryToggleBtn,
+            !showCategories && styles.categoryToggleBtnHidden,
+          ]}
+          onPress={toggleCategories}
+        >
+          <Text style={styles.categoryToggleIcon}>
+            {showCategories ? "▲" : "▼"}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Category Chips */}
-      <FlatList
-        horizontal
-        data={PRODUCT_CATEGORIES}
-        keyExtractor={(item) => item.id}
-        renderItem={renderCategoryChip}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoryChipsList}
-        style={styles.categoryChipsContainer}
-      />
+      <Animated.View
+        style={[
+          styles.categoryChipsContainer,
+          {
+            maxHeight: categoryAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 42],
+            }),
+            opacity: categoryAnim,
+            borderBottomWidth: showCategories ? 1 : 0,
+          },
+        ]}
+      >
+        <FlatList
+          horizontal
+          data={PRODUCT_CATEGORIES}
+          keyExtractor={(item) => item.id}
+          renderItem={renderCategoryChip}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryChipsList}
+        />
+      </Animated.View>
 
       {/* Sort Modal */}
       {showSortModal && (
@@ -706,12 +743,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  categoryToggleBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    backgroundColor: colors.brand.primary + "10",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  categoryToggleBtnHidden: {
+    backgroundColor: colors.brand.primary + "20",
+  },
+  categoryToggleIcon: {
+    fontSize: 10,
+    color: colors.brand.primary,
+  },
   // Category Chips
   categoryChipsContainer: {
-    minHeight: 40,
-    maxHeight: 42,
+    overflow: "hidden",
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
     borderBottomColor: "#f1f5f9",
   },
   categoryChipsList: {

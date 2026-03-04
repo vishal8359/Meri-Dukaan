@@ -5,17 +5,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -25,7 +25,11 @@ import Toast from "react-native-toast-message";
 const SectionHeader = ({ icon, title }: { icon: string; title: string }) => (
   <View style={styles.sectionHeader}>
     <View style={styles.sectionIconCircle}>
-      <Ionicons name={icon as any} size={16} color={colors.brand.primaryLight} />
+      <Ionicons
+        name={icon as any}
+        size={16}
+        color={colors.brand.primaryLight}
+      />
     </View>
     <Text style={styles.sectionTitle}>{title}</Text>
   </View>
@@ -87,7 +91,11 @@ const InputField = React.memo(
           editable={editable}
         />
         {isFocused && (
-          <Ionicons name="create-outline" size={16} color={colors.brand.primaryLight} />
+          <Ionicons
+            name="create-outline"
+            size={16}
+            color={colors.brand.primaryLight}
+          />
         )}
       </View>
     </View>
@@ -158,7 +166,10 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <TouchableOpacity
-          style={[styles.saveHeaderBtn, !hasChanges && styles.saveHeaderBtnDisabled]}
+          style={[
+            styles.saveHeaderBtn,
+            !hasChanges && styles.saveHeaderBtnDisabled,
+          ]}
           onPress={handleSave}
           disabled={!hasChanges}
           activeOpacity={0.7}
@@ -317,7 +328,11 @@ export default function EditProfileScreen() {
                 disabled={!hasChanges}
                 activeOpacity={0.8}
               >
-                <Ionicons name="checkmark-circle" size={20} color={colors.text.inverse} />
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color={colors.text.inverse}
+                />
                 <Text style={styles.saveBtnText}>Save Changes</Text>
               </TouchableOpacity>
 
@@ -351,7 +366,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 56,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 56,
     paddingBottom: 14,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.ui.surface,

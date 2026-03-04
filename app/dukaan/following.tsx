@@ -6,15 +6,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback } from "react";
 import {
-  Dimensions,
-  FlatList,
-  Image,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    FlatList,
+    Image,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -50,7 +50,11 @@ export default function FollowingStoresScreen() {
           activeOpacity={0.85}
           onPress={() => navigateToStore(item.id)}
         >
-          <Image source={imageSource} style={styles.cardImage} resizeMode="cover" />
+          <Image
+            source={imageSource}
+            style={styles.cardImage}
+            resizeMode="cover"
+          />
           <View style={styles.cardContent}>
             {/* Store Name + Type */}
             <View style={styles.cardHeader}>
@@ -152,7 +156,8 @@ export default function FollowingStoresScreen() {
             </View>
             <Text style={styles.emptyTitle}>No stores followed yet</Text>
             <Text style={styles.emptySubtitle}>
-              Follow stores to stay updated with their latest products and offers
+              Follow stores to stay updated with their latest products and
+              offers
             </Text>
             <TouchableOpacity
               style={styles.exploreCta}
@@ -183,7 +188,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 56,
+    paddingTop:
+      Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 12 : 56,
     paddingBottom: 14,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.ui.surface,
