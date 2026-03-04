@@ -5,22 +5,27 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-  Alert,
-  FlatList,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    FlatList,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 type FilterKey = "all" | "confirmed" | "pending" | "completed" | "cancelled";
 
 const STATUS_CONFIG: Record<
   string,
-  { icon: keyof typeof Ionicons.glyphMap; color: string; bg: string; label: string }
+  {
+    icon: keyof typeof Ionicons.glyphMap;
+    color: string;
+    bg: string;
+    label: string;
+  }
 > = {
   confirmed: {
     icon: "checkmark-circle-outline",
@@ -76,7 +81,11 @@ const BookingCard = React.memo(
             <Image source={{ uri: booking.image }} style={styles.cardImage} />
           ) : (
             <View style={[styles.cardImage, styles.placeholderImage]}>
-              <Ionicons name="construct-outline" size={22} color={colors.ui.muted} />
+              <Ionicons
+                name="construct-outline"
+                size={22}
+                color={colors.ui.muted}
+              />
             </View>
           )}
 
@@ -108,7 +117,11 @@ const BookingCard = React.memo(
         {/* Details row */}
         <View style={styles.detailsRow}>
           <View style={styles.detailItem}>
-            <Ionicons name="calendar-outline" size={14} color={colors.text.secondary} />
+            <Ionicons
+              name="calendar-outline"
+              size={14}
+              color={colors.text.secondary}
+            />
             <Text style={styles.detailText}>
               {new Date(booking.bookingDate).toLocaleDateString("en-IN", {
                 day: "numeric",
@@ -118,12 +131,20 @@ const BookingCard = React.memo(
             </Text>
           </View>
           <View style={styles.detailItem}>
-            <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
+            <Ionicons
+              name="time-outline"
+              size={14}
+              color={colors.text.secondary}
+            />
             <Text style={styles.detailText}>{booking.bookingTime}</Text>
           </View>
           {booking.duration && (
             <View style={styles.detailItem}>
-              <Ionicons name="hourglass-outline" size={14} color={colors.text.secondary} />
+              <Ionicons
+                name="hourglass-outline"
+                size={14}
+                color={colors.text.secondary}
+              />
               <Text style={styles.detailText}>{booking.duration}</Text>
             </View>
           )}
@@ -133,17 +154,24 @@ const BookingCard = React.memo(
         <View style={styles.cardFooter}>
           <View>
             <Text style={styles.priceLabel}>Amount</Text>
-            <Text style={styles.price}>₹{booking.price.toLocaleString("en-IN")}</Text>
+            <Text style={styles.price}>
+              ₹{booking.price.toLocaleString("en-IN")}
+            </Text>
           </View>
 
           <View style={styles.actionRow}>
-            {(booking.status === "confirmed" || booking.status === "pending") && (
+            {(booking.status === "confirmed" ||
+              booking.status === "pending") && (
               <TouchableOpacity
                 style={styles.cancelBtn}
                 onPress={() => onCancel(booking.id)}
                 activeOpacity={0.7}
               >
-                <Ionicons name="close-outline" size={16} color={colors.status.error} />
+                <Ionicons
+                  name="close-outline"
+                  size={16}
+                  color={colors.status.error}
+                />
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
             )}
@@ -152,7 +180,11 @@ const BookingCard = React.memo(
               onPress={() => onViewStore(booking.storeId)}
               activeOpacity={0.7}
             >
-              <Ionicons name="storefront-outline" size={16} color={colors.brand.primary} />
+              <Ionicons
+                name="storefront-outline"
+                size={16}
+                color={colors.brand.primary}
+              />
               <Text style={styles.storeBtnText}>View Store</Text>
             </TouchableOpacity>
           </View>
@@ -166,7 +198,11 @@ const BookingCard = React.memo(
 const EmptyState = () => (
   <View style={styles.emptyContainer}>
     <View style={styles.emptyIconWrap}>
-      <Ionicons name="calendar-clear-outline" size={56} color={colors.ui.disabled} />
+      <Ionicons
+        name="calendar-clear-outline"
+        size={56}
+        color={colors.ui.disabled}
+      />
     </View>
     <Text style={styles.emptyTitle}>No bookings yet</Text>
     <Text style={styles.emptySubtitle}>
@@ -254,14 +290,18 @@ export default function BookedServicesScreen() {
           </View>
           <View style={styles.summaryDot} />
           <View style={styles.summaryItem}>
-            <Text style={[styles.summaryCount, { color: colors.status.success }]}>
+            <Text
+              style={[styles.summaryCount, { color: colors.status.success }]}
+            >
               {bookingCounts["confirmed"] || 0}
             </Text>
             <Text style={styles.summaryLabel}>Confirmed</Text>
           </View>
           <View style={styles.summaryDot} />
           <View style={styles.summaryItem}>
-            <Text style={[styles.summaryCount, { color: colors.status.warning }]}>
+            <Text
+              style={[styles.summaryCount, { color: colors.status.warning }]}
+            >
               {bookingCounts["pending"] || 0}
             </Text>
             <Text style={styles.summaryLabel}>Pending</Text>
@@ -292,7 +332,10 @@ export default function BookedServicesScreen() {
               </Text>
               {count > 0 && (
                 <View
-                  style={[styles.filterBadge, isActive && styles.filterBadgeActive]}
+                  style={[
+                    styles.filterBadge,
+                    isActive && styles.filterBadgeActive,
+                  ]}
                 >
                   <Text
                     style={[

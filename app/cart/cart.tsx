@@ -393,67 +393,69 @@ export default function CartScreen() {
 
           {/* Show checkout summary only for products tab */}
           {activeTab === "products" && cart.length > 0 && (
-          <View style={styles.summaryCard}>
-            {/* Products Total Row */}
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t("cart.products")}</Text>
-              <Text style={styles.summaryValue}>₹{cartTotal}</Text>
-            </View>
+            <View style={styles.summaryCard}>
+              {/* Products Total Row */}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t("cart.products")}</Text>
+                <Text style={styles.summaryValue}>₹{cartTotal}</Text>
+              </View>
 
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t("cart.deliveryFee")}</Text>
-              <Text style={styles.summaryValue}>
-                {deliveryFee === 0 ? (
-                  <Text style={styles.freeText}>FREE</Text>
-                ) : (
-                  `₹${deliveryFee}`
-                )}
-              </Text>
-            </View>
-
-            {cartTotal > 500 && (
-              <View style={styles.savingsRow}>
-                <CheckCircle
-                  size={16}
-                  color={colors.status.success}
-                  fill={colors.status.success}
-                />
-                <Text style={styles.savingsText}>
-                  {t("cart.savedDelivery")}
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t("cart.deliveryFee")}</Text>
+                <Text style={styles.summaryValue}>
+                  {deliveryFee === 0 ? (
+                    <Text style={styles.freeText}>FREE</Text>
+                  ) : (
+                    `₹${deliveryFee}`
+                  )}
                 </Text>
               </View>
-            )}
 
-            <View style={styles.divider} />
+              {cartTotal > 500 && (
+                <View style={styles.savingsRow}>
+                  <CheckCircle
+                    size={16}
+                    color={colors.status.success}
+                    fill={colors.status.success}
+                  />
+                  <Text style={styles.savingsText}>
+                    {t("cart.savedDelivery")}
+                  </Text>
+                </View>
+              )}
 
-            <View style={styles.summaryRow}>
-              <Text style={styles.totalLabel}>{t("cart.total")}</Text>
-              <Text style={styles.totalValue}>₹{cartTotal + deliveryFee}</Text>
+              <View style={styles.divider} />
+
+              <View style={styles.summaryRow}>
+                <Text style={styles.totalLabel}>{t("cart.total")}</Text>
+                <Text style={styles.totalValue}>
+                  ₹{cartTotal + deliveryFee}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.checkoutBtn}
+                onPress={() =>
+                  router.push({
+                    pathname: "/payments/checkout",
+                    params: {
+                      mode: "cart",
+                      includeProducts: "true",
+                      includeServices: "false",
+                    },
+                  } as any)
+                }
+              >
+                <Text style={styles.checkoutBtnText}>
+                  {t("cart.proceedCheckout")}
+                </Text>
+                <ArrowLeft
+                  size={18}
+                  color="#FFF"
+                  style={{ transform: [{ rotate: "180deg" }] }}
+                />
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.checkoutBtn}
-              onPress={() =>
-                router.push({
-                  pathname: "/payments/checkout",
-                  params: {
-                    mode: "cart",
-                    includeProducts: "true",
-                    includeServices: "false",
-                  },
-                } as any)
-              }
-            >
-              <Text style={styles.checkoutBtnText}>
-                {t("cart.proceedCheckout")}
-              </Text>
-              <ArrowLeft
-                size={18}
-                color="#FFF"
-                style={{ transform: [{ rotate: "180deg" }] }}
-              />
-            </TouchableOpacity>
-          </View>
           )}
         </View>
       )}

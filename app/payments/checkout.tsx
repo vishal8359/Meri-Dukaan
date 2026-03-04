@@ -153,7 +153,10 @@ export default function CheckoutScreen() {
     }
 
     // Show success toast based on mode
-    if (mode === "service" || (mode === "cart" && !includeProducts && includeServices)) {
+    if (
+      mode === "service" ||
+      (mode === "cart" && !includeProducts && includeServices)
+    ) {
       Toast.show({
         type: "success",
         text1: "Booking Confirmed!",
@@ -196,8 +199,12 @@ export default function CheckoutScreen() {
     }
 
     // Navigate to appropriate page based on what was checked out
-    const hasProducts = mode === "product" || (mode === "cart" && includeProducts && orderProducts.length > 0);
-    const hasServices = mode === "service" || (mode === "cart" && includeServices && orderServices.length > 0);
+    const hasProducts =
+      mode === "product" ||
+      (mode === "cart" && includeProducts && orderProducts.length > 0);
+    const hasServices =
+      mode === "service" ||
+      (mode === "cart" && includeServices && orderServices.length > 0);
 
     if (hasProducts && !hasServices) {
       router.replace("/myorders/orders");
