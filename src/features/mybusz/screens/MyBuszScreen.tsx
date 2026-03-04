@@ -314,8 +314,8 @@ export default function MyBuszScreen() {
   const [isGrid, setIsGrid] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("relevance");
   const [showSortModal, setShowSortModal] = useState(false);
-  const [showCategories, setShowCategories] = useState(true);
-  const categoryAnim = useRef(new Animated.Value(1)).current;
+  const [showCategories, setShowCategories] = useState(false);
+  const categoryAnim = useRef(new Animated.Value(0)).current;
   const productListRef = useRef<FlatList>(null);
 
   const toggleCategories = useCallback(() => {

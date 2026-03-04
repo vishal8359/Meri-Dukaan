@@ -58,6 +58,31 @@ export interface BookedService {
 // Re-export EnhancedReel as Reel for backward compatibility
 export type Reel = EnhancedReel;
 
+// Order interfaces
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image?: string;
+  storeName?: string;
+  storeId?: string;
+}
+
+export interface Order {
+  id: string;
+  items: OrderItem[];
+  subtotal: number;
+  deliveryFee: number;
+  totalAmount: number;
+  status: "processing" | "in-transit" | "delivered" | "cancelled";
+  paymentMethod: "cod" | "online";
+  orderDate: string;
+  deliveryDate?: string;
+  deliveryAddress: string;
+  deliveryPhone: string;
+}
+
 // User Profile interface
 export interface UserProfile {
   name: string;
@@ -125,6 +150,12 @@ interface AppContextType {
     reelId: string,
     comments: EnhancedReel["comments"],
   ) => void;
+
+  // Order Management
+  orders: Order[];
+  placeOrder: (order: Order) => void;
+  getOrderById: (orderId: string) => Order | undefined;
+  updateOrderStatus: (orderId: string, status: Order["status"]) => void;
 }
 
 interface CartItem {
@@ -149,6 +180,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [allStores] = useState<Store[]>(mockStores);
   const [followedStoreIds, setFollowedStoreIds] = useState<string[]>([]);
   const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   // --- User Functions ---
   const login = (name: string) => setUser({ name, isLoggedIn: true });
@@ -425,6 +457,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // --- Order Functions ---
+  const placeOrder = useCallback((order: Order) => {
+    setOrders((prev) => [order, ...prev]);
+  }, []);
+
+  const getOrderById = useCallback(
+    (orderId: string): Order | undefined => {
+      return orders.find((o) => o.id === orderId);
+    },
+    [orders],
+  );
+
+  const updateOrderStatus = useCallback(
+    (orderId: string, status: Order["status"]) => {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+      );
+    },
+    [],
+  );
+
   // --- Context Value ---
   const contextValue = useMemo(
     () => ({
@@ -478,6 +531,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       reels,
       toggleLikeReel,
       updateReelComments,
+
+      // Orders
+      orders,
+      placeOrder,
+      getOrderById,
+      updateOrderStatus,
     }),
     [
       user,
@@ -488,6 +547,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       wishlist,
       bookedServices,
       followedStoreIds,
+      orders,
     ],
   );
 

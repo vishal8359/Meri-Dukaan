@@ -35,9 +35,12 @@ export default function CheckoutScreen() {
     cart,
     cartTotal,
     clearCart,
+    removeFromCart,
     bookedServices,
     cancelBooking,
     confirmBooking,
+    placeOrder,
+    user,
   } = useApp();
   const params = useLocalSearchParams<{
     mode?: string;
@@ -119,6 +122,36 @@ export default function CheckoutScreen() {
   ];
 
   const handlePostOrder = () => {
+    // Create an order record for product orders
+    if (mode !== "service" && orderProducts.length > 0) {
+      const selectedAddr = addresses.find((a) => a.id === selectedAddress);
+      const now = new Date();
+      const deliveryEst = new Date(now);
+      deliveryEst.setDate(deliveryEst.getDate() + 3);
+
+      placeOrder({
+        id: `ORD${Date.now()}`,
+        items: orderProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          quantity: p.quantity,
+          image: p.image,
+          storeName: p.storeName,
+          storeId: p.storeId,
+        })),
+        subtotal: productsSubtotal,
+        deliveryFee,
+        totalAmount,
+        status: "processing",
+        paymentMethod: selectedPayment as "cod" | "online",
+        orderDate: now.toISOString(),
+        deliveryDate: deliveryEst.toISOString(),
+        deliveryAddress: selectedAddr?.address || "Rajendra Nagar, Patna",
+        deliveryPhone: selectedAddr?.phone || user?.phone || "+91 98765 43210",
+      });
+    }
+
     // Show success toast based on mode
     if (mode === "service") {
       Toast.show({
@@ -147,8 +180,8 @@ export default function CheckoutScreen() {
         orderServices.forEach((s) => cancelBooking(s.id));
       }
     } else if (mode === "product") {
-      // Only remove the ordered product from cart
-      // (leave other cart items intact)
+      // Remove only the ordered product from cart
+      if (params.productId) removeFromCart(params.productId);
     } else if (mode === "service") {
       // Confirm the booking only after payment is complete
       if (params.serviceId) confirmBooking(params.serviceId);

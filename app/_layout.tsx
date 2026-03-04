@@ -59,6 +59,15 @@ export default function RootLayout() {
               }}
             />
 
+            {/* Order Detail Screen - Path: app/myorders/[id].tsx */}
+            <Stack.Screen
+              name="myorders/[id]"
+              options={{
+                headerShown: false,
+                presentation: "card",
+              }}
+            />
+
             {/* Following Stores Screen */}
             <Stack.Screen
               name="dukaan/following"
