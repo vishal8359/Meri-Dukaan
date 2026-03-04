@@ -59,6 +59,15 @@ export default function RootLayout() {
               }}
             />
 
+            {/* Following Stores Screen */}
+            <Stack.Screen
+              name="dukaan/following"
+              options={{
+                headerShown: false,
+                presentation: "card",
+              }}
+            />
+
             {/* 6. Register Wishlist Screen - Path: app/wishlist/wishlist.tsx */}
             <Stack.Screen
               name="wishlist/wishlist"

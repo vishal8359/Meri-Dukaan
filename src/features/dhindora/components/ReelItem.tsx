@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { EnhancedReel } from "@/src/assets/mockData";
+import { useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
 import {
     useCommentsManager,
@@ -71,6 +72,7 @@ export const ReelItem: React.FC<ReelItemProps> = ({
   onLikeToggle,
 }) => {
   const router = useRouter();
+  const { isFollowingStore, toggleFollowStore } = useApp();
   const [isClickedPaused, setIsClickedPaused] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [showDescription, setShowDescription] = useState(false);
@@ -128,11 +130,9 @@ export const ReelItem: React.FC<ReelItemProps> = ({
     isLiked,
     likesCount,
     isSaved,
-    isFollowing,
     commentsCount,
     handleLike,
     handleSave,
-    handleFollow,
     incrementComments,
   } = useReelInteraction({
     initialLiked: item.liked,
@@ -140,6 +140,12 @@ export const ReelItem: React.FC<ReelItemProps> = ({
     initialCommentsCount: item.comments.length,
     onLikeChange: () => onLikeToggle(item._id),
   });
+
+  // Follow state synced with AppContext
+  const isFollowing = isFollowingStore(item.store.id);
+  const handleFollow = useCallback(() => {
+    toggleFollowStore(item.store.id);
+  }, [item.store.id, toggleFollowStore]);
 
   // Comments management
   const { comments, addComment, likeComment, addReply, likeReply } =

@@ -9,13 +9,10 @@ import {
     Calendar,
     Clock,
     Heart,
-    MapPin,
     Minus,
     Package,
     Plus,
     ShoppingCart,
-    Star,
-    Store,
     Trash2,
     Wrench,
 } from "lucide-react-native";
@@ -31,13 +28,12 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 
-type TabType = "all" | "product" | "service" | "store";
+type TabType = "all" | "product" | "service";
 
 const TABS: { key: TabType; label: string; icon: any }[] = [
   { key: "all", label: "wishlist.all", icon: Heart },
   { key: "product", label: "wishlist.products", icon: Package },
   { key: "service", label: "wishlist.services", icon: Wrench },
-  { key: "store", label: "wishlist.stores", icon: Store },
 ];
 
 export default function WishlistScreen() {
@@ -56,16 +52,18 @@ export default function WishlistScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
 
   const filteredItems = useMemo(() => {
-    if (activeTab === "all") return wishlist;
+    if (activeTab === "all") {
+      // Exclude store items from wishlist
+      return wishlist.filter((item) => item.type !== "store");
+    }
     return getWishlistByType(activeTab);
   }, [wishlist, activeTab, getWishlistByType]);
 
   const tabCounts = useMemo(
     () => ({
-      all: wishlist.length,
+      all: wishlist.filter((item) => item.type !== "store").length,
       product: getWishlistByType("product").length,
       service: getWishlistByType("service").length,
-      store: getWishlistByType("store").length,
     }),
     [wishlist, getWishlistByType],
   );
@@ -322,86 +320,10 @@ export default function WishlistScreen() {
     </View>
   );
 
-  // --- Store Card ---
-  const StoreCard = ({ item }: { item: WishlistItem }) => (
-    <View style={styles.card}>
-      <TouchableOpacity
-        style={styles.storeCardContent}
-        onPress={() => handleItemPress(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.storeImageContainer}>
-          {item.image ? (
-            <Image source={{ uri: item.image }} style={styles.storeImage} />
-          ) : (
-            <View style={styles.storePlaceholder}>
-              <Store size={40} color={colors.ui.muted} />
-            </View>
-          )}
-          <View style={styles.storeOverlay} />
-          <View style={styles.storeCardOverlayContent}>
-            <Text style={styles.storeCardName} numberOfLines={1}>
-              {item.name}
-            </Text>
-            {item.storeType && (
-              <View style={styles.storeTypeBadge}>
-                <Text style={styles.storeTypeText}>{item.storeType}</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.storeInfoRow}>
-          {item.rating !== undefined && item.rating > 0 && (
-            <View style={styles.storeInfoItem}>
-              <Star
-                size={14}
-                color={colors.brand.star}
-                fill={colors.brand.star}
-              />
-              <Text style={styles.storeInfoText}>{item.rating}</Text>
-            </View>
-          )}
-          {item.distance && (
-            <View style={styles.storeInfoItem}>
-              <MapPin size={14} color={colors.text.secondary} />
-              <Text style={styles.storeInfoText}>{item.distance}</Text>
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
-
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={[styles.cartButton, styles.visitStoreButton]}
-          onPress={() => handleItemPress(item)}
-        >
-          <Store size={16} color={colors.text.inverse} />
-          <Text style={styles.cartButtonText}>Visit Store</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => {
-            removeFromWishlist(item.id);
-            Toast.show({
-              type: "info",
-              text1: "Removed from wishlist",
-              text2: `${item.name} removed`,
-              visibilityTime: 1500,
-              position: "top",
-            });
-          }}
-        >
-          <Trash2 size={18} color={colors.status.error} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  // --- Store Card (legacy — no longer shown in wishlist) ---
 
   const renderItem = ({ item }: { item: WishlistItem }) => {
     switch (item.type) {
-      case "store":
-        return <StoreCard item={item} />;
       case "service":
         return <ServiceCard item={item} />;
       case "product":
@@ -503,9 +425,7 @@ export default function WishlistScreen() {
             <Heart size={64} color={colors.ui.disabled} />
             <Text style={styles.emptyText}>{t("wishlist.empty")}</Text>
             <Text style={styles.emptySubtext}>
-              {activeTab === "store"
-                ? "Save stores you love to visit them later"
-                : activeTab === "service"
+              {activeTab === "service"
                   ? "Save services you want to book later"
                   : "Save items you love to buy them later"}
             </Text>
@@ -805,75 +725,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: colors.text.inverse,
-  },
-
-  // Store Card
-  storeCardContent: {
-    overflow: "hidden",
-  },
-  storeImageContainer: {
-    width: "100%",
-    height: 140,
-    backgroundColor: colors.ui.backgroundAlt,
-    position: "relative",
-  },
-  storeImage: {
-    width: "100%",
-    height: "100%",
-  },
-  storePlaceholder: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  storeOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  storeCardOverlayContent: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
-    right: 12,
-  },
-  storeCardName: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.text.inverse,
-    marginBottom: 4,
-  },
-  storeTypeBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(255,255,255,0.25)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-  },
-  storeTypeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.text.inverse,
-  },
-  storeInfoRow: {
-    flexDirection: "row",
-    gap: 16,
-    padding: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  storeInfoItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  storeInfoText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.secondary,
   },
 
   // Empty

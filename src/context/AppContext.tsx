@@ -98,6 +98,12 @@ interface AppContextType {
   getNearbyStores: (distance: number) => Store[];
   searchStores: (query: string) => Store[];
 
+  // Follow Store Management
+  followedStoreIds: string[];
+  toggleFollowStore: (storeId: string) => void;
+  isFollowingStore: (storeId: string) => boolean;
+  getFollowedStores: () => Store[];
+
   // Reel Management
   reels: EnhancedReel[];
   toggleLikeReel: (reelId: string) => void;
@@ -131,6 +137,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [bookedServices, setBookedServices] = useState<BookedService[]>([]);
   const [allStores] = useState<Store[]>(mockStores);
+  const [followedStoreIds, setFollowedStoreIds] = useState<string[]>([]);
   const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
 
   // --- User Functions ---
@@ -357,6 +364,29 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // --- Follow Store Functions ---
+  const toggleFollowStore = useCallback(
+    (storeId: string) => {
+      setFollowedStoreIds((prev) =>
+        prev.includes(storeId)
+          ? prev.filter((id) => id !== storeId)
+          : [...prev, storeId],
+      );
+    },
+    [],
+  );
+
+  const isFollowingStore = useCallback(
+    (storeId: string): boolean => {
+      return followedStoreIds.includes(storeId);
+    },
+    [followedStoreIds],
+  );
+
+  const getFollowedStores = useCallback((): Store[] => {
+    return allStores.filter((store) => followedStoreIds.includes(store.id));
+  }, [allStores, followedStoreIds]);
+
   // --- Reel Functions ---
   const toggleLikeReel = (reelId: string) => {
     setReels((prev) =>
@@ -423,12 +453,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       getNearbyStores,
       searchStores,
 
+      // Follow Stores
+      followedStoreIds,
+      toggleFollowStore,
+      isFollowingStore,
+      getFollowedStores,
+
       // Reels
       reels,
       toggleLikeReel,
       updateReelComments,
     }),
-    [user, cart, cartTotal, allStores, reels, wishlist, bookedServices],
+    [user, cart, cartTotal, allStores, reels, wishlist, bookedServices, followedStoreIds],
   );
 
   return (

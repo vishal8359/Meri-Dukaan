@@ -10,7 +10,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import {
     ChevronRight,
     Clock,
-    Heart,
     MapPin,
     MessageCircle,
     Phone,
@@ -18,6 +17,8 @@ import {
     Search,
     Share2,
     Star,
+    UserPlus,
+    UserCheck,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -49,9 +50,8 @@ export default function StoreDetailScreen() {
   const {
     getStoreById,
     reels,
-    isInWishlist,
-    addToWishlist,
-    removeFromWishlist,
+    isFollowingStore,
+    toggleFollowStore,
   } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
@@ -68,7 +68,7 @@ export default function StoreDetailScreen() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const store = getStoreById(id as string);
-  const isSaved = store ? isInWishlist(`store-${store.id}`) : false;
+  const isFollowing = store ? isFollowingStore(store.id) : false;
   const storeImages =
     store?.images && store.images.length > 0
       ? store.images
@@ -277,38 +277,17 @@ export default function StoreDetailScreen() {
     router.back();
   };
 
-  const handleSave = () => {
+  const handleFollow = () => {
     if (!store) return;
-    const wishlistId = `store-${store.id}`;
-    if (isInWishlist(wishlistId)) {
-      removeFromWishlist(wishlistId);
-      Toast.show({
-        type: "info",
-        text1: t("store.removedFromWishlist"),
-        text2: `${store.name} unsaved`,
-        visibilityTime: 1500,
-        position: "top",
-      });
-    } else {
-      addToWishlist({
-        id: wishlistId,
-        name: store.name,
-        price: 0,
-        type: "store",
-        image: store.image,
-        rating: store.rating,
-        storeType: store.type,
-        distance: store.distance,
-        storeId: store.id,
-      });
-      Toast.show({
-        type: "success",
-        text1: t("store.storeSaved"),
-        text2: `${store.name} ${t("store.addedToWishlist")}`,
-        visibilityTime: 1500,
-        position: "top",
-      });
-    }
+    toggleFollowStore(store.id);
+    const nowFollowing = !isFollowing;
+    Toast.show({
+      type: nowFollowing ? "success" : "info",
+      text1: nowFollowing ? "Followed" : "Unfollowed",
+      text2: `${store.name}`,
+      visibilityTime: 1500,
+      position: "top",
+    });
   };
 
   const handleShare = async () => {
@@ -349,6 +328,9 @@ export default function StoreDetailScreen() {
           horizontal
           pagingEnabled
           scrollEventThrottle={16}
+          decelerationRate="fast"
+          snapToInterval={SCREEN_WIDTH}
+          snapToAlignment="start"
           onScroll={(e) => {
             const contentOffsetX = e.nativeEvent.contentOffset.x;
             const index = Math.round(contentOffsetX / SCREEN_WIDTH);
@@ -459,21 +441,21 @@ export default function StoreDetailScreen() {
         {/* Action Buttons */}
         <View style={styles.actionRow}>
           <TouchableOpacity
-            style={[styles.actionBtn, isSaved && styles.actionBtnActive]}
-            onPress={handleSave}
+            style={[styles.actionBtn, isFollowing && styles.actionBtnFollowing]}
+            onPress={handleFollow}
           >
-            <Heart
-              size={18}
-              color={isSaved ? colors.text.inverse : colors.status.error}
-              fill={isSaved ? colors.status.error : "transparent"}
-            />
+            {isFollowing ? (
+              <UserCheck size={18} color={colors.text.inverse} />
+            ) : (
+              <UserPlus size={18} color={colors.brand.primary} />
+            )}
             <Text
               style={[
                 styles.actionBtnText,
-                isSaved && styles.actionBtnTextActive,
+                isFollowing && styles.actionBtnTextFollowing,
               ]}
             >
-              {isSaved ? t("store.saved") : t("store.save")}
+              {isFollowing ? "Following" : "Follow"}
             </Text>
           </TouchableOpacity>
 
@@ -645,6 +627,9 @@ export default function StoreDetailScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyExtractor={() => "main-content"}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={5}
+        windowSize={7}
       />
     </View>
   );
@@ -685,13 +670,13 @@ const styles = StyleSheet.create({
 
   // Hero Section
   heroSection: {
-    height: 280,
+    height: 300,
     width: "100%",
     position: "relative",
   },
   heroImage: {
     width: SCREEN_WIDTH,
-    height: 280,
+    height: 300,
   },
   heroGradient: {
     ...StyleSheet.absoluteFillObject,
@@ -883,17 +868,17 @@ const styles = StyleSheet.create({
     gap: 6,
     backgroundColor: colors.ui.surface,
   },
-  actionBtnActive: {
-    backgroundColor: colors.status.errorLight,
-    borderColor: colors.status.errorBorder,
+  actionBtnFollowing: {
+    backgroundColor: colors.brand.primary,
+    borderColor: colors.brand.primary,
   },
   actionBtnText: {
     fontSize: 13,
     fontWeight: "600",
     color: colors.text.caption,
   },
-  actionBtnTextActive: {
-    color: colors.status.error,
+  actionBtnTextFollowing: {
+    color: colors.text.inverse,
   },
   actionBtnPrimary: {
     flex: 1.2,

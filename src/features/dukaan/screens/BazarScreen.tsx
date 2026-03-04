@@ -8,24 +8,29 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
 } from "react-native";
-import { colors, radius, spacing } from "../../../theme/colors";
+import { colors, radius, shadows, spacing } from "../../../theme/colors";
 import { CategoryPickerModal } from "../components/CategoryPickerModal";
 import { StoreCardGrid } from "../components/StoreCardVertical";
 
 export default function BazarScreen() {
   const router = useRouter();
-  const { allStores } = useApp();
+  const { allStores, getFollowedStores } = useApp();
   const { t } = useSettings();
+
+  // Followed stores
+  const followedStores = getFollowedStores();
 
   // States
   const [selectedType, setSelectedType] = useState("All");
   const [distLimit, setDistLimit] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isDistModalVisible, setIsDistModalVisible] = useState(false);
 
   // Lazy Loading States
   const [limit, setLimit] = useState(10);
@@ -96,32 +101,65 @@ export default function BazarScreen() {
           style={styles.mainFilterBtn}
           onPress={() => setIsModalVisible(true)}
         >
-          <Ionicons name="filter-outline" size={18} color="#FFF" />
+          <Ionicons name="filter-outline" size={16} color="#FFF" />
           <Text style={styles.mainFilterText} numberOfLines={1}>
             {selectedType === "All" ? t("bazar.allCategories") : selectedType}
           </Text>
-          <Ionicons name="chevron-down" size={16} color="#FFF" />
+          <Ionicons name="chevron-down" size={14} color="#FFF" />
         </TouchableOpacity>
 
-        <View style={styles.distRow}>
-          {[0.5, 1, 3].map((d) => (
-            <TouchableOpacity
-              key={d}
-              onPress={() => setDistLimit(distLimit === d ? null : d)}
-              style={[styles.distBtn, distLimit === d && styles.activeDistBtn]}
-            >
-              <Text
-                style={[
-                  styles.distBtnText,
-                  distLimit === d && styles.activeDistBtnText,
-                ]}
-              >
-                {d < 1 ? "500m" : d + "km"}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Distance Dropdown */}
+        <TouchableOpacity
+          style={[styles.distDropdownBtn, distLimit !== null && styles.distDropdownBtnActive]}
+          onPress={() => setIsDistModalVisible(true)}
+        >
+          <Ionicons name="location-outline" size={14} color={distLimit !== null ? colors.brand.primaryLight : colors.text.secondary} />
+          <Text style={[styles.distDropdownText, distLimit !== null && styles.distDropdownTextActive]}>
+            {distLimit !== null ? (distLimit < 1 ? "500m" : distLimit + "km") : "Dist"}
+          </Text>
+          <Ionicons name="chevron-down" size={12} color={distLimit !== null ? colors.brand.primaryLight : colors.text.secondary} />
+        </TouchableOpacity>
+
+        {/* Following Stores Button */}
+        <TouchableOpacity
+          style={styles.followingsBtn}
+          onPress={() => router.push("/dukaan/following")}
+        >
+          <Text style={styles.followingsBtnText}>Followings</Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Distance Picker Modal */}
+      <Modal visible={isDistModalVisible} animationType="fade" transparent>
+        <TouchableOpacity
+          style={styles.distModalOverlay}
+          activeOpacity={1}
+          onPress={() => setIsDistModalVisible(false)}
+        >
+          <View style={styles.distModalContent}>
+            <Text style={styles.distModalTitle}>Distance</Text>
+            <TouchableOpacity
+              style={[styles.distModalItem, distLimit === null && styles.distModalItemActive]}
+              onPress={() => { setDistLimit(null); setIsDistModalVisible(false); }}
+            >
+              <Text style={[styles.distModalItemText, distLimit === null && styles.distModalItemTextActive]}>Any distance</Text>
+              {distLimit === null && <Ionicons name="checkmark" size={18} color={colors.brand.primaryLight} />}
+            </TouchableOpacity>
+            {[0.5, 1, 3, 5].map((d) => (
+              <TouchableOpacity
+                key={d}
+                style={[styles.distModalItem, distLimit === d && styles.distModalItemActive]}
+                onPress={() => { setDistLimit(d); setIsDistModalVisible(false); }}
+              >
+                <Text style={[styles.distModalItemText, distLimit === d && styles.distModalItemTextActive]}>
+                  {d < 1 ? "500m" : d + " km"}
+                </Text>
+                {distLimit === d && <Ionicons name="checkmark" size={18} color={colors.brand.primaryLight} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Active Filter Chip */}
       {(selectedType !== "All" || distLimit) && (
@@ -229,9 +267,10 @@ const styles = StyleSheet.create({
   filterHeader: {
     flexDirection: "row",
     alignItems: "center",
-    padding: spacing.md,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.ui.surface,
-    justifyContent: "space-between",
+    gap: 8,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
   },
@@ -239,12 +278,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.brand.primaryLight,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: radius.md,
-    gap: 8,
-    flex: 1,
-    marginRight: 10,
+    gap: 6,
+    flexShrink: 1,
     shadowColor: colors.brand.primaryLight,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -254,28 +292,86 @@ const styles = StyleSheet.create({
   mainFilterText: {
     color: colors.text.inverse,
     fontWeight: "700",
-    fontSize: 13,
+    fontSize: 12,
   },
-  distRow: { flexDirection: "row", gap: 6 },
-  distBtn: {
+  distDropdownBtn: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.ui.backgroundAlt,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: radius.md,
+    gap: 4,
     borderWidth: 1,
     borderColor: colors.ui.border,
   },
-  activeDistBtn: {
+  distDropdownBtnActive: {
     backgroundColor: colors.status.infoLight,
     borderColor: colors.brand.primaryLight,
   },
-  distBtnText: {
-    fontSize: 11,
+  distDropdownText: {
+    fontSize: 12,
     fontWeight: "700",
     color: colors.text.secondary,
   },
-  activeDistBtnText: {
+  distDropdownTextActive: {
     color: colors.brand.primaryLight,
+  },
+  followingsBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.ui.backgroundAlt,
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    borderRadius: radius.md,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+  },
+  followingsBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text.secondary,
+  },
+  // Distance Modal
+  distModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  distModalContent: {
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.lg,
+    width: 220,
+    paddingVertical: spacing.md,
+    ...shadows.medium,
+  },
+  distModalTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.text.primary,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  distModalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+  },
+  distModalItemActive: {
+    backgroundColor: colors.tint.blueLight,
+  },
+  distModalItemText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  distModalItemTextActive: {
+    color: colors.brand.primaryLight,
+    fontWeight: "700",
   },
   activeFilterBar: {
     flexDirection: "row",
@@ -325,4 +421,5 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 4,
   },
+
 });
