@@ -1,21 +1,23 @@
-// app/create-store.tsx
+// app/meri_dukaan/create-store.tsx
 import { BUSINESS_TYPES, STORE_CATEGORIES } from "@/src/assets/storeCategories";
-import { colors, radius, spacing } from "@/src/theme/colors";
+import { useApp } from "@/src/context/AppContext";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
     ArrowLeft,
+    Camera,
     MapPin,
     Store,
     Tag,
     Trash2,
-    Upload,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Alert,
     FlatList,
     Image,
+    Platform,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -25,112 +27,121 @@ import {
     View,
 } from "react-native";
 
+const PLACEHOLDER_IMAGES = [
+  "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400",
+  "https://images.unsplash.com/photo-1556740758-90de940a013d?w=400",
+  "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
+  "https://images.unsplash.com/photo-1556767576-5ec41e3239ea?w=400",
+  "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400",
+];
+
 export default function CreateStoreScreen() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    storeName: "",
-    location: "",
-    category: "",
-    businessType: "", // "products", "services", or "both"
-    images: [] as string[],
-  });
+  const { createMyStore } = useApp();
 
+  const [storeName, setStoreName] = useState("");
+  const [location, setLocation] = useState("");
+  const [category, setCategory] = useState("");
+  const [businessType, setBusinessType] = useState<
+    "products" | "services" | "both" | ""
+  >("");
+  const [images, setImages] = useState<string[]>([]);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
-  const updateField = (field: string, value: any) => {
-    setFormData({ ...formData, [field]: value });
-  };
-
   const handleAddImage = () => {
-    if (formData.images.length >= 5) {
-      Alert.alert("Limit Reached", "You can upload maximum 5 images");
+    if (images.length >= 5) {
+      Alert.alert("Limit Reached", "Maximum 5 images allowed");
       return;
     }
-    // In real app, use image picker
-    const dummyImage = `https://images.unsplash.com/photo-${Date.now()}?q=80&w=400`;
-    updateField("images", [...formData.images, dummyImage]);
+    // Simulated image pick — in production use expo-image-picker
+    const idx = images.length % PLACEHOLDER_IMAGES.length;
+    setImages((prev) => [...prev, PLACEHOLDER_IMAGES[idx]]);
   };
 
   const handleRemoveImage = (index: number) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
-    updateField("images", newImages);
+    setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleCreateStore = () => {
-    // Validation
-    if (!formData.storeName.trim()) {
-      Alert.alert("Error", "Please enter store name");
-      return;
-    }
-    if (!formData.location.trim()) {
-      Alert.alert("Error", "Please enter store location");
-      return;
-    }
-    if (!formData.category) {
-      Alert.alert("Error", "Please select a category");
-      return;
-    }
-    if (!formData.businessType) {
-      Alert.alert("Error", "Please select business type");
-      return;
-    }
-    if (formData.images.length === 0) {
-      Alert.alert("Error", "Please add at least 1 store image");
-      return;
-    }
+  const handleCreate = () => {
+    if (!storeName.trim()) return Alert.alert("Error", "Enter store name");
+    if (!location.trim()) return Alert.alert("Error", "Enter store location");
+    if (!category) return Alert.alert("Error", "Select a category");
+    if (!businessType) return Alert.alert("Error", "Select business type");
+    if (images.length < 3)
+      return Alert.alert("Error", "Add at least 3 store images");
 
-    // Create store logic here
-    Alert.alert("Success", "Store created successfully!", [
+    const store = {
+      id: `mystore_${Date.now()}`,
+      name: storeName.trim(),
+      category,
+      businessType: businessType as "products" | "services" | "both",
+      location: location.trim(),
+      images,
+      rating: 0,
+      followers: 0,
+      products: [],
+      services: [],
+      reels: [],
+      createdAt: Date.now(),
+    };
+
+    createMyStore(store);
+    Alert.alert("Success", "Your Dukaan has been created!", [
       { text: "OK", onPress: () => router.replace("/meri_dukaan/my-dukaan") },
     ]);
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.safe}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={24} color={colors.text.primary} />
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <ArrowLeft size={22} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Your Dukaan</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Store Images */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Store Images (1-5)</Text>
-          <Text style={styles.sectionSubtitle}>
-            Add at least 1 image, maximum 5 images
+          <Text style={styles.sectionTitle}>Store Images (3-5) *</Text>
+          <Text style={styles.sectionSub}>
+            Showcase your store with 3 to 5 photos
           </Text>
-
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.imagesScroll}
+            style={{ marginTop: spacing.sm }}
           >
-            {formData.images.map((img, index) => (
-              <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri: img }} style={styles.storeImage} />
+            {images.map((uri, i) => (
+              <View key={i} style={styles.imgWrap}>
+                <Image source={{ uri }} style={styles.storeImg} />
                 <TouchableOpacity
-                  style={styles.removeImageBtn}
-                  onPress={() => handleRemoveImage(index)}
+                  style={styles.removeImgBtn}
+                  onPress={() => handleRemoveImage(i)}
                 >
-                  <Trash2 size={14} color={colors.text.inverse} />
+                  <Trash2 size={12} color="#fff" />
                 </TouchableOpacity>
+                {i === 0 && (
+                  <View style={styles.coverLabel}>
+                    <Text style={styles.coverLabelText}>Cover</Text>
+                  </View>
+                )}
               </View>
             ))}
-
-            {formData.images.length < 5 && (
+            {images.length < 5 && (
               <TouchableOpacity
-                style={styles.addImageBtn}
+                style={styles.addImgBtn}
                 onPress={handleAddImage}
               >
-                <Upload size={24} color={colors.brand.primary} />
-                <Text style={styles.addImageText}>Add Image</Text>
+                <Camera size={24} color={colors.brand.primary} />
+                <Text style={styles.addImgText}>
+                  {images.length === 0 ? "Add Photos" : "Add More"}
+                </Text>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -139,13 +150,14 @@ export default function CreateStoreScreen() {
         {/* Store Name */}
         <View style={styles.section}>
           <Text style={styles.label}>Store Name *</Text>
-          <View style={styles.inputWrapper}>
+          <View style={styles.inputRow}>
             <Store size={18} color={colors.text.secondary} />
             <TextInput
               style={styles.input}
-              value={formData.storeName}
-              onChangeText={(text) => updateField("storeName", text)}
               placeholder="Enter your store name"
+              placeholderTextColor={colors.ui.muted}
+              value={storeName}
+              onChangeText={setStoreName}
             />
           </View>
         </View>
@@ -153,13 +165,14 @@ export default function CreateStoreScreen() {
         {/* Location */}
         <View style={styles.section}>
           <Text style={styles.label}>Store Location *</Text>
-          <View style={styles.inputWrapper}>
+          <View style={styles.inputRow}>
             <MapPin size={18} color={colors.text.secondary} />
             <TextInput
               style={styles.input}
-              value={formData.location}
-              onChangeText={(text) => updateField("location", text)}
-              placeholder="e.g., Rajendra Nagar, Patna - 800016"
+              placeholder="e.g., Rajendra Nagar, Patna"
+              placeholderTextColor={colors.ui.muted}
+              value={location}
+              onChangeText={setLocation}
             />
           </View>
         </View>
@@ -168,14 +181,14 @@ export default function CreateStoreScreen() {
         <View style={styles.section}>
           <Text style={styles.label}>Category *</Text>
           <TouchableOpacity
-            style={styles.inputWrapper}
+            style={styles.inputRow}
             onPress={() => setShowCategoryPicker(!showCategoryPicker)}
           >
             <Tag size={18} color={colors.text.secondary} />
             <Text
-              style={[styles.input, !formData.category && styles.placeholder]}
+              style={[styles.input, !category && { color: colors.ui.muted }]}
             >
-              {formData.category || "Select category"}
+              {category || "Select category"}
             </Text>
             <Ionicons
               name={showCategoryPicker ? "chevron-up" : "chevron-down"}
@@ -185,20 +198,21 @@ export default function CreateStoreScreen() {
           </TouchableOpacity>
 
           {showCategoryPicker && (
-            <View style={styles.categoryPicker}>
+            <View style={styles.pickerList}>
               <FlatList
                 data={STORE_CATEGORIES}
                 keyExtractor={(item) => item}
+                scrollEnabled={false}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    style={styles.categoryItem}
+                    style={styles.pickerItem}
                     onPress={() => {
-                      updateField("category", item);
+                      setCategory(item);
                       setShowCategoryPicker(false);
                     }}
                   >
-                    <Text style={styles.categoryText}>{item}</Text>
-                    {formData.category === item && (
+                    <Text style={styles.pickerItemText}>{item}</Text>
+                    {category === item && (
                       <Ionicons
                         name="checkmark"
                         size={20}
@@ -207,7 +221,6 @@ export default function CreateStoreScreen() {
                     )}
                   </TouchableOpacity>
                 )}
-                scrollEnabled={false}
               />
             </View>
           )}
@@ -216,42 +229,41 @@ export default function CreateStoreScreen() {
         {/* Business Type */}
         <View style={styles.section}>
           <Text style={styles.label}>Business Type *</Text>
-          <View style={styles.businessTypes}>
-            {BUSINESS_TYPES.map((type) => (
-              <TouchableOpacity
-                key={type.id}
-                style={[
-                  styles.businessTypeCard,
-                  formData.businessType === type.id &&
-                    styles.selectedBusinessType,
-                ]}
-                onPress={() => updateField("businessType", type.id)}
-              >
-                <View style={styles.businessTypeHeader}>
-                  <Text
-                    style={[
-                      styles.businessTypeLabel,
-                      formData.businessType === type.id &&
-                        styles.selectedBusinessTypeText,
-                    ]}
-                  >
-                    {type.label}
-                  </Text>
-                  {formData.businessType === type.id && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={colors.brand.primary}
-                    />
-                  )}
-                </View>
-                <Text style={styles.businessTypeDesc}>{type.description}</Text>
-              </TouchableOpacity>
-            ))}
+          <Text style={styles.sectionSub}>You can change this later</Text>
+          <View style={styles.bizTypes}>
+            {BUSINESS_TYPES.map((bt) => {
+              const active = businessType === bt.id;
+              return (
+                <TouchableOpacity
+                  key={bt.id}
+                  style={[styles.bizCard, active && styles.bizCardActive]}
+                  onPress={() => setBusinessType(bt.id as any)}
+                >
+                  <View style={styles.bizCardHeader}>
+                    <Text
+                      style={[
+                        styles.bizCardLabel,
+                        active && styles.bizCardLabelActive,
+                      ]}
+                    >
+                      {bt.label}
+                    </Text>
+                    {active && (
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={colors.brand.primary}
+                      />
+                    )}
+                  </View>
+                  <Text style={styles.bizCardDesc}>{bt.description}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        {/* Info Box */}
+        {/* Info */}
         <View style={styles.infoBox}>
           <Ionicons
             name="information-circle"
@@ -259,12 +271,12 @@ export default function CreateStoreScreen() {
             color={colors.status.info}
           />
           <Text style={styles.infoText}>
-            You can add products/services after creating your store
+            You can add products, services and reels after creating your store
           </Text>
         </View>
 
         {/* Create Button */}
-        <TouchableOpacity style={styles.createBtn} onPress={handleCreateStore}>
+        <TouchableOpacity style={styles.createBtn} onPress={handleCreate}>
           <Text style={styles.createBtnText}>Create My Dukaan</Text>
         </TouchableOpacity>
 
@@ -275,83 +287,43 @@ export default function CreateStoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.ui.background,
-  },
+  safe: { flex: 1, backgroundColor: colors.ui.background },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    paddingVertical: 14,
     backgroundColor: colors.ui.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.border,
+    ...shadows.small,
   },
-  backButton: {
-    padding: 4,
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.ui.background,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
     color: colors.text.primary,
   },
-  content: {
-    padding: spacing.md,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
+  scroll: { padding: spacing.md },
+  section: { marginBottom: spacing.lg },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  sectionSubtitle: {
+  sectionSub: {
     fontSize: 13,
     color: colors.text.secondary,
-    marginBottom: spacing.md,
-  },
-  imagesScroll: {
-    flexDirection: "row",
-  },
-  imageContainer: {
-    position: "relative",
-    marginRight: spacing.md,
-  },
-  storeImage: {
-    width: 120,
-    height: 120,
-    borderRadius: radius.md,
-    backgroundColor: colors.ui.backgroundAlt,
-  },
-  removeImageBtn: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: colors.status.error,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  addImageBtn: {
-    width: 120,
-    height: 120,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.brand.primary,
-    borderStyle: "dashed",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.brand.primary + "10",
-  },
-  addImageText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.brand.primary,
-    marginTop: 4,
+    marginBottom: spacing.sm,
   },
   label: {
     fontSize: 14,
@@ -359,7 +331,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
-  inputWrapper: {
+  inputRow: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.ui.surface,
@@ -371,66 +343,115 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: Platform.OS === "ios" ? 14 : 10,
     fontSize: 15,
     color: colors.text.primary,
   },
-  placeholder: {
-    color: colors.text.secondary,
+
+  /* Images */
+  imgWrap: {
+    position: "relative",
+    marginRight: 12,
   },
-  categoryPicker: {
+  storeImg: {
+    width: 110,
+    height: 110,
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.backgroundAlt,
+  },
+  removeImgBtn: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    backgroundColor: colors.status.error,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  coverLabel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingVertical: 3,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.md,
+    alignItems: "center",
+  },
+  coverLabelText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  addImgBtn: {
+    width: 110,
+    height: 110,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.brand.primary,
+    borderStyle: "dashed",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.brand.primary + "08",
+  },
+  addImgText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.brand.primary,
+    marginTop: 4,
+  },
+
+  /* Category picker */
+  pickerList: {
     backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: colors.ui.border,
-    maxHeight: 200,
+    maxHeight: 220,
   },
-  categoryItem: {
+  pickerItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: spacing.md,
+    paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
   },
-  categoryText: {
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  businessTypes: {
-    gap: spacing.md,
-  },
-  businessTypeCard: {
+  pickerItemText: { fontSize: 15, color: colors.text.primary },
+
+  /* Business type cards */
+  bizTypes: { gap: 12, marginTop: spacing.sm },
+  bizCard: {
     backgroundColor: colors.ui.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     borderWidth: 2,
     borderColor: colors.ui.border,
   },
-  selectedBusinessType: {
+  bizCardActive: {
     borderColor: colors.brand.primary,
-    backgroundColor: colors.brand.primary + "05",
+    backgroundColor: colors.brand.primary + "06",
   },
-  businessTypeHeader: {
+  bizCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
+    marginBottom: 2,
   },
-  businessTypeLabel: {
+  bizCardLabel: {
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.primary,
   },
-  selectedBusinessTypeText: {
-    color: colors.brand.primary,
-  },
-  businessTypeDesc: {
-    fontSize: 13,
-    color: colors.text.secondary,
-  },
+  bizCardLabelActive: { color: colors.brand.primary },
+  bizCardDesc: { fontSize: 13, color: colors.text.secondary },
+
+  /* Info box */
   infoBox: {
     flexDirection: "row",
     alignItems: "center",
@@ -446,11 +467,14 @@ const styles = StyleSheet.create({
     color: colors.status.infoDark,
     fontWeight: "600",
   },
+
+  /* Create button */
   createBtn: {
     backgroundColor: colors.brand.primary,
-    paddingVertical: spacing.md,
+    paddingVertical: 16,
     borderRadius: radius.lg,
     alignItems: "center",
+    ...shadows.medium,
   },
   createBtnText: {
     fontSize: 16,

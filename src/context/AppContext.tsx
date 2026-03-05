@@ -95,6 +95,56 @@ export interface UserAddress {
   isDefault: boolean;
 }
 
+// ── My Store (owner) interfaces ──
+
+export type QuantityUnit = "kg" | "g" | "ml" | "l" | "pcs";
+
+export interface MyStoreProduct {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  quantity: number;
+  unit: QuantityUnit;
+  inStock: boolean;
+}
+
+export interface MyStoreService {
+  id: string;
+  name: string;
+  price: number;
+  images: string[];
+  duration: string; // e.g. "30 min", "1 hr"
+  description: string;
+  available: boolean;
+}
+
+export interface MyStoreReel {
+  id: string;
+  videoUrl: string;
+  caption: string;
+  createdAt: number; // timestamp
+  likes: number;
+  comments: number;
+  views: number;
+  thumbnail?: string;
+}
+
+export interface MyStore {
+  id: string;
+  name: string;
+  category: string;
+  businessType: "products" | "services" | "both";
+  location: string;
+  images: string[];
+  rating: number;
+  followers: number;
+  products: MyStoreProduct[];
+  services: MyStoreService[];
+  reels: MyStoreReel[];
+  createdAt: number;
+}
+
 // User Profile interface
 export interface UserProfile {
   name: string;
@@ -177,6 +227,20 @@ interface AppContextType {
   removeAddress: (id: string) => void;
   setSelectedAddressId: (id: string) => void;
   getSelectedAddress: () => UserAddress | undefined;
+
+  // My Store (owner) Management
+  myStore: MyStore | null;
+  createMyStore: (store: MyStore) => void;
+  updateMyStore: (updates: Partial<MyStore>) => void;
+  addMyProduct: (product: MyStoreProduct) => void;
+  updateMyProduct: (id: string, updates: Partial<MyStoreProduct>) => void;
+  removeMyProduct: (id: string) => void;
+  addMyService: (service: MyStoreService) => void;
+  updateMyService: (id: string, updates: Partial<MyStoreService>) => void;
+  removeMyService: (id: string) => void;
+  addMyReel: (reel: MyStoreReel) => void;
+  removeMyReel: (id: string) => void;
+  canUploadReelToday: () => boolean;
 }
 
 interface CartItem {
@@ -202,6 +266,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [followedStoreIds, setFollowedStoreIds] = useState<string[]>([]);
   const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [myStore, setMyStore] = useState<MyStore | null>(null);
 
   // --- Address State ---
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([
@@ -569,6 +634,94 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     return savedAddresses.find((a) => a.id === selectedAddressId);
   }, [savedAddresses, selectedAddressId]);
 
+  // --- My Store Functions ---
+  const createMyStore = useCallback((store: MyStore) => {
+    setMyStore(store);
+  }, []);
+
+  const updateMyStore = useCallback((updates: Partial<MyStore>) => {
+    setMyStore((prev) => (prev ? { ...prev, ...updates } : prev));
+  }, []);
+
+  const addMyProduct = useCallback((product: MyStoreProduct) => {
+    setMyStore((prev) =>
+      prev ? { ...prev, products: [...prev.products, product] } : prev,
+    );
+  }, []);
+
+  const updateMyProduct = useCallback(
+    (id: string, updates: Partial<MyStoreProduct>) => {
+      setMyStore((prev) =>
+        prev
+          ? {
+              ...prev,
+              products: prev.products.map((p) =>
+                p.id === id ? { ...p, ...updates } : p,
+              ),
+            }
+          : prev,
+      );
+    },
+    [],
+  );
+
+  const removeMyProduct = useCallback((id: string) => {
+    setMyStore((prev) =>
+      prev
+        ? { ...prev, products: prev.products.filter((p) => p.id !== id) }
+        : prev,
+    );
+  }, []);
+
+  const addMyService = useCallback((service: MyStoreService) => {
+    setMyStore((prev) =>
+      prev ? { ...prev, services: [...prev.services, service] } : prev,
+    );
+  }, []);
+
+  const updateMyService = useCallback(
+    (id: string, updates: Partial<MyStoreService>) => {
+      setMyStore((prev) =>
+        prev
+          ? {
+              ...prev,
+              services: prev.services.map((s) =>
+                s.id === id ? { ...s, ...updates } : s,
+              ),
+            }
+          : prev,
+      );
+    },
+    [],
+  );
+
+  const removeMyService = useCallback((id: string) => {
+    setMyStore((prev) =>
+      prev
+        ? { ...prev, services: prev.services.filter((s) => s.id !== id) }
+        : prev,
+    );
+  }, []);
+
+  const addMyReel = useCallback((reel: MyStoreReel) => {
+    setMyStore((prev) =>
+      prev ? { ...prev, reels: [reel, ...prev.reels] } : prev,
+    );
+  }, []);
+
+  const removeMyReel = useCallback((id: string) => {
+    setMyStore((prev) =>
+      prev ? { ...prev, reels: prev.reels.filter((r) => r.id !== id) } : prev,
+    );
+  }, []);
+
+  const canUploadReelToday = useCallback((): boolean => {
+    if (!myStore) return false;
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    return !myStore.reels.some((r) => r.createdAt >= todayStart.getTime());
+  }, [myStore]);
+
   // --- Context Value ---
   const contextValue = useMemo(
     () => ({
@@ -637,6 +790,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       removeAddress,
       setSelectedAddressId,
       getSelectedAddress,
+
+      // My Store
+      myStore,
+      createMyStore,
+      updateMyStore,
+      addMyProduct,
+      updateMyProduct,
+      removeMyProduct,
+      addMyService,
+      updateMyService,
+      removeMyService,
+      addMyReel,
+      removeMyReel,
+      canUploadReelToday,
     }),
     [
       user,
@@ -650,6 +817,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       orders,
       savedAddresses,
       selectedAddressId,
+      myStore,
     ],
   );
 

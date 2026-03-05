@@ -124,9 +124,37 @@ export default function RootLayout() {
                   }}
                 />
 
-                {/* 10. Register My Dukaan Screen - Path: app/meri_dukaan/my-dukaan.tsx */}
+                {/* 10. Register My Dukaan Screens */}
                 <Stack.Screen
                   name="meri_dukaan/my-dukaan"
+                  options={{
+                    headerShown: false,
+                    presentation: "card",
+                  }}
+                />
+                <Stack.Screen
+                  name="meri_dukaan/create-store"
+                  options={{
+                    headerShown: false,
+                    presentation: "card",
+                  }}
+                />
+                <Stack.Screen
+                  name="meri_dukaan/add-product"
+                  options={{
+                    headerShown: false,
+                    presentation: "card",
+                  }}
+                />
+                <Stack.Screen
+                  name="meri_dukaan/add-service"
+                  options={{
+                    headerShown: false,
+                    presentation: "card",
+                  }}
+                />
+                <Stack.Screen
+                  name="meri_dukaan/upload-reel"
                   options={{
                     headerShown: false,
                     presentation: "card",
