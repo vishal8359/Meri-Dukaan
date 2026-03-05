@@ -1677,7 +1677,7 @@ export const mockReels: EnhancedReel[] = [
       isVerified: true,
     },
     item: {
-      id: "prod1",
+      id: "p1",
       name: "Fresh Tomatoes",
       price: 40,
       image:
@@ -1752,7 +1752,7 @@ export const mockReels: EnhancedReel[] = [
       isVerified: true,
     },
     item: {
-      id: "prod2",
+      id: "p19",
       name: "Designer Banarasi Saree",
       price: 4500,
       image:
@@ -1813,7 +1813,7 @@ export const mockReels: EnhancedReel[] = [
       isVerified: false,
     },
     item: {
-      id: "serv1",
+      id: "s7",
       name: "AC Repair Service",
       price: 500,
       image:
@@ -1861,7 +1861,7 @@ export const mockReels: EnhancedReel[] = [
       isVerified: true,
     },
     item: {
-      id: "serv2",
+      id: "s2",
       name: "Bridal Makeup Package",
       price: 5000,
       image:
@@ -1934,7 +1934,7 @@ export const mockReels: EnhancedReel[] = [
       isVerified: false,
     },
     item: {
-      id: "prod3",
+      id: "p40",
       name: "Premium Arabica Coffee",
       price: 450,
       image:
