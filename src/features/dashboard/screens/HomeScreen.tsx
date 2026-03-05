@@ -81,7 +81,8 @@ const TOP_OFFERS = [
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { cart, allStores } = useApp();
+  const { cart, allStores, getSelectedAddress } = useApp();
+  const selectedAddress = getSelectedAddress();
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const bannerScrollRef = useRef<FlatList>(null);
@@ -363,7 +364,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.addressBar}
           activeOpacity={0.7}
-          onPress={() => router.push("/Profile/edit-profile" as any)}
+          onPress={() => router.push("/address/saved-addresses" as any)}
         >
           <View style={styles.addressPin}>
             <MapPin size={16} color={colors.brand.primary} />
@@ -372,7 +373,9 @@ export default function HomeScreen() {
             <Text style={styles.deliverLabel}>Deliver to</Text>
             <View style={styles.addressRow}>
               <Text style={styles.addressText} numberOfLines={1}>
-                Rajendra Nagar, Patna
+                {selectedAddress
+                  ? `${selectedAddress.address}, ${selectedAddress.city}`
+                  : "Select an address"}
               </Text>
               <ChevronDown size={14} color={colors.text.secondary} />
             </View>

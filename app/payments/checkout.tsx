@@ -41,6 +41,8 @@ export default function CheckoutScreen() {
     confirmBooking,
     placeOrder,
     user,
+    savedAddresses,
+    selectedAddressId,
   } = useApp();
   const params = useLocalSearchParams<{
     mode?: string;
@@ -58,7 +60,9 @@ export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<
     "cod" | "online" | null
   >(null);
-  const [selectedAddress, setSelectedAddress] = useState("default");
+  const [selectedAddress, setSelectedAddress] = useState(
+    selectedAddressId || savedAddresses.find((a) => a.isDefault)?.id || savedAddresses[0]?.id || "",
+  );
 
   // Derive order items based on checkout mode
   const orderProducts = useMemo(() => {
@@ -87,22 +91,13 @@ export default function CheckoutScreen() {
     orderProducts.length > 0 ? (productsSubtotal > 500 ? 0 : 40) : 0;
   const totalAmount = itemSubtotal + deliveryFee;
 
-  const addresses = [
-    {
-      id: "default",
-      name: "Home",
-      address: "Rajendra Nagar, Patna - 800016",
-      phone: "+91 98765 43210",
-      isDefault: true,
-    },
-    {
-      id: "office",
-      name: "Office",
-      address: "Boring Road, Patna - 800001",
-      phone: "+91 98765 43210",
-      isDefault: false,
-    },
-  ];
+  const addresses = savedAddresses.map((a) => ({
+    id: a.id,
+    name: a.label,
+    address: `${a.address}, ${a.city} - ${a.pincode}`,
+    phone: a.phone,
+    isDefault: a.isDefault,
+  }));
 
   const paymentMethods = [
     {
@@ -336,7 +331,7 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/address/saved-addresses" as any)}>
               <Text style={styles.addNewText}>+ Add New</Text>
             </TouchableOpacity>
           </View>

@@ -83,6 +83,18 @@ export interface Order {
   deliveryPhone: string;
 }
 
+// User Address interface
+export interface UserAddress {
+  id: string;
+  label: string; // e.g. "Home", "Office"
+  address: string;
+  city: string;
+  state: string;
+  pincode: string;
+  phone: string;
+  isDefault: boolean;
+}
+
 // User Profile interface
 export interface UserProfile {
   name: string;
@@ -156,6 +168,15 @@ interface AppContextType {
   placeOrder: (order: Order) => void;
   getOrderById: (orderId: string) => Order | undefined;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
+
+  // Address Management
+  savedAddresses: UserAddress[];
+  selectedAddressId: string | null;
+  addAddress: (address: UserAddress) => void;
+  updateAddress: (id: string, updates: Partial<UserAddress>) => void;
+  removeAddress: (id: string) => void;
+  setSelectedAddressId: (id: string) => void;
+  getSelectedAddress: () => UserAddress | undefined;
 }
 
 interface CartItem {
@@ -181,6 +202,31 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [followedStoreIds, setFollowedStoreIds] = useState<string[]>([]);
   const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
   const [orders, setOrders] = useState<Order[]>([]);
+
+  // --- Address State ---
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([
+    {
+      id: "addr_1",
+      label: "Home",
+      address: "Rajendra Nagar",
+      city: "Patna",
+      state: "Bihar",
+      pincode: "800016",
+      phone: "+91 98765 43210",
+      isDefault: true,
+    },
+    {
+      id: "addr_2",
+      label: "Office",
+      address: "Boring Road",
+      city: "Patna",
+      state: "Bihar",
+      pincode: "800001",
+      phone: "+91 98765 43210",
+      isDefault: false,
+    },
+  ]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>("addr_1");
 
   // --- User Functions ---
   const login = (name: string) => setUser({ name, isLoggedIn: true });
@@ -478,6 +524,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
+  // --- Address Functions ---
+  const addAddress = useCallback((address: UserAddress) => {
+    setSavedAddresses((prev) => {
+      // If new address is default, unset previous default
+      if (address.isDefault) {
+        return [...prev.map((a) => ({ ...a, isDefault: false })), address];
+      }
+      return [...prev, address];
+    });
+  }, []);
+
+  const updateAddress = useCallback(
+    (id: string, updates: Partial<UserAddress>) => {
+      setSavedAddresses((prev) =>
+        prev.map((a) => {
+          if (a.id === id) return { ...a, ...updates };
+          // If updated address becomes default, unset others
+          if (updates.isDefault) return { ...a, isDefault: false };
+          return a;
+        }),
+      );
+    },
+    [],
+  );
+
+  const removeAddress = useCallback(
+    (id: string) => {
+      setSavedAddresses((prev) => prev.filter((a) => a.id !== id));
+      if (selectedAddressId === id) {
+        setSelectedAddressId(
+          savedAddresses.find((a) => a.id !== id && a.isDefault)?.id ??
+            savedAddresses.find((a) => a.id !== id)?.id ??
+            null,
+        );
+      }
+    },
+    [selectedAddressId, savedAddresses],
+  );
+
+  const getSelectedAddress = useCallback((): UserAddress | undefined => {
+    return savedAddresses.find((a) => a.id === selectedAddressId);
+  }, [savedAddresses, selectedAddressId]);
+
   // --- Context Value ---
   const contextValue = useMemo(
     () => ({
@@ -537,6 +626,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       placeOrder,
       getOrderById,
       updateOrderStatus,
+
+      // Addresses
+      savedAddresses,
+      selectedAddressId,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      setSelectedAddressId,
+      getSelectedAddress,
     }),
     [
       user,
@@ -548,6 +646,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       bookedServices,
       followedStoreIds,
       orders,
+      savedAddresses,
+      selectedAddressId,
     ],
   );
 
