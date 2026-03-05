@@ -1,5 +1,6 @@
 // src/components/common/StickyHeader.tsx
 import { useApp } from "@/src/context/AppContext";
+import { useNotifications } from "@/src/context/NotificationContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { SearchResult, useDebounceSearch } from "@/src/hooks/useDebounceSearch";
 import { DrawerActions } from "@react-navigation/native";
@@ -35,6 +36,7 @@ export const StickyHeader = () => {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { cart, wishlist } = useApp();
+  const { unreadCount } = useNotifications();
   const { t } = useSettings();
 
   const {
@@ -151,7 +153,13 @@ export const StickyHeader = () => {
               onPress={() => router.push("/notification/notifications" as any)}
             >
               <Bell size={18} color={colors.text.inverse} />
-              <View style={styles.notifDot} />
+              {unreadCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -451,17 +459,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
-  },
-  notifDot: {
-    position: "absolute",
-    top: 7,
-    right: 8,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.status.error,
-    borderWidth: 1.5,
-    borderColor: colors.brand.primary,
   },
   cartBadge: {
     position: "absolute",

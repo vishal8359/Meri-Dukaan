@@ -127,8 +127,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (TOP_OFFERS.length <= 1) return;
     const interval = setInterval(() => {
-      bannerIndexRef.current =
-        (bannerIndexRef.current + 1) % TOP_OFFERS.length;
+      bannerIndexRef.current = (bannerIndexRef.current + 1) % TOP_OFFERS.length;
       bannerScrollRef.current?.scrollToIndex({
         index: bannerIndexRef.current,
         animated: true,
@@ -543,9 +542,7 @@ export default function HomeScreen() {
             })}
             onScrollToIndexFailed={() => {}}
             onMomentumScrollEnd={(e) => {
-              const idx = Math.round(
-                e.nativeEvent.contentOffset.x / 186,
-              );
+              const idx = Math.round(e.nativeEvent.contentOffset.x / 186);
               trendingIndexRef.current = idx;
             }}
           />

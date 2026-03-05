@@ -1,4 +1,9 @@
-// app/notifications.tsx
+// app/notification/notifications.tsx
+import {
+    AppNotification,
+    NotificationCategory,
+    useNotifications,
+} from "@/src/context/NotificationContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
@@ -7,15 +12,23 @@ import {
     Bell,
     BellOff,
     CheckCheck,
+    Gift,
+    MapPin,
     Package,
+    RefreshCw,
     ShoppingBag,
     Store,
+    Tag,
+    Trash2,
+    TrendingDown,
     Truck,
+    XCircle,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
     FlatList,
     Platform,
+    Pressable,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -23,111 +36,157 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// ── Types ──────────────────────────────────────────
-interface Notification {
-  id: string;
-  type: "order" | "delivery" | "store" | "offer" | "general";
-  title: string;
-  message: string;
-  time: string;
-  read: boolean;
-  section?: string;
-}
+// ── Icon / color mapping per notification type ─────
 
-// ── Mock Data ──────────────────────────────────────
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    type: "order",
-    title: "Order Delivered",
-    message: "Your order #ORD001 has been delivered successfully",
-    time: "2 hours ago",
-    read: false,
-    section: "Today",
-  },
-  {
-    id: "2",
-    type: "offer",
-    title: "Special Offer!",
-    message: "Get 20% off on all vegetables at Sharma Kirana",
-    time: "5 hours ago",
-    read: false,
-    section: "Today",
-  },
-  {
-    id: "3",
-    type: "delivery",
-    title: "Out for Delivery",
-    message: "Your order #ORD002 is out for delivery",
-    time: "1 day ago",
-    read: true,
-    section: "Yesterday",
-  },
-  {
-    id: "4",
-    type: "store",
-    title: "New Store Near You",
-    message: "Organic Farms just opened 500m away from you",
-    time: "2 days ago",
-    read: true,
-    section: "Earlier",
-  },
-  {
-    id: "5",
-    type: "order",
-    title: "Order Confirmed",
-    message: "Your order #ORD003 has been confirmed",
-    time: "3 days ago",
-    read: true,
-    section: "Earlier",
-  },
-];
-
-// ── Icon + Color Map ───────────────────────────────
-const NOTIFICATION_META: Record<
-  Notification["type"],
-  { Icon: any; color: string; label: string }
+const TYPE_META: Record<
+  string,
+  { Icon: any; color: string; bgTint: string; label: string }
 > = {
-  order: { Icon: ShoppingBag, color: colors.brand.primary, label: "Order" },
-  delivery: { Icon: Truck, color: colors.status.info, label: "Delivery" },
-  store: { Icon: Store, color: colors.brand.accent, label: "Store" },
-  offer: { Icon: Package, color: colors.status.success, label: "Offer" },
-  general: { Icon: Bell, color: colors.text.secondary, label: "General" },
+  order_placed: {
+    Icon: ShoppingBag,
+    color: colors.brand.primary,
+    bgTint: colors.brand.primary + "14",
+    label: "Order",
+  },
+  order_confirmed: {
+    Icon: Package,
+    color: colors.status.info,
+    bgTint: colors.status.infoLight,
+    label: "Confirmed",
+  },
+  order_shipped: {
+    Icon: Truck,
+    color: colors.tint.blue,
+    bgTint: colors.tint.blueLight,
+    label: "Shipped",
+  },
+  order_delivered: {
+    Icon: CheckCheck,
+    color: colors.status.success,
+    bgTint: colors.status.successLight,
+    label: "Delivered",
+  },
+  order_cancelled: {
+    Icon: XCircle,
+    color: colors.status.error,
+    bgTint: colors.status.errorLight,
+    label: "Cancelled",
+  },
+  offer: {
+    Icon: Gift,
+    color: colors.brand.accent,
+    bgTint: colors.tint.orangeLight,
+    label: "Offer",
+  },
+  price_drop: {
+    Icon: TrendingDown,
+    color: colors.status.success,
+    bgTint: colors.tint.greenLight,
+    label: "Price Drop",
+  },
+  back_in_stock: {
+    Icon: RefreshCw,
+    color: colors.tint.purple,
+    bgTint: colors.tint.purpleLight,
+    label: "Back in Stock",
+  },
+  new_store: {
+    Icon: Store,
+    color: colors.brand.secondary,
+    bgTint: colors.tint.goldLight,
+    label: "New Store",
+  },
+  store_update: {
+    Icon: MapPin,
+    color: colors.status.info,
+    bgTint: colors.status.infoLight,
+    label: "Store",
+  },
+  general: {
+    Icon: Bell,
+    color: colors.text.secondary,
+    bgTint: colors.ui.background,
+    label: "General",
+  },
 };
 
-// ── List Item (extracted outside component for stable reference) ──
-const NotificationItem = React.memo(
+// ── Category filter tabs ───────────────────────────
+
+type FilterKey = "all" | NotificationCategory;
+
+const FILTERS: { key: FilterKey; label: string; Icon: any }[] = [
+  { key: "all", label: "All", Icon: Bell },
+  { key: "orders", label: "Orders", Icon: ShoppingBag },
+  { key: "promotions", label: "Offers", Icon: Tag },
+  { key: "stores", label: "Stores", Icon: Store },
+];
+
+// ── Time helpers ───────────────────────────────────
+
+const DAY_MS = 86_400_000;
+
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return "Just now";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < DAY_MS) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 2 * DAY_MS) return "Yesterday";
+  if (diff < 7 * DAY_MS) return `${Math.floor(diff / DAY_MS)}d ago`;
+  return new Date(ts).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function sectionLabel(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < DAY_MS) return "Today";
+  if (diff < 2 * DAY_MS) return "Yesterday";
+  if (diff < 7 * DAY_MS) return "This Week";
+  return "Earlier";
+}
+
+// ── NotificationCard ───────────────────────────────
+
+const NotificationCard = React.memo(
   ({
     item,
     onPress,
+    onRemove,
   }: {
-    item: Notification;
-    onPress: (id: string) => void;
+    item: AppNotification;
+    onPress: (n: AppNotification) => void;
+    onRemove: (id: string) => void;
   }) => {
-    const meta = NOTIFICATION_META[item.type];
-    const { Icon, color, label } = meta;
+    const meta = TYPE_META[item.type] ?? TYPE_META.general;
+    const { Icon, color, bgTint, label } = meta;
 
     return (
-      <TouchableOpacity
-        style={[styles.card, !item.read && styles.cardUnread]}
-        onPress={() => onPress(item.id)}
-        activeOpacity={0.65}
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          !item.read && styles.cardUnread,
+          pressed && styles.cardPressed,
+        ]}
+        onPress={() => onPress(item)}
       >
-        {/* Colored left accent */}
-        <View style={[styles.cardAccent, { backgroundColor: color }]} />
+        {/* Left accent bar */}
+        {!item.read && (
+          <View style={[styles.cardAccent, { backgroundColor: color }]} />
+        )}
 
         {/* Icon */}
-        <View style={[styles.iconCircle, { backgroundColor: color + "14" }]}>
+        <View style={[styles.iconCircle, { backgroundColor: bgTint }]}>
           <Icon size={20} color={color} />
         </View>
 
-        {/* Content */}
+        {/* Body */}
         <View style={styles.cardBody}>
           <View style={styles.cardTopRow}>
-            <View style={[styles.typeBadge, { backgroundColor: color + "18" }]}>
+            <View style={[styles.typeBadge, { backgroundColor: bgTint }]}>
               <Text style={[styles.typeBadgeText, { color }]}>{label}</Text>
             </View>
-            <Text style={styles.cardTime}>{item.time}</Text>
+            <Text style={styles.cardTime}>{timeAgo(item.createdAt)}</Text>
           </View>
 
           <View style={styles.titleRow}>
@@ -138,81 +197,120 @@ const NotificationItem = React.memo(
           </View>
 
           <Text style={styles.cardMessage} numberOfLines={2}>
-            {item.message}
+            {item.body}
           </Text>
         </View>
-      </TouchableOpacity>
+
+        {/* Delete */}
+        <TouchableOpacity
+          style={styles.deleteBtn}
+          onPress={() => onRemove(item.id)}
+          hitSlop={10}
+        >
+          <Trash2 size={14} color={colors.text.tertiary} />
+        </TouchableOpacity>
+      </Pressable>
     );
   },
 );
 
 // ── Section Header ─────────────────────────────────
-const SectionHeader = ({ title }: { title: string }) => (
+
+const SectionHeader = React.memo(({ title }: { title: string }) => (
   <View style={styles.sectionHeader}>
     <View style={styles.sectionLine} />
     <Text style={styles.sectionTitle}>{title}</Text>
     <View style={styles.sectionLine} />
   </View>
-);
+));
 
 // ── Main Screen ────────────────────────────────────
+
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useSettings();
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
-    [notifications],
-  );
+  const { notifications, unreadCount, markRead, markAllRead, remove } =
+    useNotifications();
 
-  const markAsRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }, []);
+  const [filter, setFilter] = useState<FilterKey>("all");
 
-  const markAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+  // ── Derive filtered + sectioned flat list data ──
 
-  // Build a flat list with section headers injected
   const listData = useMemo(() => {
     const filtered =
-      filter === "unread"
-        ? notifications.filter((n) => !n.read)
-        : notifications;
+      filter === "all"
+        ? notifications
+        : notifications.filter((n) => n.category === filter);
 
-    const result: (Notification | { id: string; _sectionHeader: string })[] =
-      [];
+    const sorted = [...filtered].sort((a, b) => b.createdAt - a.createdAt);
+
+    const result: (AppNotification | { id: string; _section: string })[] = [];
     let lastSection = "";
-    for (const n of filtered) {
-      if (n.section && n.section !== lastSection) {
-        result.push({ id: `section-${n.section}`, _sectionHeader: n.section });
-        lastSection = n.section;
+    for (const n of sorted) {
+      const sec = sectionLabel(n.createdAt);
+      if (sec !== lastSection) {
+        result.push({ id: `sec-${sec}`, _section: sec });
+        lastSection = sec;
       }
       result.push(n);
     }
     return result;
   }, [filter, notifications]);
 
+  // ── Category-specific unread counts ──
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: unreadCount };
+    for (const n of notifications) {
+      if (!n.read) {
+        counts[n.category] = (counts[n.category] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [notifications, unreadCount]);
+
+  // ── Handlers ──
+
+  const handlePress = useCallback(
+    (n: AppNotification) => {
+      markRead(n.id);
+      if (n.route) {
+        router.push(n.route as any);
+      }
+    },
+    [markRead, router],
+  );
+
+  const handleRemove = useCallback(
+    (id: string) => {
+      remove(id);
+    },
+    [remove],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: any }) => {
-      if (item._sectionHeader) {
-        return <SectionHeader title={item._sectionHeader} />;
+      if (item._section) {
+        return <SectionHeader title={item._section} />;
       }
-      return <NotificationItem item={item} onPress={markAsRead} />;
+      return (
+        <NotificationCard
+          item={item}
+          onPress={handlePress}
+          onRemove={handleRemove}
+        />
+      );
     },
-    [markAsRead],
+    [handlePress, handleRemove],
   );
 
   const keyExtractor = useCallback((item: any) => item.id, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top - 25 }]}>
-      {/* ── Header ────────────────────────── */}
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ── Header ──────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backBtn}
@@ -224,7 +322,7 @@ export default function NotificationsScreen() {
 
         <View style={styles.headerCenter}>
           <View style={styles.headerIconWrap}>
-            <Bell size={18} color="#fff" />
+            <Bell size={16} color="#fff" />
           </View>
           <Text style={styles.headerTitle}>{t("notif.title")}</Text>
           {unreadCount > 0 && (
@@ -234,65 +332,78 @@ export default function NotificationsScreen() {
           )}
         </View>
 
-        <View style={{ width: 36 }} />
-      </View>
-
-      {/* ── Filter Bar ────────────────────── */}
-      <View style={styles.filterBar}>
-        <View style={styles.filterPills}>
-          {(["all", "unread"] as const).map((f) => {
-            const active = filter === f;
-            return (
-              <TouchableOpacity
-                key={f}
-                style={[styles.pill, active && styles.pillActive]}
-                onPress={() => setFilter(f)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[styles.pillText, active && styles.pillTextActive]}
-                >
-                  {f === "all" ? "All" : `Unread (${unreadCount})`}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {unreadCount > 0 && (
+        {unreadCount > 0 ? (
           <TouchableOpacity
             style={styles.markAllBtn}
-            onPress={markAllAsRead}
-            activeOpacity={0.7}
+            onPress={markAllRead}
+            hitSlop={8}
           >
-            <CheckCheck size={14} color={colors.brand.primary} />
-            <Text style={styles.markAllText}>{t("notif.markAllRead")}</Text>
+            <CheckCheck size={16} color={colors.brand.primary} />
           </TouchableOpacity>
+        ) : (
+          <View style={{ width: 36 }} />
         )}
       </View>
 
-      {/* ── Virtualized List ──────────────── */}
+      {/* ── Category Filter Chips ───────── */}
+      <View style={styles.filterBar}>
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          const count = categoryCounts[f.key] ?? 0;
+          return (
+            <TouchableOpacity
+              key={f.key}
+              style={[styles.chip, active && styles.chipActive]}
+              onPress={() => setFilter(f.key)}
+              activeOpacity={0.7}
+            >
+              <f.Icon
+                size={14}
+                color={active ? "#fff" : colors.text.secondary}
+              />
+              <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                {f.label}
+              </Text>
+              {count > 0 && (
+                <View
+                  style={[styles.chipBadge, active && styles.chipBadgeActive]}
+                >
+                  <Text
+                    style={[
+                      styles.chipBadgeText,
+                      active && styles.chipBadgeTextActive,
+                    ]}
+                  >
+                    {count}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* ── Notification List ───────────── */}
       <FlatList
         data={listData}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-        // Virtualization tuning
-        initialNumToRender={8}
-        maxToRenderPerBatch={10}
+        initialNumToRender={10}
+        maxToRenderPerBatch={12}
         windowSize={7}
         removeClippedSubviews={Platform.OS !== "web"}
-        updateCellsBatchingPeriod={50}
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <View style={styles.emptyIconCircle}>
-              <BellOff size={40} color={colors.text.secondary} />
+              <BellOff size={44} color={colors.ui.disabled} />
             </View>
             <Text style={styles.emptyTitle}>{t("notif.empty")}</Text>
             <Text style={styles.emptySub}>
-              No {filter === "unread" ? "unread " : ""}notifications right now.
-              {"\n"}Check back later.
+              {filter !== "all"
+                ? `No ${FILTERS.find((f) => f.key === filter)?.label.toLowerCase()} notifications.`
+                : "You're all caught up! Check back later."}
             </Text>
           </View>
         }
@@ -315,7 +426,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.border,
     ...shadows.small,
@@ -334,15 +445,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerIconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.brand.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   headerTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "800",
     color: colors.text.primary,
     letterSpacing: -0.3,
@@ -361,58 +472,70 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#fff",
   },
+  markAllBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.brand.primary + "12",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-  /* Filter Bar */
+  /* Filter chips */
   filterBar: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
-    backgroundColor: "#fff",
+    gap: 8,
+    backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.border,
   },
-  filterPills: {
+  chip: {
     flexDirection: "row",
-    gap: 8,
-  },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: radius.full,
     backgroundColor: colors.ui.background,
     borderWidth: 1,
     borderColor: colors.ui.border,
   },
-  pillActive: {
+  chipActive: {
     backgroundColor: colors.brand.primary,
     borderColor: colors.brand.primary,
   },
-  pillText: {
+  chipText: {
     fontSize: 13,
     fontWeight: "600",
     color: colors.text.secondary,
   },
-  pillTextActive: {
+  chipTextActive: {
     color: "#fff",
   },
-  markAllBtn: {
-    flexDirection: "row",
+  chipBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.status.error,
+    justifyContent: "center",
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    backgroundColor: colors.brand.primary + "0D",
+    paddingHorizontal: 4,
   },
-  markAllText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.brand.primary,
+  chipBadgeActive: {
+    backgroundColor: "rgba(255,255,255,0.3)",
+  },
+  chipBadgeText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#fff",
+  },
+  chipBadgeTextActive: {
+    color: "#fff",
   },
 
-  /* Section Headers */
+  /* Section headers */
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -426,7 +549,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ui.border,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.text.secondary,
     textTransform: "uppercase",
@@ -443,9 +566,9 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.ui.surface,
     borderRadius: radius.lg,
-    marginBottom: 12,
+    marginBottom: 10,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.ui.border,
@@ -453,32 +576,35 @@ const styles = StyleSheet.create({
   },
   cardUnread: {
     backgroundColor: colors.brand.primary + "06",
-    borderColor: colors.brand.primary + "22",
+    borderColor: colors.brand.primary + "20",
     ...shadows.medium,
+  },
+  cardPressed: {
+    opacity: 0.85,
   },
   cardAccent: {
     width: 4,
     alignSelf: "stretch",
   },
   iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 12,
-    marginRight: 12,
+    marginRight: 10,
   },
   cardBody: {
     flex: 1,
-    paddingVertical: 14,
-    paddingRight: 14,
+    paddingVertical: 12,
+    paddingRight: 4,
   },
   cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   typeBadge: {
     paddingHorizontal: 8,
@@ -494,7 +620,7 @@ const styles = StyleSheet.create({
   cardTime: {
     fontSize: 11,
     fontWeight: "500",
-    color: colors.text.secondary,
+    color: colors.text.tertiary,
   },
   titleRow: {
     flexDirection: "row",
@@ -502,7 +628,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.text.primary,
     flex: 1,
@@ -512,24 +638,30 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: colors.brand.primary,
-    marginLeft: 8,
+    marginLeft: 6,
   },
   cardMessage: {
     fontSize: 13,
     color: colors.text.secondary,
-    lineHeight: 19,
+    lineHeight: 18,
+  },
+  deleteBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    alignSelf: "stretch",
+    justifyContent: "center",
   },
 
-  /* Empty State */
+  /* Empty state */
   emptyWrap: {
     alignItems: "center",
     paddingVertical: 80,
     paddingHorizontal: spacing.lg,
   },
   emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: colors.ui.border,
     justifyContent: "center",
     alignItems: "center",

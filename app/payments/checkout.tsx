@@ -61,7 +61,10 @@ export default function CheckoutScreen() {
     "cod" | "online" | null
   >(null);
   const [selectedAddress, setSelectedAddress] = useState(
-    selectedAddressId || savedAddresses.find((a) => a.isDefault)?.id || savedAddresses[0]?.id || "",
+    selectedAddressId ||
+      savedAddresses.find((a) => a.isDefault)?.id ||
+      savedAddresses[0]?.id ||
+      "",
   );
 
   // Derive order items based on checkout mode
@@ -331,7 +334,9 @@ export default function CheckoutScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <TouchableOpacity onPress={() => router.push("/address/saved-addresses" as any)}>
+            <TouchableOpacity
+              onPress={() => router.push("/address/saved-addresses" as any)}
+            >
               <Text style={styles.addNewText}>+ Add New</Text>
             </TouchableOpacity>
           </View>

@@ -4,18 +4,18 @@ import { colors, radius, spacing } from "@/src/theme/colors";
 import { Check } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  BackHandler,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    BackHandler,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface AddressFormModalProps {
@@ -80,7 +80,12 @@ export const AddressFormModal: React.FC<AddressFormModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView
         style={styles.modalOverlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -94,7 +99,10 @@ export const AddressFormModal: React.FC<AddressFormModalProps> = ({
             {initial ? "Edit Address" : "Add New Address"}
           </Text>
 
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.formScroll}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            style={styles.formScroll}
+          >
             <Text style={styles.inputLabel}>Label *</Text>
             <TextInput
               style={styles.input}
@@ -167,10 +175,14 @@ export const AddressFormModal: React.FC<AddressFormModalProps> = ({
               style={styles.defaultToggle}
               onPress={() => setIsDefault(!isDefault)}
             >
-              <View style={[styles.checkbox, isDefault && styles.checkboxChecked]}>
+              <View
+                style={[styles.checkbox, isDefault && styles.checkboxChecked]}
+              >
                 {isDefault && <Check size={14} color={colors.text.inverse} />}
               </View>
-              <Text style={styles.defaultToggleText}>Set as default address</Text>
+              <Text style={styles.defaultToggleText}>
+                Set as default address
+              </Text>
             </TouchableOpacity>
           </ScrollView>
 

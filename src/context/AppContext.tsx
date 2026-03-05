@@ -1,14 +1,14 @@
 // src/context/AppContext.tsx
 
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import { EnhancedReel, mockReels, mockStores, Store } from "../assets/mockData";
 
@@ -226,7 +226,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       isDefault: false,
     },
   ]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>("addr_1");
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    "addr_1",
+  );
 
   // --- User Functions ---
   const login = (name: string) => setUser({ name, isLoggedIn: true });

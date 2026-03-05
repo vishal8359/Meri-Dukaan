@@ -4,22 +4,22 @@ import { useApp, UserAddress } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-  Check,
-  ChevronLeft,
-  Edit3,
-  MapPin,
-  Plus,
-  Trash2,
+    Check,
+    ChevronLeft,
+    Edit3,
+    MapPin,
+    Plus,
+    Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -36,7 +36,9 @@ export default function SavedAddressesScreen() {
   } = useApp();
 
   const [showForm, setShowForm] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<UserAddress | undefined>();
+  const [editingAddress, setEditingAddress] = useState<
+    UserAddress | undefined
+  >();
 
   const handleAdd = (data: Omit<UserAddress, "id">) => {
     const newAddr: UserAddress = {
@@ -123,14 +125,29 @@ export default function SavedAddressesScreen() {
             return (
               <TouchableOpacity
                 key={addr.id}
-                style={[styles.addressCard, isSelected && styles.addressCardSelected]}
+                style={[
+                  styles.addressCard,
+                  isSelected && styles.addressCardSelected,
+                ]}
                 onPress={() => handleSelect(addr)}
                 activeOpacity={0.7}
               >
                 <View style={styles.cardTop}>
                   <View style={styles.cardLabelRow}>
-                    <View style={[styles.pinIcon, isSelected && styles.pinIconSelected]}>
-                      <MapPin size={16} color={isSelected ? colors.text.inverse : colors.brand.primary} />
+                    <View
+                      style={[
+                        styles.pinIcon,
+                        isSelected && styles.pinIconSelected,
+                      ]}
+                    >
+                      <MapPin
+                        size={16}
+                        color={
+                          isSelected
+                            ? colors.text.inverse
+                            : colors.brand.primary
+                        }
+                      />
                     </View>
                     <Text style={styles.cardLabel}>{addr.label}</Text>
                     {addr.isDefault && (
@@ -170,7 +187,12 @@ export default function SavedAddressesScreen() {
                     onPress={() => handleDelete(addr)}
                   >
                     <Trash2 size={14} color={colors.status.error} />
-                    <Text style={[styles.cardActionText, { color: colors.status.error }]}>
+                    <Text
+                      style={[
+                        styles.cardActionText,
+                        { color: colors.status.error },
+                      ]}
+                    >
                       Delete
                     </Text>
                   </TouchableOpacity>
