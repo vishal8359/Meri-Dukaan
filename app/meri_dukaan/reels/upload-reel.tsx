@@ -1,8 +1,9 @@
 // app/meri_dukaan/reels/upload-reel.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Film, Upload } from "lucide-react-native";
+import { ArrowLeft, Film, Upload, Video, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Alert,
@@ -21,9 +22,56 @@ export default function UploadReelScreen() {
   const { addMyReel, canUploadReelToday, myStore } = useApp();
 
   const [caption, setCaption] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoUri, setVideoUri] = useState<string | null>(null);
+  const [videoName, setVideoName] = useState<string | null>(null);
 
   const alreadyUploaded = !canUploadReelToday();
+
+  const pickVideo = async () => {
+    if (alreadyUploaded) {
+      return Alert.alert(
+        "Daily Limit",
+        "You can upload only 1 reel per day. Come back tomorrow!",
+      );
+    }
+
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      return Alert.alert(
+        "Permission Required",
+        "Please allow access to your media library to upload videos.",
+      );
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["videos"],
+      allowsEditing: true,
+      videoMaxDuration: 60,
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    const fileName = asset.fileName ?? asset.uri.split("/").pop() ?? "video";
+    const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+    const allowedExts = ["mp4", "mov", "m4v", "avi"];
+
+    if (ext && !allowedExts.includes(ext)) {
+      return Alert.alert(
+        "Invalid Format",
+        "Please select a video file (MP4, MOV, M4V).",
+      );
+    }
+
+    setVideoUri(asset.uri);
+    setVideoName(fileName);
+  };
+
+  const clearVideo = () => {
+    setVideoUri(null);
+    setVideoName(null);
+  };
 
   const handleUpload = () => {
     if (alreadyUploaded) {
@@ -32,11 +80,11 @@ export default function UploadReelScreen() {
         "You can upload only 1 reel per day. Come back tomorrow!",
       );
     }
-    if (!videoUrl.trim()) return Alert.alert("Error", "Enter video URL");
+    if (!videoUri) return Alert.alert("Error", "Please select a video file");
 
     addMyReel({
       id: `reel_${Date.now()}`,
-      videoUrl: videoUrl.trim(),
+      videoUrl: videoUri,
       caption: caption.trim(),
       createdAt: Date.now(),
       likes: 0,
@@ -100,18 +148,37 @@ export default function UploadReelScreen() {
           </Text>
         </View>
 
-        {/* Video URL */}
+        {/* Video Picker */}
         <View style={styles.section}>
-          <Text style={styles.label}>Video URL *</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Paste video URL here"
-            placeholderTextColor={colors.ui.muted}
-            value={videoUrl}
-            onChangeText={setVideoUrl}
-            editable={!alreadyUploaded}
-            autoCapitalize="none"
-          />
+          <Text style={styles.label}>Video File *</Text>
+          {videoUri ? (
+            <View style={styles.selectedFile}>
+              <View style={styles.selectedFileInfo}>
+                <Video size={20} color={colors.brand.primary} />
+                <Text style={styles.selectedFileName} numberOfLines={1}>
+                  {videoName}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.clearFileBtn}
+                onPress={clearVideo}
+                disabled={alreadyUploaded}
+              >
+                <X size={16} color={colors.status.error} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.pickBtn}
+              onPress={pickVideo}
+              disabled={alreadyUploaded}
+              activeOpacity={0.7}
+            >
+              <Video size={24} color={colors.brand.primary} />
+              <Text style={styles.pickBtnText}>Choose MP4 Video</Text>
+              <Text style={styles.pickBtnHint}>Tap to browse your gallery</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.hint}>
             Max duration: 1 minute. Supported: MP4, MOV
           </Text>
@@ -306,5 +373,60 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,
+  },
+
+  /* Video Picker */
+  pickBtn: {
+    backgroundColor: colors.ui.surface,
+    borderWidth: 1.5,
+    borderColor: colors.brand.primary + "40",
+    borderStyle: "dashed",
+    borderRadius: radius.md,
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  },
+  pickBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: colors.brand.primary,
+    marginTop: 4,
+  },
+  pickBtnHint: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+  },
+  selectedFile: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.brand.primary + "0A",
+    borderWidth: 1,
+    borderColor: colors.brand.primary + "30",
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+  },
+  selectedFileInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  selectedFileName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text.primary,
+    flex: 1,
+  },
+  clearFileBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.status.error + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: spacing.sm,
   },
 });

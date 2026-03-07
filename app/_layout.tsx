@@ -160,6 +160,13 @@ export default function RootLayout() {
                     presentation: "card",
                   }}
                 />
+                <Stack.Screen
+                  name="meri_dukaan/economics"
+                  options={{
+                    headerShown: false,
+                    presentation: "card",
+                  }}
+                />
 
                 {/* 11. Register Transporter Screen - Path: app/Transporter/transporter.tsx */}
                 <Stack.Screen

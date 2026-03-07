@@ -81,7 +81,7 @@ export default function ReelDashboardScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={22} color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Meri Dhindora</Text>
+        <Text style={styles.headerTitle}>My Ads</Text>
         <TouchableOpacity
           style={[styles.uploadHeaderBtn, !canUpload && { opacity: 0.5 }]}
           onPress={() => {
@@ -277,7 +277,8 @@ export default function ReelDashboardScreen() {
                     />
                   ) : (
                     <View style={styles.reelThumbPlaceholder}>
-                      <Film size={28} color={colors.ui.muted} />
+                      <Film size={28} color={colors.brand.primary} />
+                      <Text style={styles.reelThumbLabel}>Reel</Text>
                     </View>
                   )}
                   {/* Action overlay */}
@@ -598,9 +599,15 @@ const styles = StyleSheet.create({
   reelThumbPlaceholder: {
     width: "100%",
     height: 160,
-    backgroundColor: colors.ui.backgroundAlt,
+    backgroundColor: colors.brand.primary + "0A",
     justifyContent: "center",
     alignItems: "center",
+  },
+  reelThumbLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.brand.primary,
+    marginTop: 4,
   },
   reelOverlay: {
     position: "absolute",

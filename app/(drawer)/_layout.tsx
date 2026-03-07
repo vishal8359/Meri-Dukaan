@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
+    BarChart3,
     Calendar,
     ChevronRight,
     Film,
@@ -92,11 +93,18 @@ function CustomDrawerContent(props: any) {
       route: "/meri_dukaan/my-dukaan",
     },
     {
-      label: "Meri Dhindora",
+      label: "My Ads",
       icon: Film,
       color: colors.brand.primary,
       bgColor: colors.tint.blueLight,
       route: "/meri_dukaan/reels/dashboard",
+    },
+    {
+      label: "Store Economics",
+      icon: BarChart3,
+      color: colors.tint.purple,
+      bgColor: colors.tint.purpleLight,
+      route: "/meri_dukaan/economics",
     },
     {
       label: t("drawer.transporter"),

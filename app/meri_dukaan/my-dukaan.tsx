@@ -246,6 +246,11 @@ export default function MyDukaanScreen() {
     if (prod) updateMyProduct(id, { inStock: !prod.inStock });
   };
 
+  // Update product stock quantity
+  const handleUpdateStock = (id: string, quantity: number) => {
+    updateMyProduct(id, { quantity });
+  };
+
   // Remove product
   const handleRemoveProduct = (id: string) => {
     Alert.alert("Remove Product", "Are you sure?", [
@@ -334,6 +339,7 @@ export default function MyDukaanScreen() {
                 onToggleStock={handleToggleStock}
                 onRemove={handleRemoveProduct}
                 onAdd={() => router.push("/meri_dukaan/inventory/add-product" as any)}
+                onUpdateStock={handleUpdateStock}
               />
             )}
             {activeTab === "services" && (

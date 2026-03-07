@@ -3,7 +3,7 @@ import { QuantityUnit, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
     Alert,
     Image,
@@ -16,6 +16,11 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+
+interface QuantityVariant {
+  amount: string;
+  unit: QuantityUnit;
+}
 
 const PLACEHOLDER_PRODUCT_IMAGES = [
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
@@ -42,6 +47,32 @@ export default function AddProductScreen() {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<QuantityUnit>("pcs");
   const [images, setImages] = useState<string[]>([]);
+
+  // Quantity variant tags (e.g. "200 g", "400 g", "1 kg")
+  const [variants, setVariants] = useState<QuantityVariant[]>([]);
+  const [variantAmt, setVariantAmt] = useState("");
+  const [variantUnit, setVariantUnit] = useState<QuantityUnit>("g");
+  const variantInputRef = useRef<TextInput>(null);
+
+  const handleAddVariant = () => {
+    const trimmed = variantAmt.trim();
+    if (!trimmed || isNaN(Number(trimmed)) || Number(trimmed) <= 0) {
+      return Alert.alert("Error", "Enter a valid quantity");
+    }
+    const exists = variants.some(
+      (v) => v.amount === trimmed && v.unit === variantUnit,
+    );
+    if (exists) {
+      return Alert.alert("Duplicate", "This variant already exists");
+    }
+    setVariants((prev) => [...prev, { amount: trimmed, unit: variantUnit }]);
+    setVariantAmt("");
+    variantInputRef.current?.focus();
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    setVariants((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleAddImage = () => {
     if (images.length >= 5) {
@@ -79,6 +110,14 @@ export default function AddProductScreen() {
       { text: "OK", onPress: () => router.back() },
     ]);
   };
+
+  const VARIANT_UNITS: { value: QuantityUnit; label: string }[] = [
+    { value: "g", label: "g" },
+    { value: "kg", label: "kg" },
+    { value: "ml", label: "ml" },
+    { value: "l", label: "l" },
+    { value: "pcs", label: "pcs" },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -191,6 +230,79 @@ export default function AddProductScreen() {
               );
             })}
           </View>
+        </View>
+
+        {/* Quantity Variants */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Quantity Variants</Text>
+          <Text style={styles.hint}>
+            Add size options customers can choose from (e.g. 200g, 500g, 1kg)
+          </Text>
+
+          {/* Variant Input Row */}
+          <View style={styles.variantInputRow}>
+            <TextInput
+              ref={variantInputRef}
+              style={[styles.textInput, styles.variantAmtInput]}
+              placeholder="e.g. 200"
+              placeholderTextColor={colors.ui.muted}
+              value={variantAmt}
+              onChangeText={setVariantAmt}
+              keyboardType="numeric"
+            />
+
+            {/* Unit mini-selector */}
+            <View style={styles.variantUnitRow}>
+              {VARIANT_UNITS.map((u) => {
+                const active = variantUnit === u.value;
+                return (
+                  <TouchableOpacity
+                    key={u.value}
+                    style={[
+                      styles.variantUnitBtn,
+                      active && styles.variantUnitBtnActive,
+                    ]}
+                    onPress={() => setVariantUnit(u.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.variantUnitText,
+                        active && styles.variantUnitTextActive,
+                      ]}
+                    >
+                      {u.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity
+              style={styles.variantAddBtn}
+              onPress={handleAddVariant}
+            >
+              <Text style={styles.variantAddBtnText}>+ Add</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Variant Tags */}
+          {variants.length > 0 && (
+            <View style={styles.variantTags}>
+              {variants.map((v, i) => (
+                <View key={`${v.amount}-${v.unit}-${i}`} style={styles.variantTag}>
+                  <Text style={styles.variantTagText}>
+                    {v.amount} {v.unit}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveVariant(i)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.variantTagRemove}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Save */}
@@ -318,6 +430,83 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.text.tertiary,
     marginTop: 1,
+  },
+
+  /* Quantity Variants */
+  hint: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginBottom: spacing.sm,
+  },
+  variantInputRow: {
+    gap: 10,
+  },
+  variantAmtInput: {
+    flex: undefined,
+  },
+  variantUnitRow: {
+    flexDirection: "row",
+    gap: 6,
+    marginTop: 6,
+  },
+  variantUnitBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: radius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
+  },
+  variantUnitBtnActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary + "0F",
+  },
+  variantUnitText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.secondary,
+  },
+  variantUnitTextActive: {
+    color: colors.brand.primary,
+  },
+  variantAddBtn: {
+    backgroundColor: colors.brand.primary,
+    paddingVertical: 10,
+    borderRadius: radius.md,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  variantAddBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.inverse,
+  },
+  variantTags: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: spacing.sm,
+  },
+  variantTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.brand.primary + "12",
+    borderWidth: 1,
+    borderColor: colors.brand.primary + "30",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  variantTagText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.brand.primary,
+  },
+  variantTagRemove: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.status.error,
   },
 
   /* Save */
