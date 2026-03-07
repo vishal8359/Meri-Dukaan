@@ -3,55 +3,58 @@ import { useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
 import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
-import { colors, radius, shadows } from "@/src/theme/colors";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    ChevronRight,
-    Clock,
-    MapPin,
-    MessageCircle,
-    Phone,
-    Play,
-    Search,
-    Share2,
-    Star,
-    UserCheck,
-    UserPlus,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  MapPin,
+  Navigation,
+  Phone,
+  Play,
+  Search,
+  Share2,
+  ShoppingBag,
+  Star,
+  UserCheck,
+  UserPlus,
+  Wrench,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    Linking,
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Linking,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
-
-// Scroll threshold for search bar appearance (300% of screen height)
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
+  Dimensions.get("window");
+const HERO_HEIGHT = 380;
+const AVATAR_SIZE = 72;
 const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
 
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { t } = useSettings();
-  const { getStoreById, reels, isFollowingStore, toggleFollowStore } = useApp();
+  const { getStoreById, reels, isFollowingStore, toggleFollowStore } =
+    useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
-
-  // Bounce animation for search bar
   const searchBounceAnim = useRef(new Animated.Value(0)).current;
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
@@ -69,13 +72,11 @@ export default function StoreDetailScreen() {
       ? store.images
       : [store?.image || ""];
 
-  // Get reels count for this store
   const storeReelsCount = useMemo(
     () => reels.filter((r: EnhancedReel) => r.store.id === id).length,
     [reels, id],
   );
 
-  // Trigger bounce animation when search becomes visible
   useEffect(() => {
     if (isSearchVisible) {
       searchBounceAnim.setValue(-50);
@@ -88,7 +89,7 @@ export default function StoreDetailScreen() {
     }
   }, [isSearchVisible]);
 
-  // Mock data preserved
+  // ─── Mock data ──────────────────────────────────────────────────────────────
   const products = [
     {
       id: "1",
@@ -260,6 +261,7 @@ export default function StoreDetailScreen() {
     },
   ];
 
+  // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleBookService = (service: any) => {
     console.log("Booking service:", service.name);
   };
@@ -285,15 +287,13 @@ export default function StoreDetailScreen() {
     });
   };
 
-  const handleShare = async () => {
-    // Implement share functionality
-  };
+  const handleShare = async () => {};
 
   const handleCall = () => {
-    // Mock phone number since Store doesn't have phone property
     Linking.openURL(`tel:+919876543210`);
   };
 
+  // ─── Not-found state ────────────────────────────────────────────────────────
   if (!store) {
     return (
       <SafeAreaView style={styles.container}>
@@ -312,10 +312,10 @@ export default function StoreDetailScreen() {
     );
   }
 
-  // Header Component
+  // ─── Header ─────────────────────────────────────────────────────────────────
   const renderHeader = () => (
     <View onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
-      {/* Hero Image Section with Carousel */}
+      {/* ══════ HERO IMAGE CAROUSEL ══════ */}
       <View style={styles.heroSection}>
         <FlatList
           ref={imageCarouselRef}
@@ -327,9 +327,9 @@ export default function StoreDetailScreen() {
           snapToInterval={SCREEN_WIDTH}
           snapToAlignment="start"
           onScroll={(e) => {
-            const contentOffsetX = e.nativeEvent.contentOffset.x;
-            const index = Math.round(contentOffsetX / SCREEN_WIDTH);
-            setCurrentImageIndex(Math.min(index, storeImages.length - 1));
+            const x = e.nativeEvent.contentOffset.x;
+            const idx = Math.round(x / SCREEN_WIDTH);
+            setCurrentImageIndex(Math.min(idx, storeImages.length - 1));
           }}
           renderItem={({ item }) => (
             <Image
@@ -343,158 +343,157 @@ export default function StoreDetailScreen() {
           scrollEnabled={storeImages.length > 1}
         />
 
-        {/* Gradient Overlay */}
+        {/* Dark gradient overlay */}
         <LinearGradient
-          colors={["rgba(0,0,0,0.4)", "transparent", "rgba(0,0,0,0.6)"]}
-          locations={[0, 0.4, 1]}
-          style={styles.heroGradient}
+          colors={[
+            "rgba(0,0,0,0.45)",
+            "transparent",
+            "rgba(15,23,42,0.85)",
+          ]}
+          locations={[0, 0.35, 1]}
+          style={StyleSheet.absoluteFillObject}
         />
 
-        {/* Top Navigation Bar */}
+        {/* Top bar: back + actions */}
         <View style={styles.heroTopBar}>
+          <TouchableOpacity style={styles.glassBtn} onPress={handleBack}>
+            <ChevronLeft size={22} color="#fff" />
+          </TouchableOpacity>
+
           <View style={styles.heroTopRight}>
-            {/* Reels Button - Always visible */}
             <TouchableOpacity
+              style={styles.glassBtn}
               onPress={handleReelsPress}
-              style={[
-                styles.reelsBtnContainer,
-                storeReelsCount === 0 && { opacity: 0.6 },
-              ]}
             >
-              <View style={styles.reelsBtnRow}>
-                <Play
-                  size={14}
-                  color={colors.text.inverse}
-                  fill={colors.text.inverse}
-                />
-                <Text style={styles.reelsBtnText}>{storeReelsCount}</Text>
-              </View>
+              <Play size={14} color="#fff" fill="#fff" />
+              <Text style={styles.glassBtnText}>{storeReelsCount}</Text>
             </TouchableOpacity>
 
-            {/* Rating Badge */}
-            <View style={styles.ratingBadge}>
-              <Star
-                size={14}
-                color={colors.brand.star}
-                fill={colors.brand.star}
-              />
-              <Text style={styles.ratingText}>{store?.rating}</Text>
-            </View>
+            <TouchableOpacity style={styles.glassBtn} onPress={handleShare}>
+              <Share2 size={16} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Pagination Dots */}
+        {/* Distance badge */}
+        <View style={styles.distanceBadge}>
+          <Navigation size={11} color="#fff" />
+          <Text style={styles.distanceText}>{store.distance}</Text>
+        </View>
+
+        {/* Pagination dots */}
         {storeImages.length > 1 && (
-          <View style={styles.paginationContainer}>
+          <View style={styles.paginationRow}>
             {storeImages.map((_: string, idx: number) => (
               <View
                 key={`dot-${idx}`}
                 style={[
-                  styles.paginationDot,
-                  idx === currentImageIndex && styles.paginationDotActive,
+                  styles.dot,
+                  idx === currentImageIndex && styles.dotActive,
                 ]}
               />
             ))}
           </View>
         )}
 
-        {/* Store Name Overlay on Hero */}
-        <View style={styles.heroBottomInfo}>
-          <Text style={styles.heroStoreName}>{store?.name}</Text>
-          <View style={styles.heroTags}>
-            <View style={styles.storeTypeBadge}>
-              <Text style={styles.storeTypeText}>{store?.type}</Text>
-            </View>
-            <View style={styles.openBadge}>
-              <Clock size={10} color={colors.status.successDark} />
-              <Text style={styles.openText}>{t("store.openNow")}</Text>
-            </View>
-          </View>
-        </View>
       </View>
 
-      {/* Store Info Card */}
-      <View style={styles.storeCard}>
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{store?.followers || "2.5K"}</Text>
+      {/* ══════ STORE PROFILE CARD ══════ */}
+      <View style={styles.profileCard}>
+        {/* Avatar bridge */}
+        <View style={styles.avatarWrapper}>
+          <Image
+            source={{ uri: storeImages[0] || store.image }}
+            style={styles.avatar}
+          />
+          <View style={styles.avatarRing} />
+        </View>
+
+        <Text style={styles.storeName}>{store.name}</Text>
+
+        {/* Type / Open / Rating pills */}
+        <View style={styles.metaRow}>
+          <View style={styles.typePill}>
+            <Text style={styles.typePillText}>{store.type}</Text>
+          </View>
+          <View style={styles.openPill}>
+            <Clock size={10} color={colors.status.successDark} />
+            <Text style={styles.openPillText}>{t("store.openNow")}</Text>
+          </View>
+          <View style={styles.ratingPill}>
+            <Star
+              size={12}
+              color={colors.brand.star}
+              fill={colors.brand.star}
+            />
+            <Text style={styles.ratingPillText}>{store.rating}</Text>
+          </View>
+        </View>
+
+        {/* Location */}
+        <TouchableOpacity style={styles.locationChip}>
+          <MapPin size={12} color={colors.text.secondary} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            123 Market Street, City Center
+          </Text>
+          <Clock size={12} color={colors.brand.star} style={{ marginLeft: 8 }} />
+          <Text style={styles.hoursText}>9:00 AM – 9:00 PM</Text>
+          <Navigation size={12} color={colors.brand.primary} />
+        </TouchableOpacity>
+
+        {/* ── Stats strip ── */}
+        <View style={styles.statsStrip}>
+          <View style={styles.statCell}>
+            <Text style={styles.statValue}>
+              {store.followers || "2.5K"}
+            </Text>
             <Text style={styles.statLabel}>{t("store.followers")}</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <View style={styles.statCell}>
             <Text style={styles.statValue}>{products.length}</Text>
             <Text style={styles.statLabel}>{t("store.products")}</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{store?.distance || "1.2 km"}</Text>
-            <Text style={styles.statLabel}>{t("store.away")}</Text>
+          <View style={styles.statCell}>
+            <Text style={styles.statValue}>{services.length}</Text>
+            <Text style={styles.statLabel}>{t("store.services")}</Text>
           </View>
         </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionRow}>
+        {/* ── Primary actions ── */}
+        <View style={styles.primaryActions}>
           <TouchableOpacity
-            style={[styles.actionBtn, isFollowing && styles.actionBtnFollowing]}
+            style={[
+              styles.followBtn,
+              isFollowing && styles.followBtnActive,
+            ]}
             onPress={handleFollow}
+            activeOpacity={0.8}
           >
             {isFollowing ? (
-              <UserCheck size={18} color={colors.text.inverse} />
+              <UserCheck size={16} color="#fff" />
             ) : (
-              <UserPlus size={18} color={colors.brand.primary} />
+              <UserPlus size={16} color="#fff" />
             )}
-            <Text
-              style={[
-                styles.actionBtnText,
-                isFollowing && styles.actionBtnTextFollowing,
-              ]}
-            >
+            <Text style={styles.followBtnText}>
               {isFollowing ? "Following" : "Follow"}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionBtn} onPress={handleShare}>
-            <Share2 size={18} color={colors.status.info} />
-            <Text style={styles.actionBtnText}>{t("store.share")}</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
-            style={styles.actionBtnPrimary}
+            style={styles.callBtn}
             onPress={handleCall}
+            activeOpacity={0.8}
           >
-            <Phone size={18} color={colors.text.inverse} />
-            <Text style={styles.actionBtnTextPrimary}>
-              {t("store.callStore")}
-            </Text>
+            <Phone size={16} color="#fff" />
+            <Text style={styles.callBtnText}>{t("store.callStore")}</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Location Info */}
-        <TouchableOpacity style={styles.locationRow}>
-          <MapPin size={16} color={colors.text.secondary} />
-          <Text style={styles.locationText} numberOfLines={1}>
-            123 Market Street, City Center
-          </Text>
-          <ChevronRight size={16} color={colors.ui.muted} />
-        </TouchableOpacity>
       </View>
 
-      {/* Quick Contact Row */}
-      <View style={styles.quickContactRow}>
-        <TouchableOpacity style={styles.quickContactBtn}>
-          <MessageCircle size={18} color={colors.status.info} />
-          <Text style={styles.quickContactText}>{t("store.chat")}</Text>
-        </TouchableOpacity>
-        <View style={styles.quickContactDivider} />
-        <TouchableOpacity style={styles.quickContactBtn}>
-          <Clock size={18} color={colors.brand.star} />
-          <Text style={styles.quickContactText}>9 AM - 9 PM</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Tab Selector */}
-      <View style={styles.tabContainer}>
+      {/* ══════ TAB SELECTOR ══════ */}
+      <View style={styles.tabBar}>
         <TouchableOpacity
           style={[
             styles.tabBtn,
@@ -504,16 +503,24 @@ export default function StoreDetailScreen() {
             setActiveTab("products");
             setSearchQuery("");
           }}
+          activeOpacity={0.7}
         >
+          <ShoppingBag
+            size={16}
+            color={
+              activeTab === "products"
+                ? colors.brand.primary
+                : colors.text.secondary
+            }
+          />
           <Text
             style={[
-              styles.tabBtnText,
-              activeTab === "products" && styles.tabBtnTextActive,
+              styles.tabText,
+              activeTab === "products" && styles.tabTextActive,
             ]}
           >
             {t("store.products")}
           </Text>
-          {activeTab === "products" && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -525,21 +532,30 @@ export default function StoreDetailScreen() {
             setActiveTab("services");
             setSearchQuery("");
           }}
+          activeOpacity={0.7}
         >
+          <Wrench
+            size={16}
+            color={
+              activeTab === "services"
+                ? colors.brand.primary
+                : colors.text.secondary
+            }
+          />
           <Text
             style={[
-              styles.tabBtnText,
-              activeTab === "services" && styles.tabBtnTextActive,
+              styles.tabText,
+              activeTab === "services" && styles.tabTextActive,
             ]}
           >
             {t("store.services")}
           </Text>
-          {activeTab === "services" && <View style={styles.tabIndicator} />}
         </TouchableOpacity>
       </View>
     </View>
   );
 
+  // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
       <StatusBar
@@ -548,7 +564,7 @@ export default function StoreDetailScreen() {
         backgroundColor="transparent"
       />
 
-      {/* Animated Sticky Search Bar - Appears at 300% scroll with bounce */}
+      {/* Sticky search – appears on deep scroll */}
       {activeTab === "products" && (
         <Animated.View
           pointerEvents={isSearchVisible ? "auto" : "none"}
@@ -567,8 +583,8 @@ export default function StoreDetailScreen() {
             },
           ]}
         >
-          <SafeAreaView edges={["top"]} style={styles.stickySearchSafe}>
-            <View style={styles.searchInputContainer}>
+          <SafeAreaView edges={["top"]} style={styles.stickySearchInner}>
+            <View style={styles.searchBox}>
               <Search size={18} color={colors.text.secondary} />
               <TextInput
                 placeholder={t("store.searchProducts")}
@@ -582,11 +598,10 @@ export default function StoreDetailScreen() {
         </Animated.View>
       )}
 
-      {/* Main Scroll Content */}
       <Animated.FlatList
         data={[1]}
         renderItem={() => (
-          <View style={styles.contentContainer}>
+          <View style={styles.contentWrap}>
             {activeTab === "products" ? (
               <ProductsSection
                 storeId={id as string}
@@ -630,14 +645,14 @@ export default function StoreDetailScreen() {
   );
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════════════════════
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.ui.surfaceHover,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.ui.background },
+  scrollContent: { paddingBottom: 60 },
+
+  // ── Error state ─────────────────────────────────────────
   errorContainer: {
     flex: 1,
     justifyContent: "center",
@@ -663,135 +678,98 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // Hero Section
+  // ══════════════════════════════════════════════════════════
+  // HERO
+  // ══════════════════════════════════════════════════════════
   heroSection: {
-    height: 300,
+    height: HERO_HEIGHT,
     width: "100%",
     position: "relative",
   },
   heroImage: {
     width: SCREEN_WIDTH,
-    height: 300,
+    height: HERO_HEIGHT,
   },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
+
+  // Top navigation
   heroTopBar: {
     position: "absolute",
-    top: Platform.OS === "ios" ? 50 : 35,
+    top: Platform.OS === "ios" ? 54 : 38,
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     zIndex: 10,
   },
   heroTopRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
-  reelsBtnContainer: {
-    backgroundColor: "rgba(0,0,0,0.3)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  reelsBtnRow: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-  },
-  reelsBtn: {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    gap: 6,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  reelsBtnEmpty: {
-    opacity: 0.6,
-  },
-  reelsBtnText: {
-    color: colors.text.inverse,
-    fontSize: 13,
-    fontWeight: "700" as const,
-    marginLeft: 6,
-  },
-  ratingBadge: {
+  glassBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: colors.ui.surface,
-    paddingHorizontal: 10,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    ...shadows.small,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
   },
-  ratingText: {
+  glassBtnText: {
+    color: "#fff",
     fontSize: 13,
     fontWeight: "700",
-    color: colors.text.primary,
   },
-  paginationContainer: {
+
+  // Pagination
+  paginationRow: {
     position: "absolute",
-    bottom: 80,
+    bottom: AVATAR_SIZE / 2 + 50,
     left: 0,
     right: 0,
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
+    gap: 5,
     zIndex: 5,
   },
-  paginationDot: {
+  dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "rgba(255, 255, 255, 0.5)",
+    backgroundColor: "rgba(255,255,255,0.45)",
   },
-  paginationDotActive: {
+  dotActive: {
     backgroundColor: "#fff",
-    width: 20,
+    width: 22,
+    borderRadius: 4,
   },
-  heroBottomInfo: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    zIndex: 5,
-  },
-  heroStoreName: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: colors.text.inverse,
-    marginBottom: 10,
-    textShadowColor: "rgba(0,0,0,0.5)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  heroTags: {
+
+  // Meta row (inside profile card)
+  metaRow: {
     flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
+    marginBottom: 14,
   },
-  storeTypeBadge: {
-    backgroundColor: "rgba(255,255,255,0.9)",
+  typePill: {
+    backgroundColor: "rgba(255,255,255,0.92)",
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 20,
   },
-  storeTypeText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.text.heading,
+  typePillText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.brand.primary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
-  openBadge: {
+  openPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -800,187 +778,220 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
   },
-  openText: {
-    fontSize: 11,
+  openPillText: {
+    fontSize: 10,
     fontWeight: "700",
     color: colors.status.successDark,
   },
+  ratingPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  ratingPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
 
-  // Store Card
-  storeCard: {
+  // ══════════════════════════════════════════════════════════
+  // PROFILE CARD
+  // ══════════════════════════════════════════════════════════
+  profileCard: {
     backgroundColor: colors.ui.surface,
-    marginHorizontal: 16,
-    marginTop: -20,
-    borderRadius: 16,
-    padding: 16,
+    marginHorizontal: spacing.md,
+    marginTop: -AVATAR_SIZE / 2,
+    borderRadius: 20,
+    paddingTop: AVATAR_SIZE / 2 + 10,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    alignItems: "center",
     ...shadows.medium,
     zIndex: 10,
   },
-  statsRow: {
+  avatarWrapper: {
+    position: "absolute",
+    top: -AVATAR_SIZE / 2,
+    alignSelf: "center",
+  },
+  avatar: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    borderWidth: 3,
+    borderColor: colors.ui.surface,
+  },
+  avatarRing: {
+    position: "absolute",
+    top: -2,
+    left: -2,
+    width: AVATAR_SIZE + 4,
+    height: AVATAR_SIZE + 4,
+    borderRadius: (AVATAR_SIZE + 4) / 2,
+    borderWidth: 2,
+    borderColor: colors.brand.primary,
+    opacity: 0.3,
+  },
+  storeName: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: colors.text.primary,
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  distanceBadge: {
+    position: "absolute",
+    bottom: AVATAR_SIZE / 2 + 12,
+    right: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    zIndex: 5,
+  },
+  distanceText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#fff",
+  },
+  locationChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: colors.ui.backgroundAlt,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 18,
+  },
+  locationText: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+
+  // Stats strip
+  statsStrip: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.ui.borderLight,
+    width: "100%",
+    paddingVertical: 14,
+    backgroundColor: colors.ui.backgroundAlt,
+    borderRadius: 14,
     marginBottom: 16,
   },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
+  statCell: { flex: 1, alignItems: "center" },
   statValue: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "800",
     color: colors.text.primary,
   },
   statLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.text.secondary,
     marginTop: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   statDivider: {
     width: 1,
-    height: 30,
+    height: 28,
     backgroundColor: colors.ui.border,
   },
-  actionRow: {
+
+  // Primary action buttons
+  primaryActions: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 16,
+    width: "100%",
   },
-  actionBtn: {
+  followBtn: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    borderWidth: 1.5,
-    borderColor: colors.ui.border,
-    borderRadius: 12,
     gap: 6,
-    backgroundColor: colors.ui.surface,
-  },
-  actionBtnFollowing: {
+    paddingVertical: 13,
+    borderRadius: 14,
     backgroundColor: colors.brand.primary,
-    borderColor: colors.brand.primary,
   },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.caption,
+  followBtnActive: {
+    backgroundColor: colors.brand.primaryLight,
   },
-  actionBtnTextFollowing: {
-    color: colors.text.inverse,
+  followBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#fff",
   },
-  actionBtnPrimary: {
-    flex: 1.2,
+  callBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 12,
     gap: 6,
+    paddingVertical: 13,
+    borderRadius: 14,
     backgroundColor: colors.status.success,
   },
-  actionBtnTextPrimary: {
-    fontSize: 13,
+  callBtnText: {
+    fontSize: 14,
     fontWeight: "700",
-    color: colors.text.inverse,
-  },
-  locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.ui.surfaceHover,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    gap: 10,
-  },
-  locationText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text.caption,
+    color: "#fff",
   },
 
-  // Quick Contact
-  quickContactRow: {
+  // ══════════════════════════════════════════════════════════
+  // TAB BAR
+  // ══════════════════════════════════════════════════════════
+  tabBar: {
     flexDirection: "row",
-    backgroundColor: colors.ui.surface,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 12,
-    padding: 12,
-    ...shadows.small,
-  },
-  quickContactBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  quickContactText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.text.caption,
-  },
-  quickContactDivider: {
-    width: 1,
-    backgroundColor: colors.ui.border,
-    marginVertical: 4,
-  },
-
-  // Tab Container
-  tabContainer: {
-    flexDirection: "row",
-    marginHorizontal: 16,
-    marginTop: 20,
-    marginBottom: 16,
+    marginHorizontal: spacing.md,
+    marginTop: 18,
+    marginBottom: spacing.md,
     backgroundColor: colors.ui.surface,
     borderRadius: 16,
-    padding: 6,
+    padding: 5,
     ...shadows.small,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 14,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 13,
     borderRadius: 12,
-    position: "relative",
   },
   tabBtnActive: {
-    backgroundColor: colors.ui.background,
+    backgroundColor: colors.ui.backgroundAlt,
+    ...shadows.small,
   },
-  tabBtnText: {
-    fontSize: 15,
+  tabText: {
+    fontSize: 14,
     fontWeight: "600",
     color: colors.text.secondary,
   },
-  tabBtnTextActive: {
-    color: colors.brand.primary,
+  tabTextActive: {
     fontWeight: "700",
-  },
-  tabIndicator: {
-    position: "absolute",
-    bottom: 6,
-    left: "30%",
-    right: "30%",
-    height: 3,
-    backgroundColor: colors.brand.primary,
-    borderRadius: 2,
+    color: colors.brand.primary,
   },
 
-  // Content
-  contentContainer: {
-    marginHorizontal: 16,
+  // ══════════════════════════════════════════════════════════
+  // CONTENT
+  // ══════════════════════════════════════════════════════════
+  contentWrap: {
+    marginHorizontal: spacing.md,
     minHeight: 400,
   },
 
-  // Sticky Search
+  // Sticky search
   stickySearch: {
     position: "absolute",
     top: 0,
@@ -992,15 +1003,15 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.ui.borderLight,
     ...shadows.small,
   },
-  stickySearchSafe: {
-    paddingHorizontal: 16,
+  stickySearchInner: {
+    paddingHorizontal: spacing.md,
     paddingBottom: 12,
   },
-  searchInputContainer: {
+  searchBox: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: colors.ui.backgroundAlt,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 14,
     height: 48,
     gap: 10,
@@ -1009,5 +1020,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: colors.text.heading,
+  },
+  hoursText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: colors.text.secondary,
+    marginLeft: 4,
   },
 });
