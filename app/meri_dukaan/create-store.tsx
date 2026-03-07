@@ -5,25 +5,25 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    Camera,
-    MapPin,
-    Store,
-    Tag,
-    Trash2,
+  ArrowLeft,
+  Camera,
+  MapPin,
+  Store,
+  Tag,
+  Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const PLACEHOLDER_IMAGES = [

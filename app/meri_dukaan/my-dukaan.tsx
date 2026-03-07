@@ -28,7 +28,10 @@ import React, { useState } from "react";
 import {
     Alert,
     Dimensions,
+    FlatList,
     Image,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
     SafeAreaView,
     ScrollView,
     StatusBar,
@@ -40,6 +43,7 @@ import {
 } from "react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const CARD_WIDTH = SCREEN_WIDTH - spacing.md * 2;
 
 type DashboardTab = "products" | "services" | "reels";
 
@@ -65,11 +69,48 @@ function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
 
 // ========== STORE PROFILE HEADER ==========
 function StoreHeader({ store }: { store: MyStore }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  const onBannerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / CARD_WIDTH);
+    setActiveIndex(index);
+  };
+
   return (
     <View style={styles.profileCard}>
-      {/* Images carousel (first image as cover) */}
+      {/* Images carousel */}
       {store.images.length > 0 && (
-        <Image source={{ uri: store.images[0] }} style={styles.coverImage} />
+        <View>
+          <FlatList
+            data={store.images}
+            keyExtractor={(_, i) => i.toString()}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onMomentumScrollEnd={onBannerScroll}
+            getItemLayout={(_, index) => ({
+              length: CARD_WIDTH,
+              offset: CARD_WIDTH * index,
+              index,
+            })}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={styles.coverImage} />
+            )}
+          />
+          {store.images.length > 1 && (
+            <View style={styles.dotsRow}>
+              {store.images.map((_, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    i === activeIndex && styles.dotActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
       )}
       <View style={styles.profileInfo}>
         <Text style={styles.storeName}>{store.name}</Text>
@@ -707,9 +748,31 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   coverImage: {
-    width: "100%",
+    width: CARD_WIDTH,
     height: 160,
     backgroundColor: colors.ui.backgroundAlt,
+  },
+  dotsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    bottom: 8,
+    left: 0,
+    right: 0,
+    gap: 6,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: "rgba(255,255,255,0.5)",
+  },
+  dotActive: {
+    backgroundColor: "#fff",
+    width: 9,
+    height: 9,
+    borderRadius: 5,
   },
   profileInfo: { padding: spacing.md },
   storeName: { fontSize: 20, fontWeight: "800", color: colors.text.primary },
