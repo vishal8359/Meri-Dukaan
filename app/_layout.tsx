@@ -140,21 +140,21 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen
-                  name="meri_dukaan/add-product"
+                  name="meri_dukaan/inventory/add-product"
                   options={{
                     headerShown: false,
                     presentation: "card",
                   }}
                 />
                 <Stack.Screen
-                  name="meri_dukaan/add-service"
+                  name="meri_dukaan/inventory/add-service"
                   options={{
                     headerShown: false,
                     presentation: "card",
                   }}
                 />
                 <Stack.Screen
-                  name="meri_dukaan/upload-reel"
+                  name="meri_dukaan/reels/upload-reel"
                   options={{
                     headerShown: false,
                     presentation: "card",

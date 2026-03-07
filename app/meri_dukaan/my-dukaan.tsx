@@ -1,27 +1,18 @@
 // app/meri_dukaan/my-dukaan.tsx
-import {
-    MyStore,
-    MyStoreProduct,
-    MyStoreReel,
-    MyStoreService,
-    useApp,
-} from "@/src/context/AppContext";
+import ProductsTab from "@/app/meri_dukaan/inventory/products";
+import ServicesTab from "@/app/meri_dukaan/inventory/services";
+import { MyStore, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
     ArrowLeft,
-    Eye,
     Film,
-    Heart,
-    MessageCircle,
     Package,
     Plus,
     Settings,
     Star,
     Store,
-    Trash2,
-    Upload,
     Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
@@ -36,7 +27,6 @@ import {
     ScrollView,
     StatusBar,
     StyleSheet,
-    Switch,
     Text,
     TouchableOpacity,
     View,
@@ -45,7 +35,7 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - spacing.md * 2;
 
-type DashboardTab = "products" | "services" | "reels";
+type DashboardTab = "products" | "services";
 
 // ========== NO STORE STATE ==========
 function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
@@ -68,7 +58,13 @@ function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
 }
 
 // ========== STORE PROFILE HEADER ==========
-function StoreHeader({ store }: { store: MyStore }) {
+function StoreHeader({
+  store,
+  onReelDashboard,
+}: {
+  store: MyStore;
+  onReelDashboard: () => void;
+}) {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const onBannerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -102,10 +98,7 @@ function StoreHeader({ store }: { store: MyStore }) {
               {store.images.map((_, i) => (
                 <View
                   key={i}
-                  style={[
-                    styles.dot,
-                    i === activeIndex && styles.dotActive,
-                  ]}
+                  style={[styles.dot, i === activeIndex && styles.dotActive]}
                 />
               ))}
             </View>
@@ -113,16 +106,33 @@ function StoreHeader({ store }: { store: MyStore }) {
         </View>
       )}
       <View style={styles.profileInfo}>
-        <Text style={styles.storeName}>{store.name}</Text>
-        <Text style={styles.storeCategory}>
-          {store.category} •{" "}
-          {store.businessType === "both"
-            ? "Products & Services"
-            : store.businessType === "products"
-              ? "Products"
-              : "Services"}
-        </Text>
-        <Text style={styles.storeLocation}>📍 {store.location}</Text>
+        <View style={styles.profileInfoRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.storeName}>{store.name}</Text>
+            <Text style={styles.storeCategory}>
+              {store.category} •{" "}
+              {store.businessType === "both"
+                ? "Products & Services"
+                : store.businessType === "products"
+                  ? "Products"
+                  : "Services"}
+            </Text>
+            <Text style={styles.storeLocation}>📍 {store.location}</Text>
+          </View>
+          {/* Reel Dashboard Icon */}
+          <TouchableOpacity
+            style={styles.reelDashboardBtn}
+            onPress={onReelDashboard}
+            activeOpacity={0.7}
+          >
+            <Film size={20} color={colors.brand.primary} />
+            {store.reels.length > 0 && (
+              <View style={styles.reelBadge}>
+                <Text style={styles.reelBadgeText}>{store.reels.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
@@ -167,12 +177,10 @@ function TabBar({
   activeTab,
   onTabChange,
   businessType,
-  reelCount,
 }: {
   activeTab: DashboardTab;
   onTabChange: (tab: DashboardTab) => void;
   businessType: MyStore["businessType"];
-  reelCount: number;
 }) {
   const tabs: { key: DashboardTab; label: string; icon: any; show: boolean }[] =
     [
@@ -187,12 +195,6 @@ function TabBar({
         label: "Services",
         icon: Wrench,
         show: businessType === "services" || businessType === "both",
-      },
-      {
-        key: "reels",
-        label: `Reels (${reelCount})`,
-        icon: Film,
-        show: true,
       },
     ];
 
@@ -223,303 +225,6 @@ function TabBar({
   );
 }
 
-// ========== PRODUCTS TAB ==========
-function ProductsTab({
-  products,
-  onToggleStock,
-  onRemove,
-  onAdd,
-}: {
-  products: MyStoreProduct[];
-  onToggleStock: (id: string) => void;
-  onRemove: (id: string) => void;
-  onAdd: () => void;
-}) {
-  return (
-    <View>
-      <View style={styles.tabHeader}>
-        <Text style={styles.tabHeaderTitle}>
-          {products.length} Product{products.length !== 1 ? "s" : ""}
-        </Text>
-        <TouchableOpacity style={styles.addItemBtn} onPress={onAdd}>
-          <Plus size={14} color={colors.text.inverse} />
-          <Text style={styles.addItemBtnText}>Add Product</Text>
-        </TouchableOpacity>
-      </View>
-
-      {products.length === 0 ? (
-        <View style={styles.emptyTab}>
-          <Package size={32} color={colors.ui.muted} />
-          <Text style={styles.emptyText}>No products yet</Text>
-          <Text style={styles.emptySubtext}>
-            Add your first product to start selling
-          </Text>
-        </View>
-      ) : (
-        products.map((p) => (
-          <View key={p.id} style={styles.itemCard}>
-            <Image source={{ uri: p.images[0] }} style={styles.itemImage} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{p.name}</Text>
-              <Text style={styles.itemPrice}>
-                ₹{p.price}/{p.unit}
-              </Text>
-              <Text style={styles.itemMeta}>
-                Stock: {p.quantity} {p.unit}
-              </Text>
-            </View>
-            <View style={styles.itemActions}>
-              <View style={styles.stockToggle}>
-                <Text
-                  style={[
-                    styles.stockLabel,
-                    {
-                      color: p.inStock
-                        ? colors.status.success
-                        : colors.text.light,
-                    },
-                  ]}
-                >
-                  {p.inStock ? "In Stock" : "Out"}
-                </Text>
-                <Switch
-                  trackColor={{
-                    false: colors.ui.border,
-                    true: colors.brand.primaryLight,
-                  }}
-                  thumbColor={
-                    p.inStock ? colors.brand.primary : colors.ui.surfaceHover
-                  }
-                  onValueChange={() => onToggleStock(p.id)}
-                  value={p.inStock}
-                  style={{ transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }] }}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.removeBtn}
-                onPress={() => onRemove(p.id)}
-              >
-                <Trash2 size={15} color={colors.status.error} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
-      )}
-    </View>
-  );
-}
-
-// ========== SERVICES TAB ==========
-function ServicesTab({
-  services,
-  onToggleAvailable,
-  onRemove,
-  onAdd,
-}: {
-  services: MyStoreService[];
-  onToggleAvailable: (id: string) => void;
-  onRemove: (id: string) => void;
-  onAdd: () => void;
-}) {
-  return (
-    <View>
-      <View style={styles.tabHeader}>
-        <Text style={styles.tabHeaderTitle}>
-          {services.length} Service{services.length !== 1 ? "s" : ""}
-        </Text>
-        <TouchableOpacity style={styles.addItemBtn} onPress={onAdd}>
-          <Plus size={14} color={colors.text.inverse} />
-          <Text style={styles.addItemBtnText}>Add Service</Text>
-        </TouchableOpacity>
-      </View>
-
-      {services.length === 0 ? (
-        <View style={styles.emptyTab}>
-          <Wrench size={32} color={colors.ui.muted} />
-          <Text style={styles.emptyText}>No services yet</Text>
-          <Text style={styles.emptySubtext}>
-            Add your first service to get bookings
-          </Text>
-        </View>
-      ) : (
-        services.map((s) => (
-          <View key={s.id} style={styles.itemCard}>
-            <Image source={{ uri: s.images[0] }} style={styles.itemImage} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemName}>{s.name}</Text>
-              <Text style={styles.itemPrice}>₹{s.price}</Text>
-              <Text style={styles.itemMeta}>⏱ {s.duration}</Text>
-            </View>
-            <View style={styles.itemActions}>
-              <View style={styles.stockToggle}>
-                <Text
-                  style={[
-                    styles.stockLabel,
-                    {
-                      color: s.available
-                        ? colors.status.success
-                        : colors.text.light,
-                    },
-                  ]}
-                >
-                  {s.available ? "Available" : "Off"}
-                </Text>
-                <Switch
-                  trackColor={{
-                    false: colors.ui.border,
-                    true: colors.brand.primaryLight,
-                  }}
-                  thumbColor={
-                    s.available ? colors.brand.primary : colors.ui.surfaceHover
-                  }
-                  onValueChange={() => onToggleAvailable(s.id)}
-                  value={s.available}
-                  style={{ transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }] }}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.removeBtn}
-                onPress={() => onRemove(s.id)}
-              >
-                <Trash2 size={15} color={colors.status.error} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
-      )}
-    </View>
-  );
-}
-
-// ========== REELS TAB ==========
-function ReelsTab({
-  reels,
-  onUpload,
-  onRemove,
-  canUpload,
-}: {
-  reels: MyStoreReel[];
-  onUpload: () => void;
-  onRemove: (id: string) => void;
-  canUpload: boolean;
-}) {
-  // Engagement totals
-  const totalViews = reels.reduce((s, r) => s + r.views, 0);
-  const totalLikes = reels.reduce((s, r) => s + r.likes, 0);
-  const totalComments = reels.reduce((s, r) => s + r.comments, 0);
-
-  return (
-    <View>
-      {/* Upload button + daily limit */}
-      <View style={styles.tabHeader}>
-        <Text style={styles.tabHeaderTitle}>
-          {reels.length} Reel{reels.length !== 1 ? "s" : ""}
-        </Text>
-        <TouchableOpacity
-          style={[styles.addItemBtn, !canUpload && { opacity: 0.5 }]}
-          onPress={onUpload}
-          disabled={!canUpload}
-        >
-          <Upload size={14} color={colors.text.inverse} />
-          <Text style={styles.addItemBtnText}>
-            {canUpload ? "Upload Reel" : "Done for Today"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Engagement Summary */}
-      {reels.length > 0 && (
-        <View style={styles.engagementCard}>
-          <Text style={styles.engagementTitle}>Total Engagement</Text>
-          <View style={styles.engagementRow}>
-            <View style={styles.engagementStat}>
-              <Eye size={16} color={colors.brand.primary} />
-              <Text style={styles.engagementNum}>
-                {totalViews.toLocaleString()}
-              </Text>
-              <Text style={styles.engagementLabel}>Views</Text>
-            </View>
-            <View style={styles.engagementStat}>
-              <Heart size={16} color={colors.status.error} />
-              <Text style={styles.engagementNum}>
-                {totalLikes.toLocaleString()}
-              </Text>
-              <Text style={styles.engagementLabel}>Likes</Text>
-            </View>
-            <View style={styles.engagementStat}>
-              <MessageCircle size={16} color={colors.status.info} />
-              <Text style={styles.engagementNum}>
-                {totalComments.toLocaleString()}
-              </Text>
-              <Text style={styles.engagementLabel}>Comments</Text>
-            </View>
-          </View>
-        </View>
-      )}
-
-      {reels.length === 0 ? (
-        <View style={styles.emptyTab}>
-          <Film size={32} color={colors.ui.muted} />
-          <Text style={styles.emptyText}>No reels yet</Text>
-          <Text style={styles.emptySubtext}>
-            Upload your first reel to boost engagement
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.reelGrid}>
-          {reels.map((r) => (
-            <View key={r.id} style={styles.reelCard}>
-              {/* Reel thumbnail or placeholder */}
-              <View style={styles.reelThumb}>
-                {r.thumbnail ? (
-                  <Image
-                    source={{ uri: r.thumbnail }}
-                    style={styles.reelThumbImg}
-                  />
-                ) : (
-                  <View style={styles.reelThumbPlaceholder}>
-                    <Film size={24} color={colors.ui.muted} />
-                  </View>
-                )}
-                {/* Remove button */}
-                <TouchableOpacity
-                  style={styles.reelRemoveBtn}
-                  onPress={() => onRemove(r.id)}
-                >
-                  <Trash2 size={10} color="#fff" />
-                </TouchableOpacity>
-              </View>
-              {/* Caption */}
-              <Text style={styles.reelCaption} numberOfLines={2}>
-                {r.caption || "No caption"}
-              </Text>
-              {/* Per-reel stats */}
-              <View style={styles.reelStats}>
-                <View style={styles.miniStat}>
-                  <Eye size={10} color={colors.text.tertiary} />
-                  <Text style={styles.miniStatNum}>{r.views}</Text>
-                </View>
-                <View style={styles.miniStat}>
-                  <Heart size={10} color={colors.text.tertiary} />
-                  <Text style={styles.miniStatNum}>{r.likes}</Text>
-                </View>
-                <View style={styles.miniStat}>
-                  <MessageCircle size={10} color={colors.text.tertiary} />
-                  <Text style={styles.miniStatNum}>{r.comments}</Text>
-                </View>
-              </View>
-              {/* Date */}
-              <Text style={styles.reelDate}>
-                {new Date(r.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
 // ========== MAIN DASHBOARD ==========
 export default function MyDukaanScreen() {
   const router = useRouter();
@@ -529,8 +234,6 @@ export default function MyDukaanScreen() {
     removeMyProduct,
     updateMyService,
     removeMyService,
-    removeMyReel,
-    canUploadReelToday,
   } = useApp();
 
   const defaultTab: DashboardTab =
@@ -573,14 +276,6 @@ export default function MyDukaanScreen() {
     ]);
   };
 
-  // Remove reel
-  const handleRemoveReel = (id: string) => {
-    Alert.alert("Remove Reel", "Are you sure?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Remove", style: "destructive", onPress: () => removeMyReel(id) },
-    ]);
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar
@@ -617,14 +312,18 @@ export default function MyDukaanScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Store Profile */}
-          <StoreHeader store={myStore} />
+          <StoreHeader
+            store={myStore}
+            onReelDashboard={() =>
+              router.push("/meri_dukaan/reels/dashboard" as any)
+            }
+          />
 
           {/* Tab Bar */}
           <TabBar
             activeTab={activeTab}
             onTabChange={setActiveTab}
             businessType={myStore.businessType}
-            reelCount={myStore.reels.length}
           />
 
           {/* Tab Content */}
@@ -634,7 +333,7 @@ export default function MyDukaanScreen() {
                 products={myStore.products}
                 onToggleStock={handleToggleStock}
                 onRemove={handleRemoveProduct}
-                onAdd={() => router.push("/meri_dukaan/add-product" as any)}
+                onAdd={() => router.push("/meri_dukaan/inventory/add-product" as any)}
               />
             )}
             {activeTab === "services" && (
@@ -642,15 +341,7 @@ export default function MyDukaanScreen() {
                 services={myStore.services}
                 onToggleAvailable={handleToggleAvailable}
                 onRemove={handleRemoveService}
-                onAdd={() => router.push("/meri_dukaan/add-service" as any)}
-              />
-            )}
-            {activeTab === "reels" && (
-              <ReelsTab
-                reels={myStore.reels}
-                onUpload={() => router.push("/meri_dukaan/upload-reel" as any)}
-                onRemove={handleRemoveReel}
-                canUpload={canUploadReelToday()}
+                onAdd={() => router.push("/meri_dukaan/inventory/add-service" as any)}
               />
             )}
           </View>
@@ -663,8 +354,6 @@ export default function MyDukaanScreen() {
 }
 
 // ========== STYLES ==========
-const REEL_CARD_WIDTH = (SCREEN_WIDTH - spacing.md * 2 - 12) / 2;
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ui.background },
 
@@ -775,6 +464,11 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   profileInfo: { padding: spacing.md },
+  profileInfoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
   storeName: { fontSize: 20, fontWeight: "800", color: colors.text.primary },
   storeCategory: {
     fontSize: 13,
@@ -786,6 +480,35 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 4,
   },
+
+  /* Reel Dashboard Button on Card */
+  reelDashboardBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.brand.primary + "10",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  reelBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: colors.brand.primary,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+  },
+  reelBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#fff",
+  },
+
   statsRow: { flexDirection: "row", gap: 10, marginTop: spacing.sm },
   statBadge: {
     flexDirection: "row",
@@ -826,152 +549,4 @@ const styles = StyleSheet.create({
 
   /* Tab Content */
   tabContent: { minHeight: 200 },
-
-  /* Tab Header */
-  tabHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.md,
-  },
-  tabHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text.primary,
-  },
-  addItemBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.brand.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.full,
-    gap: 5,
-  },
-  addItemBtnText: {
-    color: colors.text.inverse,
-    fontWeight: "600",
-    fontSize: 12,
-  },
-
-  /* Empty state */
-  emptyTab: {
-    alignItems: "center",
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyText: { fontSize: 16, fontWeight: "700", color: colors.text.secondary },
-  emptySubtext: { fontSize: 13, color: colors.text.tertiary },
-
-  /* Product / Service Card */
-  itemCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.ui.surface,
-    padding: 10,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.ui.border,
-    marginBottom: 10,
-  },
-  itemImage: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.sm,
-    backgroundColor: colors.ui.backgroundAlt,
-  },
-  itemInfo: { flex: 1, paddingHorizontal: 10 },
-  itemName: { fontSize: 14, fontWeight: "700", color: colors.text.primary },
-  itemPrice: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.brand.primary,
-    marginTop: 1,
-  },
-  itemMeta: { fontSize: 11, color: colors.text.tertiary, marginTop: 1 },
-  itemActions: { alignItems: "flex-end", gap: 6 },
-  stockToggle: { alignItems: "flex-end" },
-  stockLabel: { fontSize: 10, fontWeight: "600", marginBottom: 1 },
-  removeBtn: {
-    padding: 6,
-    backgroundColor: colors.status.errorBorder,
-    borderRadius: radius.sm,
-  },
-
-  /* Engagement Card */
-  engagementCard: {
-    backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.ui.border,
-  },
-  engagementTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-  },
-  engagementRow: { flexDirection: "row", justifyContent: "space-around" },
-  engagementStat: { alignItems: "center", gap: 4 },
-  engagementNum: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: colors.text.primary,
-  },
-  engagementLabel: { fontSize: 11, color: colors.text.tertiary },
-
-  /* Reel Grid */
-  reelGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
-  reelCard: {
-    width: REEL_CARD_WIDTH,
-    backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: colors.ui.border,
-  },
-  reelThumb: { position: "relative" },
-  reelThumbImg: { width: "100%", height: 140 },
-  reelThumbPlaceholder: {
-    width: "100%",
-    height: 140,
-    backgroundColor: colors.ui.backgroundAlt,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  reelRemoveBtn: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  reelCaption: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.text.primary,
-    paddingHorizontal: 8,
-    paddingTop: 6,
-  },
-  reelStats: {
-    flexDirection: "row",
-    gap: 10,
-    paddingHorizontal: 8,
-    paddingTop: 4,
-  },
-  miniStat: { flexDirection: "row", alignItems: "center", gap: 3 },
-  miniStatNum: { fontSize: 10, color: colors.text.tertiary, fontWeight: "600" },
-  reelDate: {
-    fontSize: 10,
-    color: colors.text.light,
-    paddingHorizontal: 8,
-    paddingTop: 2,
-    paddingBottom: 8,
-  },
 });

@@ -6,6 +6,7 @@ import { Drawer } from "expo-router/drawer";
 import {
     Calendar,
     ChevronRight,
+    Film,
     Heart,
     HelpCircle,
     Languages,
@@ -89,6 +90,13 @@ function CustomDrawerContent(props: any) {
       color: colors.tint.green,
       bgColor: colors.tint.greenLight,
       route: "/meri_dukaan/my-dukaan",
+    },
+    {
+      label: "Meri Dhindora",
+      icon: Film,
+      color: colors.brand.primary,
+      bgColor: colors.tint.blueLight,
+      route: "/meri_dukaan/reels/dashboard",
     },
     {
       label: t("drawer.transporter"),

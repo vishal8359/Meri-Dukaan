@@ -1,4 +1,4 @@
-// app/meri_dukaan/add-product.tsx
+// app/meri_dukaan/inventory/add-product.tsx
 import { QuantityUnit, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";

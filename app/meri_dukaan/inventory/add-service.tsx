@@ -1,4 +1,4 @@
-// app/meri_dukaan/add-service.tsx
+// app/meri_dukaan/inventory/add-service.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";

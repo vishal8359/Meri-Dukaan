@@ -1,4 +1,4 @@
-// app/meri_dukaan/upload-reel.tsx
+// app/meri_dukaan/reels/upload-reel.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
