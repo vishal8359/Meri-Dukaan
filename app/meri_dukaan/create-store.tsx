@@ -15,7 +15,6 @@ import {
 import React, { useState } from "react";
 import {
     Alert,
-    FlatList,
     Image,
     Platform,
     SafeAreaView,
@@ -198,31 +197,27 @@ export default function CreateStoreScreen() {
           </TouchableOpacity>
 
           {showCategoryPicker && (
-            <View style={styles.pickerList}>
-              <FlatList
-                data={STORE_CATEGORIES}
-                keyExtractor={(item) => item}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.pickerItem}
-                    onPress={() => {
-                      setCategory(item);
-                      setShowCategoryPicker(false);
-                    }}
-                  >
-                    <Text style={styles.pickerItemText}>{item}</Text>
-                    {category === item && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={colors.brand.primary}
-                      />
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
+            <ScrollView style={styles.pickerList} nestedScrollEnabled={true}>
+              {STORE_CATEGORIES.map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={styles.pickerItem}
+                  onPress={() => {
+                    setCategory(item);
+                    setShowCategoryPicker(false);
+                  }}
+                >
+                  <Text style={styles.pickerItemText}>{item}</Text>
+                  {category === item && (
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={colors.brand.primary}
+                    />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           )}
         </View>
 
