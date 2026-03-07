@@ -5,16 +5,16 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
-    Alert,
-    Image,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface QuantityVariant {
@@ -289,7 +289,10 @@ export default function AddProductScreen() {
           {variants.length > 0 && (
             <View style={styles.variantTags}>
               {variants.map((v, i) => (
-                <View key={`${v.amount}-${v.unit}-${i}`} style={styles.variantTag}>
+                <View
+                  key={`${v.amount}-${v.unit}-${i}`}
+                  style={styles.variantTag}
+                >
                   <Text style={styles.variantTagText}>
                     {v.amount} {v.unit}
                   </Text>

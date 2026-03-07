@@ -153,6 +153,11 @@ export default function BazarScreen() {
           style={styles.followingsBtn}
           onPress={() => router.push("/dukaan/following")}
         >
+          <Ionicons
+            name="heart-outline"
+            size={14}
+            color={colors.brand.primaryLight}
+          />
           <Text style={styles.followingsBtnText}>Followings</Text>
         </TouchableOpacity>
       </View>

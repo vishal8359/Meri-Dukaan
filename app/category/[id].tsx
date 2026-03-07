@@ -1,35 +1,35 @@
 // app/category/[id].tsx
 import {
-  mockProducts,
-  mockStores,
-  Product,
-  PRODUCT_CATEGORIES,
+    mockProducts,
+    mockStores,
+    Product,
+    PRODUCT_CATEGORIES,
 } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Grid2x2,
-  Heart,
-  List,
-  MapPin,
-  Search,
-  ShoppingCart,
-  SortAsc,
-  Star,
-  X,
+    ArrowLeft,
+    Grid2x2,
+    Heart,
+    List,
+    MapPin,
+    Search,
+    ShoppingCart,
+    SortAsc,
+    Star,
+    X,
 } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  Dimensions,
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";

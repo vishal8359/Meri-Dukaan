@@ -4,28 +4,28 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
-    BarChart3,
-    Calendar,
-    ChevronRight,
-    Film,
-    Heart,
-    HelpCircle,
-    Languages,
-    LogOut,
-    Settings,
-    ShoppingBag,
-    Store,
-    Truck,
-    User,
+  BarChart3,
+  Calendar,
+  ChevronRight,
+  Film,
+  Heart,
+  HelpCircle,
+  Languages,
+  LogOut,
+  Settings,
+  ShoppingBag,
+  Store,
+  Truck,
+  User,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import {
-    Dimensions,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
