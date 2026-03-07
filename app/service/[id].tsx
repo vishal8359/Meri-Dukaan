@@ -1,4 +1,4 @@
-import { mockServices, ServiceItem } from "@/src/assets/mockData";
+import { mockServices, mockStores, ServiceItem } from "@/src/assets/mockData";
 import { BookedService, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
@@ -365,6 +365,12 @@ export default function ServiceDetailScreen() {
         : [service.image];
     return imgs.slice(0, 5);
   }, [service]);
+
+  // ─── Store lookup for image ──────────────────────────────────────────────
+  const store = useMemo(
+    () => mockStores.find((s) => s.id === service?.storeId),
+    [service],
+  );
 
   const relatedServices = useMemo(() => {
     if (!service) return [];
@@ -853,12 +859,24 @@ export default function ServiceDetailScreen() {
                 </Text>
               </View>
               <View style={styles.storeDeliveryColumn}>
-                <View style={styles.storeInfo}>
+                <TouchableOpacity
+                  style={styles.storeInfo}
+                  activeOpacity={0.7}
+                  onPress={() => router.push(`/dukaan/${service.storeId}`)}
+                >
                   <Text style={styles.storeLabel}>
                     {t("service.offeredBy")}
                   </Text>
-                  <Text style={styles.storeName}>{service.storeName}</Text>
-                </View>
+                  <View style={styles.storeNameRow}>
+                    {store?.image && (
+                      <Image
+                        source={{ uri: store.image }}
+                        style={styles.storeImage}
+                      />
+                    )}
+                    <Text style={styles.storeName}>{service.storeName}</Text>
+                  </View>
+                </TouchableOpacity>
                 {service.duration && (
                   <View style={styles.deliveryInfo}>
                     <Text style={styles.deliveryLabel}>
@@ -1512,6 +1530,17 @@ const styles = StyleSheet.create({
   storeDeliveryColumn: { flex: 1, gap: spacing.sm },
   storeInfo: { gap: spacing.xs },
   storeLabel: { fontSize: 10, fontWeight: "600", color: colors.text.secondary },
+  storeNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  storeImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.ui.disabled,
+  },
   storeName: { fontSize: 12, fontWeight: "700", color: colors.brand.primary },
   deliveryInfo: { gap: spacing.xs },
   deliveryLabel: {

@@ -1,4 +1,4 @@
-import { mockProducts, Product } from "@/src/assets/mockData";
+import { mockProducts, mockStores, Product } from "@/src/assets/mockData";
 import { useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
@@ -299,6 +299,12 @@ export default function ProductDetailScreen() {
     }
     return null;
   }, [id, fallbackData]);
+
+  // ─── Store lookup for image ──────────────────────────────────────────────
+  const store = useMemo(
+    () => mockStores.find((s) => s.id === product?.storeId),
+    [product],
+  );
 
   // ─── Product images (1 to 5 photos) ─────────────────────────────────────
   const productImages = useMemo(() => {
@@ -787,13 +793,25 @@ export default function ProductDetailScreen() {
               )}
             </View>
             <View style={styles.storeDeliveryColumn}>
-              <View style={styles.storeInfo}>
+              <TouchableOpacity
+                style={styles.storeInfo}
+                activeOpacity={0.7}
+                onPress={() => router.push(`/dukaan/${product.storeId}`)}
+              >
                 <View style={styles.storeIconRow}>
                   <Store size={12} color={colors.brand.primary} />
                   <Text style={styles.storeLabel}>{t("product.soldBy")}</Text>
                 </View>
-                <Text style={styles.storeName}>{product.storeName}</Text>
-              </View>
+                <View style={styles.storeNameRow}>
+                  {store?.image && (
+                    <Image
+                      source={{ uri: store.image }}
+                      style={styles.storeImage}
+                    />
+                  )}
+                  <Text style={styles.storeName}>{product.storeName}</Text>
+                </View>
+              </TouchableOpacity>
               {product.delivery && (
                 <View style={styles.deliveryInfo}>
                   <View style={styles.storeIconRow}>
@@ -1369,11 +1387,22 @@ const styles = StyleSheet.create({
   storeInfo: { gap: 2 },
   storeIconRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   storeLabel: { fontSize: 10, fontWeight: "600", color: colors.text.secondary },
+  storeNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginLeft: 16,
+  },
+  storeImage: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.ui.disabled,
+  },
   storeName: {
     fontSize: 13,
     fontWeight: "700",
     color: colors.brand.primary,
-    marginLeft: 16,
   },
   deliveryInfo: { gap: 2 },
   deliveryLabel: {

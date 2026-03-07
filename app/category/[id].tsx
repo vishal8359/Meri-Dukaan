@@ -1,6 +1,7 @@
 // app/category/[id].tsx
 import {
   mockProducts,
+  mockStores,
   Product,
   PRODUCT_CATEGORIES,
 } from "@/src/assets/mockData";
@@ -190,6 +191,7 @@ export default function CategoryProductsScreen() {
 
   const ProductGridCard = ({ item }: { item: Product }) => {
     const wishlisted = isInWishlist(`product-${item.id}`);
+    const itemStore = mockStores.find((s) => s.id === item.storeId);
     return (
       <TouchableOpacity
         style={styles.gridCard}
@@ -223,12 +225,27 @@ export default function CategoryProductsScreen() {
           <Text style={styles.productName} numberOfLines={1}>
             {item.name}
           </Text>
-          <View style={styles.storeRow}>
-            <MapPin size={10} color={colors.text.secondary} />
+          <TouchableOpacity
+            style={styles.storeRow}
+            activeOpacity={0.7}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push(`/dukaan/${item.storeId}`);
+            }}
+          >
+            {itemStore?.image && (
+              <Image
+                source={{ uri: itemStore.image }}
+                style={styles.storeIcon}
+              />
+            )}
+            {!itemStore?.image && (
+              <MapPin size={10} color={colors.text.secondary} />
+            )}
             <Text style={styles.storeText} numberOfLines={1}>
               {item.storeName} • {item.distance}
             </Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.ratingStoreRow}>
             <Star size={12} color="#fbbf24" fill="#fbbf24" />
             <Text style={styles.ratingText}>{item.rating}</Text>
@@ -255,6 +272,7 @@ export default function CategoryProductsScreen() {
 
   const ProductListCard = ({ item }: { item: Product }) => {
     const wishlisted = isInWishlist(`product-${item.id}`);
+    const itemStore = mockStores.find((s) => s.id === item.storeId);
     return (
       <TouchableOpacity
         style={styles.listCard}
@@ -276,12 +294,27 @@ export default function CategoryProductsScreen() {
           <Text style={styles.productName} numberOfLines={1}>
             {item.name}
           </Text>
-          <View style={styles.storeRow}>
-            <MapPin size={10} color={colors.text.secondary} />
+          <TouchableOpacity
+            style={styles.storeRow}
+            activeOpacity={0.7}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push(`/dukaan/${item.storeId}`);
+            }}
+          >
+            {itemStore?.image && (
+              <Image
+                source={{ uri: itemStore.image }}
+                style={styles.storeIcon}
+              />
+            )}
+            {!itemStore?.image && (
+              <MapPin size={10} color={colors.text.secondary} />
+            )}
             <Text style={styles.storeText} numberOfLines={1}>
               {item.storeName} • {item.distance}
             </Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.ratingStoreRow}>
             <Star size={12} color="#fbbf24" fill="#fbbf24" />
             <Text style={styles.ratingText}>{item.rating}</Text>
@@ -679,6 +712,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     marginBottom: 4,
+  },
+  storeIcon: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#e2e8f0",
   },
   storeText: {
     fontSize: 11,
