@@ -4,33 +4,34 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter, type Href } from "expo-router";
 import { Drawer } from "expo-router/drawer";
 import {
-  BarChart3,
-  Calendar,
-  ChevronRight,
-  Film,
-  Heart,
-  HelpCircle,
-  Languages,
-  LogOut,
-  Settings,
-  ShoppingBag,
-  Store,
-  Truck,
-  User,
+    BarChart3,
+    Calendar,
+    ChevronRight,
+    Film,
+    Heart,
+    HelpCircle,
+    Languages,
+    LogOut,
+    Settings,
+    ShoppingBag,
+    Store,
+    Truck,
+    User,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import {
-  Dimensions,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Import your theme configuration
 import { useApp } from "../../src/context/AppContext";
+import { useAuth } from "../../src/context/AuthContext";
 import { useSettings } from "../../src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "../../src/theme/colors";
 
@@ -39,6 +40,7 @@ const { width } = Dimensions.get("window");
 function CustomDrawerContent(props: any) {
   const router = useRouter();
   const { user, logout } = useApp();
+  const { logout: authLogout } = useAuth();
   const { t } = useSettings();
 
   const accountItems: {
@@ -145,7 +147,8 @@ function CustomDrawerContent(props: any) {
 
   const handleLogout = () => {
     props.navigation.closeDrawer();
-    logout();
+    logout(); // Clear AppContext state
+    authLogout(); // Clear persisted auth session → triggers redirect to login
   };
 
   const renderNavItem = (
