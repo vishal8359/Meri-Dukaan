@@ -1,8 +1,8 @@
-import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import supabase from "../../config/supabase.js";
-import { generateToken } from "../../lib/token.js";
 import AppError from "../../lib/AppError.js";
+import { generateToken } from "../../lib/token.js";
 
 const SALT_ROUNDS = 10;
 
@@ -16,7 +16,14 @@ function generateOtp() {
 
 // ── Registration & Login ────────────────────────────────────
 
-async function register({ name, email, phone, password, profileImage, location }) {
+async function register({
+  name,
+  email,
+  phone,
+  password,
+  profileImage,
+  location,
+}) {
   const { data: byEmail } = await supabase
     .from("users")
     .select("id")
@@ -131,4 +138,5 @@ async function updateProfile(userId, body) {
   return user;
 }
 
-export { register, login, sendOtp, verifyOtp, updateProfile };
+export { login, register, sendOtp, updateProfile, verifyOtp };
+
