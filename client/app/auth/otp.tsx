@@ -1,4 +1,5 @@
 // app/auth/otp.tsx
+import { useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
@@ -29,6 +30,7 @@ const OTP_LENGTH = 6;
 
 export default function OtpScreen() {
   const router = useRouter();
+  const { login: appLogin, updateProfile } = useApp();
   const {
     pendingPhone,
     pendingCountryCode,
@@ -40,13 +42,17 @@ export default function OtpScreen() {
     resetOtpState,
     incrementOtpAttempt,
     startResendCooldown,
-    generateNewOtp,
+    requestPhoneOtp,
+    verifyPhoneOtp,
+    completeAuth,
   } = useAuth();
 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [shake, setShake] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -63,16 +69,49 @@ export default function OtpScreen() {
     setTimeout(() => setShake(false), 600);
   }, []);
 
-  const handleVerify = useCallback(() => {
+  const handleVerify = useCallback(async () => {
     if (!isComplete || isOtpLocked) return;
 
-    if (otpValue === mockOtp) {
+    try {
+      setIsVerifying(true);
+      const result = await verifyPhoneOtp(pendingPhone, otpValue);
       setError("");
+
+      if (result.isNewUser) {
+        setSuccess(true);
+        setTimeout(() => {
+          router.push("/auth/personal-details" as any);
+        }, 800);
+        return;
+      }
+
+      if (!result.user || !result.token) {
+        throw new Error("Invalid verification response from server");
+      }
+
+      const authUser = {
+        id: result.user.id,
+        phone: result.user.phone,
+        countryCode: pendingCountryCode,
+        name: result.user.name || "User",
+        address: result.user.location || "",
+        email: result.user.email || undefined,
+        imageUri: result.user.profile_image || undefined,
+      };
+
+      await completeAuth(authUser, result.token);
+      appLogin(authUser.name);
+      updateProfile({
+        phone: `${pendingCountryCode} ${pendingPhone}`,
+        email: authUser.email,
+        address: authUser.address,
+      });
+
       setSuccess(true);
       setTimeout(() => {
-        router.push("/auth/personal-details" as any);
+        router.replace("/(drawer)/(tabs)/" as any);
       }, 800);
-    } else {
+    } catch {
       incrementOtpAttempt();
       triggerShake();
       const newAttemptsLeft = attemptsLeft - 1;
@@ -88,12 +127,19 @@ export default function OtpScreen() {
       // Clear OTP boxes
       setOtp(Array(OTP_LENGTH).fill(""));
       inputRefs.current[0]?.focus();
+    } finally {
+      setIsVerifying(false);
     }
   }, [
     isComplete,
     isOtpLocked,
     otpValue,
-    mockOtp,
+    verifyPhoneOtp,
+    pendingPhone,
+    pendingCountryCode,
+    completeAuth,
+    appLogin,
+    updateProfile,
     incrementOtpAttempt,
     triggerShake,
     attemptsLeft,
@@ -101,23 +147,39 @@ export default function OtpScreen() {
     router,
   ]);
 
-  const handleResend = useCallback(() => {
+  const handleResend = useCallback(async () => {
     if (resendSecondsLeft > 0) return;
-    const newOtp = generateNewOtp();
-    startResendCooldown();
-    resetOtpState();
-    setOtp(Array(OTP_LENGTH).fill(""));
-    setError("");
-    console.log(`[DEV] New OTP: ${newOtp}`);
-    inputRefs.current[0]?.focus();
-  }, [resendSecondsLeft, generateNewOtp, startResendCooldown, resetOtpState]);
+
+    try {
+      setIsResending(true);
+      const response = await requestPhoneOtp(pendingPhone);
+      startResendCooldown();
+      resetOtpState();
+      setOtp(Array(OTP_LENGTH).fill(""));
+      setError("");
+      if (response.otp) {
+        console.log(`[DEV] New OTP: ${response.otp}`);
+      }
+      inputRefs.current[0]?.focus();
+    } catch (err: any) {
+      setError(err?.message || "Unable to resend OTP. Please try again.");
+    } finally {
+      setIsResending(false);
+    }
+  }, [
+    resendSecondsLeft,
+    requestPhoneOtp,
+    pendingPhone,
+    startResendCooldown,
+    resetOtpState,
+  ]);
 
   // Auto-verify when all digits entered
   useEffect(() => {
-    if (isComplete && !isOtpLocked && !success) {
+    if (isComplete && !isOtpLocked && !success && !isVerifying) {
       handleVerify();
     }
-  }, [isComplete, isOtpLocked, success, handleVerify]);
+  }, [isComplete, isOtpLocked, success, isVerifying, handleVerify]);
 
   // Update error when lockout changes
   useEffect(() => {
@@ -317,14 +379,14 @@ export default function OtpScreen() {
             <Text style={styles.resendLabel}>Didn't receive OTP? </Text>
             <TouchableOpacity
               onPress={handleResend}
-              disabled={resendSecondsLeft > 0}
+              disabled={resendSecondsLeft > 0 || isResending}
               activeOpacity={0.7}
             >
-              {resendSecondsLeft > 0 ? (
+              {resendSecondsLeft > 0 || isResending ? (
                 <View style={styles.resendCooldown}>
                   <Clock size={13} color={colors.text.tertiary} />
                   <Text style={styles.resendCooldownText}>
-                    {resendSecondsLeft}s
+                    {isResending ? "..." : `${resendSecondsLeft}s`}
                   </Text>
                 </View>
               ) : (

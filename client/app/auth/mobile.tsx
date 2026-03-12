@@ -48,7 +48,7 @@ export default function MobileScreen() {
   const {
     setPendingPhone,
     setPendingCountryCode,
-    generateNewOtp,
+    requestPhoneOtp,
     startResendCooldown,
     resetOtpState,
   } = useAuth();
@@ -57,26 +57,39 @@ export default function MobileScreen() {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
   const [showPicker, setShowPicker] = useState(false);
   const [error, setError] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const isValidPhone =
     phone.replace(/\s/g, "").length === selectedCountry.digits;
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     const cleaned = phone.replace(/\s/g, "");
     if (cleaned.length !== selectedCountry.digits) {
       setError(`Please enter a valid ${selectedCountry.digits}-digit number.`);
       return;
     }
+
     setError("");
-    resetOtpState();
-    setPendingPhone(cleaned);
-    setPendingCountryCode(selectedCountry.code);
-    const otp = generateNewOtp();
-    startResendCooldown();
-    // In dev/frontend-only: log OTP to console
-    console.log(`[DEV] OTP for ${selectedCountry.code}${cleaned}: ${otp}`);
-    router.push("/auth/otp" as any);
+    setIsSending(true);
+
+    try {
+      resetOtpState();
+      setPendingPhone(cleaned);
+      setPendingCountryCode(selectedCountry.code);
+      const response = await requestPhoneOtp(cleaned);
+      startResendCooldown();
+
+      if (response.otp) {
+        console.log(`[DEV] OTP for ${selectedCountry.code}${cleaned}: ${response.otp}`);
+      }
+
+      router.push("/auth/otp" as any);
+    } catch (err: any) {
+      setError(err?.message || "Unable to send OTP. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handlePhoneChange = (text: string) => {
@@ -192,14 +205,17 @@ export default function MobileScreen() {
 
           {/* CTA Button */}
           <TouchableOpacity
-            style={[styles.ctaBtn, !isValidPhone && styles.ctaBtnDisabled]}
+            style={[
+              styles.ctaBtn,
+              (!isValidPhone || isSending) && styles.ctaBtnDisabled,
+            ]}
             onPress={handleSendOtp}
             activeOpacity={0.85}
-            disabled={!isValidPhone}
+            disabled={!isValidPhone || isSending}
           >
             <LinearGradient
               colors={
-                isValidPhone
+                isValidPhone && !isSending
                   ? [colors.brand.secondary, colors.brand.accent]
                   : [colors.ui.disabled, colors.ui.disabled]
               }
@@ -207,7 +223,7 @@ export default function MobileScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.ctaText}>Send OTP</Text>
+              <Text style={styles.ctaText}>{isSending ? "Sending..." : "Send OTP"}</Text>
             </LinearGradient>
           </TouchableOpacity>
 

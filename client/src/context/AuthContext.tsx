@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { sendPhoneOtp, verifyPhoneOtp, type VerifyOtpResponse } from "@/src/api/auth";
 import React, {
     createContext,
     useCallback,
@@ -15,6 +16,7 @@ const OTP_LOCKOUT_SECONDS = 30;
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export interface AuthUser {
+  id?: string;
   phone: string;
   countryCode: string;
   name: string;
@@ -23,11 +25,17 @@ export interface AuthUser {
   imageUri?: string;
 }
 
+interface StoredSession {
+  user: AuthUser;
+  token: string | null;
+}
+
 interface AuthContextType {
   // Session state
   isAuthenticated: boolean;
   isLoading: boolean;
   user: AuthUser | null;
+  authToken: string | null;
 
   // Pending auth data (shared between screens)
   pendingPhone: string;
@@ -48,9 +56,11 @@ interface AuthContextType {
   incrementOtpAttempt: () => void;
   startResendCooldown: () => void;
   generateNewOtp: () => string;
+  requestPhoneOtp: (phone: string) => Promise<{ message: string; otp?: string }>;
+  verifyPhoneOtp: (phone: string, otp: string) => Promise<VerifyOtpResponse>;
 
   // Auth actions
-  completeAuth: (user: AuthUser) => Promise<void>;
+  completeAuth: (user: AuthUser, token?: string | null) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -64,6 +74,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Pending auth flow state
   const [pendingPhone, setPendingPhone] = useState("");
@@ -86,8 +97,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const stored = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         if (stored) {
-          const parsed: AuthUser = JSON.parse(stored);
-          setUser(parsed);
+          const parsed = JSON.parse(stored) as AuthUser | StoredSession;
+          if (parsed && typeof parsed === "object" && "user" in parsed) {
+            setUser(parsed.user);
+            setAuthToken(parsed.token ?? null);
+          } else {
+            // Backward compatibility with old storage shape.
+            setUser(parsed as AuthUser);
+            setAuthToken(null);
+          }
           setIsAuthenticated(true);
         }
       } catch {
@@ -155,14 +173,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return otp;
   }, []);
 
-  const completeAuth = useCallback(async (authUser: AuthUser) => {
+  const requestPhoneOtp = useCallback(async (phone: string) => {
+    const result = await sendPhoneOtp(phone);
+    setMockOtp(result.otp || "");
+    return result;
+  }, []);
+
+  const verifyPhoneOtpFromApi = useCallback(async (phone: string, otp: string) => {
+    return verifyPhoneOtp(phone, otp);
+  }, []);
+
+  const completeAuth = useCallback(async (authUser: AuthUser, token?: string | null) => {
     try {
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authUser));
+      const payload: StoredSession = { user: authUser, token: token ?? null };
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
       setUser(authUser);
+      setAuthToken(token ?? null);
       setIsAuthenticated(true);
     } catch {
       // If storage fails, still authenticate in-memory
       setUser(authUser);
+      setAuthToken(token ?? null);
       setIsAuthenticated(true);
     }
   }, []);
@@ -172,6 +203,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
     } finally {
       setUser(null);
+      setAuthToken(null);
       setIsAuthenticated(false);
       setPendingPhone("");
       setPendingEmail("");
@@ -186,6 +218,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isAuthenticated,
         isLoading,
         user,
+        authToken,
         pendingPhone,
         pendingCountryCode,
         pendingEmail,
@@ -201,6 +234,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         incrementOtpAttempt,
         startResendCooldown,
         generateNewOtp,
+        requestPhoneOtp,
+        verifyPhoneOtp: verifyPhoneOtpFromApi,
         completeAuth,
         logout,
       }}
