@@ -1,3 +1,4 @@
+import axios, { AxiosError, type Method } from "axios";
 import Constants from "expo-constants";
 
 export class ApiError extends Error {
@@ -18,7 +19,9 @@ function resolveApiBaseUrl(): string {
     return configured.replace(/\/$/, "");
   }
 
-  const hostUri = Constants.expoConfig?.hostUri || Constants.manifest2?.extra?.expoGo?.debuggerHost;
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    Constants.manifest2?.extra?.expoGo?.debuggerHost;
   if (hostUri && typeof hostUri === "string") {
     const host = hostUri.split(":")[0];
     return `http://${host}:5001/api`;
@@ -29,6 +32,12 @@ function resolveApiBaseUrl(): string {
 
 export const API_BASE_URL = resolveApiBaseUrl();
 
+let globalAuthToken: string | null = null;
+
+export function setApiAuthToken(token: string | null) {
+  globalAuthToken = token;
+}
+
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -36,32 +45,39 @@ type RequestOptions = {
   headers?: Record<string, string>;
 };
 
+const http = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+});
+
 export async function apiRequest<T>(
   path: string,
   { method = "GET", body, token, headers = {} }: RequestOptions = {},
 ): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  try {
+    const response = await http.request<T>({
+      url: path,
+      method: method as Method,
+      data: body,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token || globalAuthToken
+          ? { Authorization: `Bearer ${token ?? globalAuthToken}` }
+          : {}),
+        ...headers,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    const axiosErr = error as AxiosError;
+    const status = axiosErr.response?.status ?? 500;
+    const payload = axiosErr.response?.data;
 
-  const contentType = response.headers.get("content-type") || "";
-  const isJson = contentType.includes("application/json");
-  const payload = isJson ? await response.json() : await response.text();
-
-  if (!response.ok) {
     const message =
       (typeof payload === "object" && payload && "error" in payload
         ? String((payload as { error?: unknown }).error)
-        : undefined) || `Request failed (${response.status})`;
+        : axiosErr.message) || `Request failed (${status})`;
 
-    throw new ApiError(message, response.status, payload);
+    throw new ApiError(message, status, payload);
   }
-
-  return payload as T;
 }

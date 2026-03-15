@@ -1,6 +1,12 @@
 // src/context/AuthContext.tsx
+import {
+    getMe,
+    sendPhoneOtp,
+    verifyPhoneOtp,
+    type VerifyOtpResponse,
+} from "@/src/api/auth";
+import { setApiAuthToken } from "@/src/api/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { sendPhoneOtp, verifyPhoneOtp, type VerifyOtpResponse } from "@/src/api/auth";
 import React, {
     createContext,
     useCallback,
@@ -56,7 +62,9 @@ interface AuthContextType {
   incrementOtpAttempt: () => void;
   startResendCooldown: () => void;
   generateNewOtp: () => string;
-  requestPhoneOtp: (phone: string) => Promise<{ message: string; otp?: string }>;
+  requestPhoneOtp: (
+    phone: string,
+  ) => Promise<{ message: string; otp?: string }>;
   verifyPhoneOtp: (phone: string, otp: string) => Promise<VerifyOtpResponse>;
 
   // Auth actions
@@ -124,6 +132,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  // Keep API client in sync with auth token.
+  useEffect(() => {
+    setApiAuthToken(authToken);
+  }, [authToken]);
+
+  // Refresh server user profile once authenticated.
+  useEffect(() => {
+    (async () => {
+      if (!authToken) return;
+      try {
+        const { user: serverUser } = await getMe(authToken);
+        setUser((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            id: serverUser.id,
+            name: serverUser.name || prev.name,
+            email: serverUser.email || prev.email,
+            phone: serverUser.phone || prev.phone,
+            imageUri: serverUser.profile_image || prev.imageUri,
+            address: serverUser.location || prev.address,
+          };
+        });
+      } catch {
+        // Ignore profile refresh failures; session remains usable.
+      }
+    })();
+  }, [authToken]);
+
   const resetOtpState = useCallback(() => {
     setOtpAttempts(0);
     setIsOtpLocked(false);
@@ -179,24 +216,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return result;
   }, []);
 
-  const verifyPhoneOtpFromApi = useCallback(async (phone: string, otp: string) => {
-    return verifyPhoneOtp(phone, otp);
-  }, []);
+  const verifyPhoneOtpFromApi = useCallback(
+    async (phone: string, otp: string) => {
+      return verifyPhoneOtp(phone, otp);
+    },
+    [],
+  );
 
-  const completeAuth = useCallback(async (authUser: AuthUser, token?: string | null) => {
-    try {
-      const payload: StoredSession = { user: authUser, token: token ?? null };
-      await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
-      setUser(authUser);
-      setAuthToken(token ?? null);
-      setIsAuthenticated(true);
-    } catch {
-      // If storage fails, still authenticate in-memory
-      setUser(authUser);
-      setAuthToken(token ?? null);
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const completeAuth = useCallback(
+    async (authUser: AuthUser, token?: string | null) => {
+      try {
+        const payload: StoredSession = { user: authUser, token: token ?? null };
+        await AsyncStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(payload));
+        setUser(authUser);
+        setAuthToken(token ?? null);
+        setIsAuthenticated(true);
+      } catch {
+        // If storage fails, still authenticate in-memory
+        setUser(authUser);
+        setAuthToken(token ?? null);
+        setIsAuthenticated(true);
+      }
+    },
+    [],
+  );
 
   const logout = useCallback(async () => {
     try {
