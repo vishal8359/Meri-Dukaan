@@ -1,5 +1,4 @@
-import { mockProducts, mockStores, Product } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { CatalogProduct, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -260,6 +259,8 @@ export default function ProductDetailScreen() {
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
+    catalogProducts,
+    allStores,
   } = useApp();
 
   const [mainImageIndex, setMainImageIndex] = useState(0);
@@ -273,7 +274,7 @@ export default function ProductDetailScreen() {
 
   // ─── Look up the actual product by ID (with store fallback) ──────────────
   const product = useMemo(() => {
-    const found = mockProducts.find((p) => p.id === id);
+    const found = catalogProducts.find((p) => p.id === id);
     if (found) return found;
     // Fallback: item from store's local data passed via params
     if (fallbackData) {
@@ -292,18 +293,18 @@ export default function ProductDetailScreen() {
           delivery: parsed.delivery || "30-45 min",
           reviews: parsed.reviews || 0,
           rating: parsed.rating || 4.5,
-        } as Product;
+        } as CatalogProduct;
       } catch {
         /* ignore parse error */
       }
     }
     return null;
-  }, [id, fallbackData]);
+  }, [id, fallbackData, catalogProducts]);
 
   // ─── Store lookup for image ──────────────────────────────────────────────
   const store = useMemo(
-    () => mockStores.find((s) => s.id === product?.storeId),
-    [product],
+    () => allStores.find((s) => s.id === product?.storeId),
+    [product, allStores],
   );
 
   // ─── Product images (1 to 5 photos) ─────────────────────────────────────
@@ -318,10 +319,10 @@ export default function ProductDetailScreen() {
   // ─── Related products: same category, excluding current ──────────────────
   const allRelatedProducts = useMemo(() => {
     if (!product) return [];
-    return mockProducts.filter(
+    return catalogProducts.filter(
       (p) => p.category === product.category && p.id !== product.id,
     );
-  }, [product]);
+  }, [product, catalogProducts]);
 
   // ─── Virtualized batch loading for related products ──────────────────────
   const visibleRelatedProducts = useMemo(

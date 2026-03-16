@@ -1,5 +1,4 @@
-import { mockServices, mockStores, ServiceItem } from "@/src/assets/mockData";
-import { BookedService, useApp } from "@/src/context/AppContext";
+import { BookedService, CatalogService, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -308,6 +307,8 @@ export default function ServiceDetailScreen() {
     getBookingByServiceId,
     updateBooking,
     cancelBooking,
+    catalogServices,
+    allStores,
   } = useApp();
 
   // Image gallery state
@@ -332,7 +333,7 @@ export default function ServiceDetailScreen() {
 
   // ─── Dynamic service lookup (with store fallback) ────────────────────────
   const service = useMemo(() => {
-    const found = mockServices.find((s) => s.id === id);
+    const found = catalogServices.find((s) => s.id === id);
     if (found) return found;
     // Fallback: item from store's local data passed via params
     if (fallbackData) {
@@ -349,13 +350,13 @@ export default function ServiceDetailScreen() {
           rating: parsed.rating || 4.5,
           delivery: parsed.delivery || "Walk-in",
           distance: parsed.distance || "Nearby",
-        } as ServiceItem;
+        } as CatalogService;
       } catch {
         /* ignore parse error */
       }
     }
     return null;
-  }, [id, fallbackData]);
+  }, [id, fallbackData, catalogServices]);
 
   const serviceImages = useMemo(() => {
     if (!service) return [];
@@ -368,21 +369,21 @@ export default function ServiceDetailScreen() {
 
   // ─── Store lookup for image ──────────────────────────────────────────────
   const store = useMemo(
-    () => mockStores.find((s) => s.id === service?.storeId),
-    [service],
+    () => allStores.find((s) => s.id === service?.storeId),
+    [service, allStores],
   );
 
   const relatedServices = useMemo(() => {
     if (!service) return [];
-    return mockServices
+    return catalogServices
       .filter((s) => s.id !== service.id && s.category === service.category)
       .concat(
-        mockServices.filter(
+        catalogServices.filter(
           (s) => s.id !== service.id && s.category !== service.category,
         ),
       )
       .slice(0, 12);
-  }, [service]);
+  }, [service, catalogServices]);
 
   const paginatedRelated = useMemo(
     () => relatedServices.slice(0, visibleRelated),

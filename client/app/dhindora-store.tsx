@@ -1,6 +1,5 @@
 // app/dhindora-store.tsx
-import { EnhancedReel } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { Reel, useApp } from "@/src/context/AppContext";
 import { useReelSession } from "@/src/context/ReelContext";
 import { ReelItem } from "@/src/features/dhindora/components/ReelItem";
 import { reelCache } from "@/src/utils/reelCacheManager";
@@ -40,7 +39,7 @@ export default function StoreDhindoraScreen() {
 
   // Filter reels for this specific store
   const storeReels = useMemo(
-    () => allReels.filter((r: EnhancedReel) => r.store.id === storeId),
+    () => allReels.filter((r: Reel) => r.store.id === storeId),
     [allReels, storeId],
   );
 
@@ -55,7 +54,7 @@ export default function StoreDhindoraScreen() {
   const screenHeight = windowHeight;
 
   const [viewableItem, setViewableItem] = useState<string | null>(null);
-  const [reels, setReels] = useState<EnhancedReel[]>(
+  const [reels, setReels] = useState<Reel[]>(
     storeReels.slice(0, Math.max(REELS_PER_PAGE, startIndex + 2)),
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);

@@ -1,4 +1,5 @@
 // app/auth/personal-details.tsx
+import { register } from "@/src/api/auth";
 import { useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
@@ -50,11 +51,7 @@ export default function PersonalDetailsScreen() {
   const {
     pendingPhone,
     pendingCountryCode,
-    setPendingEmail,
     completeAuth,
-    generateNewOtp,
-    startResendCooldown,
-    resetOtpState,
   } = useAuth();
 
   const { login: appLogin, updateProfile } = useApp();
@@ -154,41 +151,49 @@ export default function PersonalDetailsScreen() {
 
     const emailTrimmed = fields.email.trim().toLowerCase();
 
-    if (emailTrimmed) {
-      // Route to email OTP
-      setPendingEmail(emailTrimmed);
-      resetOtpState();
-      const otp = generateNewOtp();
-      startResendCooldown();
-      console.log(`[DEV] Email OTP for ${emailTrimmed}: ${otp}`);
+    const safeEmail =
+      emailTrimmed || `${pendingPhone.replace(/\D/g, "")}@user.sangam.local`;
+    const generatedPassword = `Sangam@${pendingPhone.replace(/\D/g, "")}`;
 
-      // Stash profile data (will be committed after email OTP)
-      router.push({
-        pathname: "/auth/email-otp" as any,
-        params: {
-          name: fields.name.trim(),
-          address: fields.address.trim(),
-          imageUri: imageUri ?? "",
-        },
-      });
-    } else {
-      // No email → complete auth directly
-      await completeAuth({
-        phone: pendingPhone,
-        countryCode: pendingCountryCode,
+    try {
+      const { user, token } = await register({
         name: fields.name.trim(),
-        address: fields.address.trim(),
-        imageUri: imageUri ?? undefined,
+        email: safeEmail,
+        phone: pendingPhone,
+        password: generatedPassword,
+        profileImage: imageUri ?? undefined,
+        location: fields.address.trim(),
       });
-      // Sync to AppContext user profile
-      appLogin(fields.name.trim());
+
+      await completeAuth(
+        {
+          id: user.id,
+          phone: user.phone,
+          countryCode: pendingCountryCode,
+          name: user.name,
+          address: user.location || fields.address.trim(),
+          email: user.email || undefined,
+          imageUri: user.profile_image || imageUri || undefined,
+        },
+        token,
+      );
+
+      appLogin(user.name);
       updateProfile({
         phone: `${pendingCountryCode} ${pendingPhone}`,
-        address: fields.address.trim(),
+        email: user.email || undefined,
+        address: user.location || fields.address.trim(),
       });
+
       router.replace("/(drawer)/(tabs)/" as any);
+    } catch (err: any) {
+      Alert.alert(
+        "Setup failed",
+        err?.message || "Could not complete setup. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const isReady =
@@ -381,9 +386,7 @@ export default function PersonalDetailsScreen() {
                 end={{ x: 1, y: 0 }}
               >
                 <Text style={styles.ctaText}>
-                  {fields.email.trim()
-                    ? "Continue to Verify Email"
-                    : "Complete Setup"}
+                  {isSubmitting ? "Completing Setup..." : "Complete Setup"}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

@@ -1,6 +1,7 @@
 // src/hooks/useDebounceSearch.ts
 import { useCallback, useEffect, useRef, useState } from "react";
-import { mockProducts, mockServices, mockStores } from "../assets/mockData";
+
+import * as storeApi from "../api/stores";
 
 export interface SearchResult {
   type: "product" | "service" | "store";
@@ -11,80 +12,126 @@ export interface SearchResult {
   category?: string;
 }
 
-/**
- * Custom hook for debounced search across products, services, and stores
- * @param delay - debounce delay in ms (default: 300ms)
- */
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=300";
+
 export function useDebounceSearch(delay: number = 300) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [defaultSuggestions, setDefaultSuggestions] = useState<SearchResult[]>(
+    [],
+  );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestIdRef = useRef(0);
 
-  const search = useCallback((text: string) => {
+  const mapStoreResult = (store: any): SearchResult => {
+    const firstImage = Array.isArray(store?.images)
+      ? store.images[0]?.image_url
+      : undefined;
+
+    return {
+      type: "store",
+      id: String(store?.id ?? ""),
+      name: String(store?.store_name ?? "Store"),
+      subtitle: `${store?.category ?? "General"} • ⭐ ${Number(store?.rating ?? 0).toFixed(1)}`,
+      image: firstImage || FALLBACK_IMAGE,
+      category: String(store?.category ?? "General"),
+    };
+  };
+
+  const search = useCallback(async (text: string) => {
+    const requestId = ++requestIdRef.current;
+
     if (!text.trim()) {
       setResults([]);
       setIsSearching(false);
       return;
     }
 
-    const lowerQuery = text.toLowerCase();
+    try {
+      setIsSearching(true);
+      const lowerQuery = text.trim().toLowerCase();
 
-    // Search products
-    const productResults: SearchResult[] = mockProducts
-      .filter(
-        (p) =>
-          p.name.toLowerCase().includes(lowerQuery) ||
-          p.category.toLowerCase().includes(lowerQuery),
-      )
-      .slice(0, 5)
-      .map((p) => ({
-        type: "product" as const,
-        id: p.id,
-        name: p.name,
-        subtitle: `₹${p.price} • ${p.storeName}`,
-        image: p.image,
-        category: p.category,
-      }));
+      const storeRes = await storeApi.getStores({
+        search: lowerQuery,
+        page: 1,
+        limit: 10,
+      });
 
-    // Search stores
-    const storeResults: SearchResult[] = mockStores
-      .filter(
-        (s) =>
-          s.name.toLowerCase().includes(lowerQuery) ||
-          s.type.toLowerCase().includes(lowerQuery),
-      )
-      .slice(0, 5)
-      .map((s) => ({
-        type: "store" as const,
-        id: s.id,
-        name: s.name,
-        subtitle: `${s.type} • ${s.distance} • ⭐ ${s.rating}`,
-        image: s.image,
-      }));
+      const stores = Array.isArray(storeRes?.stores)
+        ? (storeRes.stores as any[])
+        : [];
 
-    // Search services
-    const serviceResults: SearchResult[] = mockServices
-      .filter(
-        (s) =>
-          s.name.toLowerCase().includes(lowerQuery) ||
-          s.category.toLowerCase().includes(lowerQuery) ||
-          (s.description && s.description.toLowerCase().includes(lowerQuery)),
-      )
-      .slice(0, 5)
-      .map((s) => ({
-        type: "service" as const,
-        id: s.id,
-        name: s.name,
-        subtitle: `₹${s.price} • ${s.storeName} • ${s.duration || ""}`,
-        image: s.image,
-        category: s.category,
-      }));
+      const storeResults: SearchResult[] = stores.slice(0, 5).map(mapStoreResult);
 
-    setResults(
-      [...productResults, ...serviceResults, ...storeResults].slice(0, 10),
-    );
-    setIsSearching(false);
+      const detailFetches = stores.slice(0, 4).map(async (store) => {
+        const storeId = String(store?.id ?? "");
+        const [productsRes, servicesRes] = await Promise.allSettled([
+          storeApi.getStoreProducts(storeId),
+          storeApi.getStoreServices(storeId),
+        ]);
+
+        const products =
+          productsRes.status === "fulfilled" &&
+          Array.isArray(productsRes.value?.products)
+            ? (productsRes.value.products as any[])
+            : [];
+
+        const services =
+          servicesRes.status === "fulfilled" &&
+          Array.isArray(servicesRes.value?.services)
+            ? (servicesRes.value.services as any[])
+            : [];
+
+        const mappedProducts: SearchResult[] = products
+          .filter((p) => String(p?.name ?? "").toLowerCase().includes(lowerQuery))
+          .slice(0, 2)
+          .map((p) => ({
+            type: "product" as const,
+            id: String(p?.id ?? ""),
+            name: String(p?.name ?? "Product"),
+            subtitle: `₹${Number(p?.offer_price ?? p?.real_price ?? 0)} • ${store?.store_name ?? "Store"}`,
+            image: Array.isArray(p?.images)
+              ? p.images[0]?.image_url || FALLBACK_IMAGE
+              : FALLBACK_IMAGE,
+            category: String(p?.type ?? "General"),
+          }));
+
+        const mappedServices: SearchResult[] = services
+          .filter(
+            (s) =>
+              String(s?.name ?? "").toLowerCase().includes(lowerQuery) ||
+              String(s?.description ?? "").toLowerCase().includes(lowerQuery),
+          )
+          .slice(0, 2)
+          .map((s) => ({
+            type: "service" as const,
+            id: String(s?.id ?? ""),
+            name: String(s?.name ?? "Service"),
+            subtitle: `${store?.store_name ?? "Store"} • ${s?.timings ?? ""}`,
+            image: FALLBACK_IMAGE,
+            category: String(s?.type ?? "Service"),
+          }));
+
+        return [...mappedProducts, ...mappedServices];
+      });
+
+      const detailed = (await Promise.all(detailFetches)).flat();
+      const combined = [...storeResults, ...detailed].slice(0, 12);
+
+      if (requestId === requestIdRef.current) {
+        setResults(combined);
+      }
+    } catch {
+      if (requestId === requestIdRef.current) {
+        setResults([]);
+      }
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setIsSearching(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -96,14 +143,12 @@ export function useDebounceSearch(delay: number = 300) {
 
     setIsSearching(true);
 
-    // Clear previous timer
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
 
-    // Set new debounce timer
     timerRef.current = setTimeout(() => {
-      search(query);
+      void search(query);
     }, delay);
 
     return () => {
@@ -113,41 +158,25 @@ export function useDebounceSearch(delay: number = 300) {
     };
   }, [query, delay, search]);
 
-  // Default suggestions shown before user types
-  const defaultSuggestions: SearchResult[] = [
-    ...mockStores
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3)
-      .map((s) => ({
-        type: "store" as const,
-        id: s.id,
-        name: s.name,
-        subtitle: `${s.type} • ${s.distance} • ⭐ ${s.rating}`,
-        image: s.image,
-      })),
-    ...mockProducts
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3)
-      .map((p) => ({
-        type: "product" as const,
-        id: p.id,
-        name: p.name,
-        subtitle: `₹${p.price} • ${p.storeName}`,
-        image: p.image,
-        category: p.category,
-      })),
-    ...mockServices
-      .sort((a, b) => b.rating - a.rating)
-      .slice(0, 3)
-      .map((s) => ({
-        type: "service" as const,
-        id: s.id,
-        name: s.name,
-        subtitle: `₹${s.price} • ${s.storeName}`,
-        image: s.image,
-        category: s.category,
-      })),
-  ];
+  useEffect(() => {
+    (async () => {
+      try {
+        const storesRes = await storeApi.getStores({ page: 1, limit: 6 });
+        const stores = Array.isArray(storesRes?.stores)
+          ? (storesRes.stores as any[])
+          : [];
+
+        const suggestions = stores
+          .sort((a, b) => Number(b?.rating ?? 0) - Number(a?.rating ?? 0))
+          .slice(0, 6)
+          .map(mapStoreResult);
+
+        setDefaultSuggestions(suggestions);
+      } catch {
+        setDefaultSuggestions([]);
+      }
+    })();
+  }, []);
 
   return {
     query,

@@ -14,7 +14,7 @@ import * as cartApi from "../api/cart";
 import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
 import * as storeApi from "../api/stores";
-import { EnhancedReel, mockReels, mockStores, Store } from "../assets/mockData";
+import { EnhancedReel, Store } from "../types/catalog";
 import { useAuth } from "./AuthContext";
 
 // --- Interfaces ---
@@ -43,6 +43,46 @@ export interface WishlistItem {
   storeType?: string;
   distance?: string;
   duration?: string;
+}
+
+export interface CatalogProduct {
+  id: string;
+  storeId: string;
+  storeName: string;
+  name: string;
+  category: string;
+  image: string;
+  images: string[];
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  rating: number;
+  reviews: number;
+  distance: string;
+  description?: string;
+  unit?: string;
+  delivery?: string;
+  isSubscription?: boolean;
+}
+
+export interface CatalogService {
+  id: string;
+  storeId: string;
+  storeName: string;
+  name: string;
+  category: string;
+  image: string;
+  images: string[];
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  rating: number;
+  reviewsCount: number;
+  distance: string;
+  description?: string;
+  duration?: string;
+  active?: boolean;
+  features?: string[];
 }
 
 // Booked Service interface
@@ -199,6 +239,8 @@ interface AppContextType {
 
   // Store Management (Centralized)
   allStores: Store[];
+  catalogProducts: CatalogProduct[];
+  catalogServices: CatalogService[];
   getStoreById: (id: string) => Store | undefined;
   getFeaturedStores: (limit?: number) => Store[];
   getStoresByType: (type: string) => Store[];
@@ -271,9 +313,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [bookedServices, setBookedServices] = useState<BookedService[]>([]);
-  const [allStores, setAllStores] = useState<Store[]>(mockStores);
+  const [allStores, setAllStores] = useState<Store[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
+  const [catalogServices, setCatalogServices] = useState<CatalogService[]>([]);
   const [followedStoreIds, setFollowedStoreIds] = useState<string[]>([]);
-  const [reels, setReels] = useState<EnhancedReel[]>(mockReels);
+  const [reels, setReels] = useState<EnhancedReel[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [myStore, setMyStore] = useState<MyStore | null>(null);
 
@@ -455,6 +499,67 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  const mapCatalogProduct = useCallback((store: any, raw: any): CatalogProduct => {
+    const offerPrice = Number(raw?.offer_price ?? 0);
+    const realPrice = Number(raw?.real_price ?? 0);
+    const price = offerPrice || realPrice;
+    const discount = realPrice > price && realPrice > 0
+      ? Math.round(((realPrice - price) / realPrice) * 100)
+      : 0;
+
+    const imageUrls: string[] = Array.isArray(raw?.images)
+      ? raw.images
+          .map((img: any) => img?.image_url)
+          .filter((url: unknown): url is string => typeof url === "string")
+      : [];
+
+    const fallbackImage =
+      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400";
+
+    return {
+      id: String(raw?.id ?? ""),
+      storeId: String(store?.id ?? raw?.store_id ?? ""),
+      storeName: String(store?.store_name ?? "Store"),
+      name: String(raw?.name ?? "Product"),
+      category: String(raw?.type ?? "general").toLowerCase(),
+      image: imageUrls[0] || fallbackImage,
+      images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+      price,
+      originalPrice: realPrice > price ? realPrice : undefined,
+      discount: discount > 0 ? discount : undefined,
+      rating: Number(raw?.rating ?? 0),
+      reviews: 0,
+      distance: String(store?.distance ?? "0 km"),
+      description: String(raw?.description ?? ""),
+      unit: "1 pc",
+      delivery: "30-45 min",
+      isSubscription: true,
+    };
+  }, []);
+
+  const mapCatalogService = useCallback((store: any, raw: any): CatalogService => {
+    const fallbackImage =
+      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
+
+    return {
+      id: String(raw?.id ?? ""),
+      storeId: String(store?.id ?? raw?.store_id ?? ""),
+      storeName: String(store?.store_name ?? "Store"),
+      name: String(raw?.name ?? "Service"),
+      category: String(raw?.type ?? "service").toLowerCase(),
+      image: fallbackImage,
+      images: [fallbackImage],
+      price: 0,
+      rating: Number(raw?.rating ?? 0),
+      reviewsCount: 0,
+      distance: String(store?.distance ?? "0 km"),
+      description: String(raw?.description ?? ""),
+      duration: String(raw?.timings ?? ""),
+      active: Boolean(raw?.availability ?? true),
+      features: [],
+    };
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -462,12 +567,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const mapped = Array.isArray(response.stores)
           ? response.stores.map(mapStoreFromApi)
           : [];
-        if (mapped.length > 0) setAllStores(mapped);
+        setAllStores(mapped);
       } catch {
-        // Keep mock stores as fallback.
+        setAllStores([]);
       }
     })();
   }, [mapStoreFromApi]);
+
+  useEffect(() => {
+    (async () => {
+      if (!allStores.length) {
+        setCatalogProducts([]);
+        setCatalogServices([]);
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          allStores.map(async (store) => {
+            const [productsRes, servicesRes] = await Promise.allSettled([
+              storeApi.getStoreProducts(store.id),
+              storeApi.getStoreServices(store.id),
+            ]);
+
+            const products =
+              productsRes.status === "fulfilled" &&
+              Array.isArray(productsRes.value?.products)
+                ? (productsRes.value.products as any[])
+                : [];
+
+            const services =
+              servicesRes.status === "fulfilled" &&
+              Array.isArray(servicesRes.value?.services)
+                ? (servicesRes.value.services as any[])
+                : [];
+
+            return {
+              store,
+              products,
+              services,
+            };
+          }),
+        );
+
+        const mappedProducts = results
+          .flatMap((entry) =>
+            entry.products.map((product) => mapCatalogProduct(entry.store, product)),
+          )
+          .filter((item) => item.id);
+
+        const mappedServices = results
+          .flatMap((entry) =>
+            entry.services.map((service) => mapCatalogService(entry.store, service)),
+          )
+          .filter((item) => item.id);
+
+        setCatalogProducts(mappedProducts);
+        setCatalogServices(mappedServices);
+      } catch {
+        setCatalogProducts([]);
+        setCatalogServices([]);
+      }
+    })();
+  }, [allStores, mapCatalogProduct, mapCatalogService]);
 
   useEffect(() => {
     (async () => {
@@ -476,9 +638,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         const mapped = Array.isArray(response.reels)
           ? response.reels.map(mapReelFromApi)
           : [];
-        if (mapped.length > 0) setReels(mapped);
+        setReels(mapped);
       } catch {
-        // Keep mock reels as fallback.
+        setReels([]);
       }
     })();
   }, [mapReelFromApi]);
@@ -580,7 +742,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date(ownerStore.created_at ?? Date.now()).getTime(),
         });
       } catch {
-        // Keep local myStore state as fallback.
+        setMyStore(null);
       }
     })();
   }, [
@@ -1207,6 +1369,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       // Stores
       allStores,
+      catalogProducts,
+      catalogServices,
       getStoreById,
       getFeaturedStores,
       getStoresByType,
@@ -1258,6 +1422,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       cart,
       cartTotal,
       allStores,
+      catalogProducts,
+      catalogServices,
       reels,
       wishlist,
       bookedServices,

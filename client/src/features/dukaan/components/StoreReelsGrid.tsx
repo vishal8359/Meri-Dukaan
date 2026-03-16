@@ -1,5 +1,5 @@
 // src/features/dukaan/components/StoreReelsGrid.tsx
-import { EnhancedReel } from "@/src/assets/mockData";
+import { Reel } from "@/src/context/AppContext";
 import { Eye, Play } from "lucide-react-native";
 import React, { useCallback, useMemo } from "react";
 import {
@@ -21,15 +21,15 @@ const ITEM_WIDTH =
 const ITEM_HEIGHT = ITEM_WIDTH * 1.5;
 
 interface StoreReelsGridProps {
-  reels: EnhancedReel[];
-  onReelPress: (reel: EnhancedReel, index: number) => void;
+  reels: Reel[];
+  onReelPress: (reel: Reel, index: number) => void;
   isLoading?: boolean;
   onEndReached?: () => void;
   ListHeaderComponent?: React.ReactElement;
 }
 
 interface ReelThumbnailProps {
-  reel: EnhancedReel;
+  reel: Reel;
   index: number;
   onPress: () => void;
 }
@@ -97,7 +97,7 @@ export const StoreReelsGrid: React.FC<StoreReelsGridProps> = ({
   );
 
   const renderItem = useCallback(
-    ({ item, index }: { item: EnhancedReel; index: number }) => (
+    ({ item, index }: { item: Reel; index: number }) => (
       <ReelThumbnail
         reel={item}
         index={index}
@@ -107,7 +107,7 @@ export const StoreReelsGrid: React.FC<StoreReelsGridProps> = ({
     [onReelPress],
   );
 
-  const keyExtractor = useCallback((item: EnhancedReel) => item._id, []);
+  const keyExtractor = useCallback((item: Reel) => item._id, []);
 
   const ListFooterComponent = useMemo(
     () =>

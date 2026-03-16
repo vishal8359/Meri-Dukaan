@@ -10,8 +10,7 @@ import {
     View,
 } from "react-native";
 
-import { EnhancedReel } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { Reel, useApp } from "@/src/context/AppContext";
 import { colors } from "@/src/theme/colors";
 import {
     useCommentsManager,
@@ -25,7 +24,7 @@ import { ReelSidebar } from "./ReelSidebar";
 import { ShareModal } from "./ShareModal";
 
 interface ReelItemProps {
-  item: EnhancedReel;
+  item: Reel;
   isVisible: boolean;
   isPaused: boolean;
   itemHeight: number;
@@ -33,8 +32,7 @@ interface ReelItemProps {
   onLikeToggle: (reelId: string) => void;
 }
 
-// Helper to convert mockData comments to component format
-const convertComments = (comments: EnhancedReel["comments"]): ReelComment[] => {
+const convertComments = (comments: Reel["comments"]): ReelComment[] => {
   return comments.map((c) => ({
     id: c.id,
     user: {

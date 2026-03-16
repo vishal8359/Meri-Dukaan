@@ -1,6 +1,5 @@
 // app/dukaan/reels/[storeId].tsx
-import { EnhancedReel } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { Reel, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import StoreReelsGrid from "@/src/features/dukaan/components/StoreReelsGrid";
 import { router, useLocalSearchParams } from "expo-router";
@@ -29,12 +28,12 @@ export default function StoreReelsPage() {
 
   // Filter reels for this store
   const storeReels = useMemo(
-    () => reels.filter((r: EnhancedReel) => r.store.id === storeId),
+    () => reels.filter((r: Reel) => r.store.id === storeId),
     [reels, storeId],
   );
 
   const handleReelPress = useCallback(
-    (reel: EnhancedReel, index: number) => {
+    (reel: Reel, index: number) => {
       // Navigate to dhindora with store filter
       router.push({
         pathname: "/dhindora-store",
@@ -75,7 +74,7 @@ export default function StoreReelsPage() {
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
               {storeReels.reduce(
-                (acc: number, r: EnhancedReel) => acc + r.likesCount,
+                (acc: number, r: Reel) => acc + r.likesCount,
                 0,
               )}
             </Text>
@@ -85,7 +84,7 @@ export default function StoreReelsPage() {
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
               {storeReels.reduce(
-                (acc: number, r: EnhancedReel) => acc + r.comments.length,
+                (acc: number, r: Reel) => acc + r.comments.length,
                 0,
               )}
             </Text>

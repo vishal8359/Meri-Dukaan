@@ -1,12 +1,9 @@
 ﻿// src/features/dashboard/screens/HomeScreen.tsx
 import {
-    mockProducts,
-    mockServices,
-    Product,
-    PRODUCT_CATEGORIES,
-    SERVICE_CATEGORY_IDS,
-    ServiceItem,
-} from "@/src/assets/mockData";
+  PRODUCT_CATEGORIES,
+  SERVICE_CATEGORY_IDS,
+} from "@/src/constants/catalog";
+import * as storeApi from "@/src/api/stores";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +21,7 @@ import {
 import React, { useEffect, useMemo, useRef } from "react";
 import {
     Animated,
+  ActivityIndicator,
     Dimensions,
     FlatList,
     Image,
@@ -36,6 +34,34 @@ import {
 const { width } = Dimensions.get("window");
 
 const QUICK_PICKS = PRODUCT_CATEGORIES.filter((c) => c.id !== "all");
+
+type DashboardProduct = {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  rating: number;
+  storeId: string;
+  storeName: string;
+  distance: string;
+  isSubscription: boolean;
+  category: string;
+};
+
+type DashboardService = {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  discount?: number;
+  rating: number;
+  storeId: string;
+  storeName: string;
+  distance: string;
+  duration?: string;
+};
 
 const TOP_OFFERS = [
   {
@@ -84,34 +110,109 @@ export default function HomeScreen() {
   const { cart, allStores, getSelectedAddress } = useApp();
   const selectedAddress = getSelectedAddress();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [flashDealProducts, setFlashDealProducts] = React.useState<
+    DashboardProduct[]
+  >([]);
+  const [flashDealServices, setFlashDealServices] = React.useState<
+    DashboardService[]
+  >([]);
+  const [isDealsLoading, setIsDealsLoading] = React.useState(true);
 
   const bannerScrollRef = useRef<FlatList>(null);
   const bannerIndexRef = useRef(0);
   const trendingScrollRef = useRef<FlatList>(null);
   const trendingIndexRef = useRef(0);
 
-  const flashDealProducts = useMemo(
-    () =>
-      mockProducts
-        .filter(
-          (p) =>
-            p.isSubscription &&
-            p.discount &&
-            !SERVICE_CATEGORY_IDS.includes(p.category),
-        )
-        .sort((a, b) => (b.discount || 0) - (a.discount || 0))
-        .slice(0, 10),
-    [],
-  );
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsDealsLoading(true);
+        const storesRes = await storeApi.getStores({ page: 1, limit: 12 });
+        const stores = Array.isArray(storesRes?.stores)
+          ? (storesRes.stores as any[])
+          : [];
 
-  const flashDealServices = useMemo(
-    () =>
-      mockServices
-        .filter((s) => s.active && s.discount)
-        .sort((a, b) => (b.discount || 0) - (a.discount || 0))
-        .slice(0, 10),
-    [],
-  );
+        const storeSlice = stores.slice(0, 8);
+
+        const [productBuckets, serviceBuckets] = await Promise.all([
+          Promise.all(
+            storeSlice.map(async (store) => {
+              const res = await storeApi.getStoreProducts(String(store.id));
+              const products = Array.isArray(res?.products)
+                ? (res.products as any[])
+                : [];
+
+              return products.map((p) => {
+                const offer = Number(p?.offer_price ?? 0);
+                const real = Number(p?.real_price ?? 0);
+                const discount = real > offer && real > 0
+                  ? Math.round(((real - offer) / real) * 100)
+                  : 0;
+
+                return {
+                  id: String(p?.id ?? ""),
+                  name: String(p?.name ?? "Product"),
+                  image: Array.isArray(p?.images)
+                    ? p.images[0]?.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400"
+                    : "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400",
+                  price: offer || real,
+                  originalPrice: real > offer ? real : undefined,
+                  discount: discount > 0 ? discount : undefined,
+                  rating: Number(p?.rating ?? 0),
+                  storeId: String(store?.id ?? ""),
+                  storeName: String(store?.store_name ?? "Store"),
+                  distance: String(store?.distance ?? "0 km"),
+                  isSubscription: true,
+                  category: String(p?.type ?? "general").toLowerCase(),
+                } as DashboardProduct;
+              });
+            }),
+          ),
+          Promise.all(
+            storeSlice.map(async (store) => {
+              const res = await storeApi.getStoreServices(String(store.id));
+              const services = Array.isArray(res?.services)
+                ? (res.services as any[])
+                : [];
+
+              return services.map((s) => ({
+                id: String(s?.id ?? ""),
+                name: String(s?.name ?? "Service"),
+                image:
+                  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+                price: 0,
+                discount: undefined,
+                rating: Number(s?.rating ?? 0),
+                storeId: String(store?.id ?? ""),
+                storeName: String(store?.store_name ?? "Store"),
+                distance: String(store?.distance ?? "0 km"),
+                duration: String(s?.timings ?? ""),
+              })) as DashboardService[];
+            }),
+          ),
+        ]);
+
+        const products = productBuckets
+          .flat()
+          .filter((p) => !SERVICE_CATEGORY_IDS.includes(p.category))
+          .sort((a, b) => (b.discount || 0) - (a.discount || 0))
+          .slice(0, 10);
+
+        const services = serviceBuckets
+          .flat()
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 10);
+
+        setFlashDealProducts(products);
+        setFlashDealServices(services);
+      } catch {
+        setFlashDealProducts([]);
+        setFlashDealServices([]);
+      } finally {
+        setIsDealsLoading(false);
+      }
+    })();
+  }, []);
 
   const trendingStores = useMemo(() => {
     return [...allStores]
@@ -191,7 +292,7 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const FlashDealCard = ({ item }: { item: Product }) => (
+  const FlashDealCard = ({ item }: { item: DashboardProduct }) => (
     <TouchableOpacity
       style={styles.flashDealCard}
       onPress={() => navigateToProduct(item.id)}
@@ -230,7 +331,7 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const FlashServiceCard = ({ item }: { item: ServiceItem }) => (
+  const FlashServiceCard = ({ item }: { item: DashboardService }) => (
     <TouchableOpacity
       style={styles.flashDealCard}
       onPress={() => navigateToService(item.id)}

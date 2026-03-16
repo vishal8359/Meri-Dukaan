@@ -1,6 +1,5 @@
 // src/features/dhindora/screens/DhindoraScreen.tsx
-import { EnhancedReel } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { Reel, useApp } from "@/src/context/AppContext";
 import { useReelSession } from "@/src/context/ReelContext";
 import { reelCache } from "@/src/utils/reelCacheManager";
 import { preloadNextReel } from "@/src/utils/videoLoadingOptimizer";
@@ -28,7 +27,7 @@ export default function DhindoraScreen() {
   const screenHeight = windowHeight;
 
   const [viewableItem, setViewableItem] = useState<string | null>(null);
-  const [reels, setReels] = useState<EnhancedReel[]>(
+  const [reels, setReels] = useState<Reel[]>(
     initialReels.slice(0, REELS_PER_PAGE),
   );
   const [isLoadingMore, setIsLoadingMore] = useState(false);

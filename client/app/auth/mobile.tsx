@@ -7,19 +7,19 @@ import { ChevronDown, Phone, ShoppingBag } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import React, { useRef, useState } from "react";
 import {
-    Dimensions,
-    FlatList,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { height } = Dimensions.get("window");
@@ -81,7 +81,9 @@ export default function MobileScreen() {
       startResendCooldown();
 
       if (response.otp) {
-        console.log(`[DEV] OTP for ${selectedCountry.code}${cleaned}: ${response.otp}`);
+        console.log(
+          `[DEV] OTP for ${selectedCountry.code}${cleaned}: ${response.otp}`,
+        );
       }
 
       router.push("/auth/otp" as any);
@@ -223,7 +225,9 @@ export default function MobileScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
             >
-              <Text style={styles.ctaText}>{isSending ? "Sending..." : "Send OTP"}</Text>
+              <Text style={styles.ctaText}>
+                {isSending ? "Sending..." : "Send OTP"}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
 

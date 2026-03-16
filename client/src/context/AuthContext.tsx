@@ -47,7 +47,6 @@ interface AuthContextType {
   pendingPhone: string;
   pendingCountryCode: string;
   pendingEmail: string;
-  mockOtp: string; // For frontend-only dev/testing
 
   setPendingPhone: (phone: string) => void;
   setPendingCountryCode: (code: string) => void;
@@ -61,7 +60,6 @@ interface AuthContextType {
   resetOtpState: () => void;
   incrementOtpAttempt: () => void;
   startResendCooldown: () => void;
-  generateNewOtp: () => string;
   requestPhoneOtp: (
     phone: string,
   ) => Promise<{ message: string; otp?: string }>;
@@ -74,10 +72,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,7 +82,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [pendingPhone, setPendingPhone] = useState("");
   const [pendingCountryCode, setPendingCountryCode] = useState("+91");
   const [pendingEmail, setPendingEmail] = useState("");
-  const [mockOtp, setMockOtp] = useState(() => generateOtp());
 
   // OTP rate limiting state
   const [otpAttempts, setOtpAttempts] = useState(0);
@@ -204,16 +197,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, 1000);
   }, []);
 
-  const generateNewOtp = useCallback((): string => {
-    const otp = generateOtp();
-    setMockOtp(otp);
-    return otp;
-  }, []);
-
   const requestPhoneOtp = useCallback(async (phone: string) => {
-    const result = await sendPhoneOtp(phone);
-    setMockOtp(result.otp || "");
-    return result;
+    return sendPhoneOtp(phone);
   }, []);
 
   const verifyPhoneOtpFromApi = useCallback(
@@ -251,7 +236,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setPendingPhone("");
       setPendingEmail("");
       resetOtpState();
-      setMockOtp(generateOtp());
     }
   }, [resetOtpState]);
 
@@ -265,7 +249,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         pendingPhone,
         pendingCountryCode,
         pendingEmail,
-        mockOtp,
         setPendingPhone,
         setPendingCountryCode,
         setPendingEmail,
@@ -276,7 +259,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         resetOtpState,
         incrementOtpAttempt,
         startResendCooldown,
-        generateNewOtp,
         requestPhoneOtp,
         verifyPhoneOtp: verifyPhoneOtpFromApi,
         completeAuth,

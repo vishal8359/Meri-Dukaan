@@ -1,10 +1,8 @@
 // src/features/mybusz/screens/MyBuszScreen.tsx
 import {
-    mockProducts,
-    Product,
-    PRODUCT_CATEGORIES,
-} from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+  PRODUCT_CATEGORIES,
+} from "@/src/constants/catalog";
+import { CatalogProduct, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -98,14 +96,14 @@ const ProductGridCardItem = memo(
     onIncrease,
     onDecrease,
   }: {
-    item: Product;
+    item: CatalogProduct;
     wishlisted: boolean;
     cartQty: number;
-    onPress: (item: Product) => void;
-    onToggleWishlist: (item: Product) => void;
-    onAddToCart: (item: Product) => void;
-    onIncrease: (item: Product) => void;
-    onDecrease: (item: Product) => void;
+    onPress: (item: CatalogProduct) => void;
+    onToggleWishlist: (item: CatalogProduct) => void;
+    onAddToCart: (item: CatalogProduct) => void;
+    onIncrease: (item: CatalogProduct) => void;
+    onDecrease: (item: CatalogProduct) => void;
   }) => {
     const isInCart = cartQty > 0;
     return (
@@ -196,14 +194,14 @@ const ProductListCardItem = memo(
     onIncrease,
     onDecrease,
   }: {
-    item: Product;
+    item: CatalogProduct;
     wishlisted: boolean;
     cartQty: number;
-    onPress: (item: Product) => void;
-    onToggleWishlist: (item: Product) => void;
-    onAddToCart: (item: Product) => void;
-    onIncrease: (item: Product) => void;
-    onDecrease: (item: Product) => void;
+    onPress: (item: CatalogProduct) => void;
+    onToggleWishlist: (item: CatalogProduct) => void;
+    onAddToCart: (item: CatalogProduct) => void;
+    onIncrease: (item: CatalogProduct) => void;
+    onDecrease: (item: CatalogProduct) => void;
   }) => {
     const isInCart = cartQty > 0;
     return (
@@ -296,6 +294,7 @@ export default function MyBuszScreen() {
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
+    catalogProducts,
   } = useApp();
 
   const [selectedCategory, setSelectedCategory] = useState(
@@ -340,7 +339,7 @@ export default function MyBuszScreen() {
   );
 
   const filteredProducts = useMemo(() => {
-    let products = [...mockProducts];
+    let products = [...catalogProducts];
 
     if (selectedCategory !== "all") {
       products = products.filter((p) => p.category === selectedCategory);
@@ -387,7 +386,7 @@ export default function MyBuszScreen() {
   }, [cart]);
 
   const handleAddToCart = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       addToCart({
         id: product.id,
         name: product.name,
@@ -406,7 +405,7 @@ export default function MyBuszScreen() {
   );
 
   const handleIncreaseQuantity = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       const currentQty = cartQtyMap[product.id] || 0;
       updateCartQuantity(product.id, currentQty + 1);
     },
@@ -414,7 +413,7 @@ export default function MyBuszScreen() {
   );
 
   const handleDecreaseQuantity = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       const currentQty = cartQtyMap[product.id] || 0;
       if (currentQty > 1) {
         updateCartQuantity(product.id, currentQty - 1);
@@ -433,7 +432,7 @@ export default function MyBuszScreen() {
   );
 
   const toggleWishlist = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       const wishlistId = `product-${product.id}`;
       if (isInWishlist(wishlistId)) {
         removeFromWishlist(wishlistId);
@@ -474,7 +473,7 @@ export default function MyBuszScreen() {
   ];
 
   const handleProductPress = useCallback(
-    (item: Product) => {
+    (item: CatalogProduct) => {
       router.push({
         pathname: "/product/[id]",
         params: { id: item.id },
@@ -484,7 +483,7 @@ export default function MyBuszScreen() {
   );
 
   const renderGridItem = useCallback(
-    ({ item }: { item: Product }) => (
+    ({ item }: { item: CatalogProduct }) => (
       <ProductGridCardItem
         item={item}
         wishlisted={isInWishlist(`product-${item.id}`)}
@@ -508,7 +507,7 @@ export default function MyBuszScreen() {
   );
 
   const renderListItem = useCallback(
-    ({ item }: { item: Product }) => (
+    ({ item }: { item: CatalogProduct }) => (
       <ProductListCardItem
         item={item}
         wishlisted={isInWishlist(`product-${item.id}`)}

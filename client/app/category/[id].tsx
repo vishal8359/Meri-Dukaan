@@ -1,11 +1,8 @@
 // app/category/[id].tsx
 import {
-    mockProducts,
-    mockStores,
-    Product,
-    PRODUCT_CATEGORIES,
-} from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+  PRODUCT_CATEGORIES,
+} from "@/src/constants/catalog";
+import { CatalogProduct, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -47,8 +44,14 @@ type SortOption =
 export default function CategoryProductsScreen() {
   const router = useRouter();
   const { id: categoryId } = useLocalSearchParams<{ id: string }>();
-  const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } =
-    useApp();
+  const {
+    addToCart,
+    addToWishlist,
+    removeFromWishlist,
+    isInWishlist,
+    catalogProducts,
+    allStores,
+  } = useApp();
 
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -70,7 +73,7 @@ export default function CategoryProductsScreen() {
   );
 
   const filteredProducts = useMemo(() => {
-    let products = [...mockProducts];
+    let products = [...catalogProducts];
 
     // Filter by category
     if (selectedCategory !== "all") {
@@ -112,7 +115,7 @@ export default function CategoryProductsScreen() {
   }, [selectedCategory, searchQuery, sortBy]);
 
   const handleAddToCart = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       addToCart({
         id: product.id,
         name: product.name,
@@ -123,7 +126,7 @@ export default function CategoryProductsScreen() {
   );
 
   const toggleWishlist = useCallback(
-    (product: Product) => {
+    (product: CatalogProduct) => {
       const wishlistId = `product-${product.id}`;
       if (isInWishlist(wishlistId)) {
         removeFromWishlist(wishlistId);
@@ -191,7 +194,7 @@ export default function CategoryProductsScreen() {
 
   const ProductGridCard = ({ item }: { item: Product }) => {
     const wishlisted = isInWishlist(`product-${item.id}`);
-    const itemStore = mockStores.find((s) => s.id === item.storeId);
+    const itemStore = allStores.find((s) => s.id === item.storeId);
     return (
       <TouchableOpacity
         style={styles.gridCard}
@@ -270,9 +273,9 @@ export default function CategoryProductsScreen() {
     );
   };
 
-  const ProductListCard = ({ item }: { item: Product }) => {
+  const ProductListCard = ({ item }: { item: CatalogProduct }) => {
     const wishlisted = isInWishlist(`product-${item.id}`);
-    const itemStore = mockStores.find((s) => s.id === item.storeId);
+    const itemStore = allStores.find((s) => s.id === item.storeId);
     return (
       <TouchableOpacity
         style={styles.listCard}

@@ -5,25 +5,25 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    CheckCircle,
-    Clock,
-    Lock,
-    MessageSquare,
-    RefreshCw,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  Lock,
+  MessageSquare,
+  RefreshCw,
 } from "lucide-react-native";
 import { MotiText, MotiView } from "moti";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const OTP_LENGTH = 6;
@@ -34,7 +34,6 @@ export default function OtpScreen() {
   const {
     pendingPhone,
     pendingCountryCode,
-    mockOtp,
     otpAttempts,
     isOtpLocked,
     lockoutSecondsLeft,
@@ -352,10 +351,11 @@ export default function OtpScreen() {
           <TouchableOpacity
             style={[
               styles.ctaBtn,
-              (!isComplete || isOtpLocked || success) && styles.ctaBtnDisabled,
+              (!isComplete || isOtpLocked || success || isVerifying) &&
+                styles.ctaBtnDisabled,
             ]}
             onPress={handleVerify}
-            disabled={!isComplete || isOtpLocked || success}
+            disabled={!isComplete || isOtpLocked || success || isVerifying}
             activeOpacity={0.85}
           >
             <LinearGradient
@@ -369,7 +369,7 @@ export default function OtpScreen() {
               end={{ x: 1, y: 0 }}
             >
               <Text style={styles.ctaText}>
-                {success ? "✓ Verified" : "Verify OTP"}
+                {success ? "✓ Verified" : isVerifying ? "Verifying..." : "Verify OTP"}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -398,12 +398,6 @@ export default function OtpScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Dev hint */}
-          <View style={styles.devHint}>
-            <Text style={styles.devHintText}>
-              🛠 Dev: OTP is {mockOtp} (check console)
-            </Text>
-          </View>
         </MotiView>
       </KeyboardAvoidingView>
     </SafeAreaView>

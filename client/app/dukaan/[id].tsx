@@ -1,5 +1,4 @@
-import { EnhancedReel } from "@/src/assets/mockData";
-import { useApp } from "@/src/context/AppContext";
+import { Reel, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
 import { ServicesSection } from "@/src/features/dukaan/components/ServiceSection";
@@ -73,7 +72,7 @@ export default function StoreDetailScreen() {
       : [store?.image || ""];
 
   const storeReelsCount = useMemo(
-    () => reels.filter((r: EnhancedReel) => r.store.id === id).length,
+    () => reels.filter((r: Reel) => r.store.id === id).length,
     [reels, id],
   );
 

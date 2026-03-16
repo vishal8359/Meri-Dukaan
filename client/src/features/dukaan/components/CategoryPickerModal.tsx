@@ -11,7 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-import { STORE_TYPES } from "../../../assets/mockData";
+import { STORE_TYPES } from "@/src/constants/catalog";
 import { colors, radius, spacing } from "../../../theme/colors";
 
 interface CategoryPickerModalProps {
