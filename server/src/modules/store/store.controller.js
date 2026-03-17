@@ -35,3 +35,13 @@ export const removeStoreImage = asyncHandler(async (req, res) => {
   await storeService.removeImage(req.params.imageId, req.user.id);
   res.json({ message: "Image removed" });
 });
+
+export const getStoreHours = asyncHandler(async (req, res) => {
+  const hours = await storeService.getStoreHours(req.params.id);
+  res.json({ hours });
+});
+
+export const updateStoreHours = asyncHandler(async (req, res) => {
+  const hours = await storeService.updateStoreHours(req.params.id, req.user.id, req.body.schedule);
+  res.json({ hours });
+});

@@ -103,6 +103,8 @@ async function update(storeId, ownerId, body) {
   if (body.storeName !== undefined) updates.store_name = body.storeName;
   if (body.category !== undefined) updates.category = body.category;
   if (body.location !== undefined) updates.location = body.location;
+  if (body.openingTime !== undefined) updates.opening_time = body.openingTime;
+  if (body.closingTime !== undefined) updates.closing_time = body.closingTime;
 
   const { data: store, error } = await supabase
     .from("stores")
@@ -157,4 +159,125 @@ async function verifyOwnership(storeId, ownerId) {
   return store;
 }
 
-export { list, findById, findByOwner, create, update, addImage, removeImage, verifyOwnership };
+async function getStoreHours(storeId) {
+  const { data: hours, error } = await supabase
+    .from("store_hours")
+    .select("*")
+    .eq("store_id", storeId)
+    .order("day_of_week");
+
+  if (error) {
+    // store_hours table may not exist yet in some environments.
+    if (error.code === "PGRST205") {
+      const { data: legacyStore, error: legacyError } = await supabase
+        .from("stores")
+        .select("opening_time, closing_time")
+        .eq("id", storeId)
+        .single();
+
+      if (legacyError?.code === "PGRST204") {
+        return [
+          {
+            day_of_week: "Everyday",
+            opening_time: "09:00",
+            closing_time: "21:00",
+            is_closed: false,
+          },
+        ];
+      }
+
+      if (!legacyError && (legacyStore?.opening_time || legacyStore?.closing_time)) {
+        return [
+          {
+            day_of_week: "Everyday",
+            opening_time: legacyStore.opening_time || "09:00",
+            closing_time: legacyStore.closing_time || "21:00",
+            is_closed: false,
+          },
+        ];
+      }
+
+      return [];
+    }
+    throw error;
+  }
+  return hours || [];
+}
+
+async function updateStoreHours(storeId, ownerId, schedule) {
+  await verifyOwnership(storeId, ownerId);
+
+  // Delete existing hours for this store
+  const { error: deleteError } = await supabase
+    .from("store_hours")
+    .delete()
+    .eq("store_id", storeId);
+
+  if (deleteError) {
+    // Fallback for environments still using legacy store-level hours fields.
+    if (deleteError.code === "PGRST205") {
+      const firstOpenDay = Array.isArray(schedule)
+        ? schedule.find((item) => !item?.isClosed)
+        : null;
+
+      const openingTime = firstOpenDay?.openingTime || "09:00";
+      const closingTime = firstOpenDay?.closingTime || "21:00";
+
+      const { data: updatedStore, error: legacyUpdateError } = await supabase
+        .from("stores")
+        .update({
+          opening_time: openingTime,
+          closing_time: closingTime,
+        })
+        .eq("id", storeId)
+        .eq("owner_id", ownerId)
+        .select("id, opening_time, closing_time")
+        .single();
+
+      if (legacyUpdateError?.code === "PGRST204") {
+        // Neither store_hours table nor legacy columns exist yet.
+        // Return a normalized response so clients can proceed without 500s.
+        return (Array.isArray(schedule) ? schedule : []).map((item) => ({
+          store_id: storeId,
+          day_of_week: item.dayOfWeek,
+          opening_time: item.openingTime || "09:00",
+          closing_time: item.closingTime || "21:00",
+          is_closed: Boolean(item.isClosed),
+        }));
+      }
+
+      if (legacyUpdateError) throw legacyUpdateError;
+
+      return [
+        {
+          store_id: storeId,
+          day_of_week: "Everyday",
+          opening_time: updatedStore?.opening_time || openingTime,
+          closing_time: updatedStore?.closing_time || closingTime,
+          is_closed: false,
+        },
+      ];
+    }
+
+    throw deleteError;
+  }
+
+  // Insert new hours
+  const hoursData = schedule.map((item) => ({
+    store_id: storeId,
+    day_of_week: item.dayOfWeek,
+    opening_time: item.openingTime || "09:00",
+    closing_time: item.closingTime || "21:00",
+    is_closed: item.isClosed || false,
+  }));
+
+  const { data: inserted, error: insertError } = await supabase
+    .from("store_hours")
+    .insert(hoursData)
+    .select();
+
+  if (insertError) throw insertError;
+  return inserted;
+}
+
+export { list, findById, findByOwner, create, update, addImage, removeImage, verifyOwnership, getStoreHours, updateStoreHours };

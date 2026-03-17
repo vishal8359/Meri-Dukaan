@@ -46,11 +46,39 @@ const HERO_HEIGHT = 380;
 const AVATAR_SIZE = 72;
 const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
 
+function formatTime(time?: string): string {
+  if (!time || !/^\d{2}:\d{2}$/.test(time)) return "--:--";
+  const [hh, mm] = time.split(":").map(Number);
+  const period = hh >= 12 ? "PM" : "AM";
+  const hour12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${hour12}:${String(mm).padStart(2, "0")} ${period}`;
+}
+
+function isStoreOpenNow(openingTime?: string, closingTime?: string): boolean {
+  if (!openingTime || !closingTime) return true;
+  if (!/^\d{2}:\d{2}$/.test(openingTime) || !/^\d{2}:\d{2}$/.test(closingTime)) {
+    return true;
+  }
+
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const [openH, openM] = openingTime.split(":").map(Number);
+  const [closeH, closeM] = closingTime.split(":").map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+
+  if (closeMinutes >= openMinutes) {
+    return nowMinutes >= openMinutes && nowMinutes <= closeMinutes;
+  }
+
+  return nowMinutes >= openMinutes || nowMinutes <= closeMinutes;
+}
+
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { t } = useSettings();
-  const { getStoreById, reels, isFollowingStore, toggleFollowStore } =
+  const { getStoreById, reels, isFollowingStore, toggleFollowStore, catalogProducts, catalogServices } =
     useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
@@ -88,177 +116,26 @@ export default function StoreDetailScreen() {
     }
   }, [isSearchVisible]);
 
-  // ─── Mock data ──────────────────────────────────────────────────────────────
-  const products = [
-    {
-      id: "1",
-      name: "Fresh Tomatoes",
-      category: "Vegetables",
-      price: 40,
-      displayPrice: "₹40/kg",
-      stock: "50 kg",
-      image:
-        "https://images.unsplash.com/photo-1546470427-227e933ac3bb?q=80&w=300",
-      status: "active" as const,
-    },
-    {
-      id: "2",
-      name: "Onions",
-      category: "Vegetables",
-      price: 30,
-      displayPrice: "₹30/kg",
-      stock: "80 kg",
-      image:
-        "https://images.unsplash.com/photo-1618512496248-a07fe83aa8cb?q=80&w=300",
-      status: "active" as const,
-    },
-    {
-      id: "3",
-      name: "Green Chilies",
-      category: "Vegetables",
-      price: 60,
-      displayPrice: "₹60/kg",
-      stock: "0 kg",
-      image:
-        "https://images.unsplash.com/photo-1583846499862-bf1c00b4c7ed?q=80&w=300",
-      status: "out-of-stock" as const,
-    },
-  ];
-
-  const services = [
-    {
-      id: "1",
-      name: "Home Delivery",
-      description: "Free over ₹500",
-      active: true,
-      price: 0,
-      duration: "24-48 hrs",
-      image:
-        "https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=300",
-      rating: 4.8,
-    },
-    {
-      id: "2",
-      name: "Same Day Delivery",
-      description: "Order before 5 PM",
-      active: true,
-      price: 50,
-      duration: "4-6 hrs",
-      image:
-        "https://images.unsplash.com/photo-1565033595900-6ad46f6f8217?q=80&w=300",
-      rating: 4.7,
-    },
-    {
-      id: "3",
-      name: "Bulk Orders",
-      description: "Special pricing for bulk",
-      active: false,
-      price: 0,
-      duration: "1-3 days",
-      image:
-        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=300",
-      rating: 4.5,
-    },
-    {
-      id: "4",
-      name: "Hair Cutting (Saloon)",
-      description: "Professional hair styling",
-      active: true,
-      price: 200,
-      duration: "30-45 min",
-      image:
-        "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=300",
-      rating: 4.9,
-    },
-    {
-      id: "5",
-      name: "Welding Services",
-      description: "Metal repairs & fabrication",
-      active: true,
-      price: 500,
-      duration: "1-2 hrs",
-      image:
-        "https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?q=80&w=300",
-      rating: 4.6,
-    },
-    {
-      id: "6",
-      name: "Clothes Stitching",
-      description: "Custom tailoring & alterations",
-      active: true,
-      price: 300,
-      duration: "2-3 days",
-      image:
-        "https://images.unsplash.com/photo-1558171813-4c088753af8f?q=80&w=300",
-      rating: 4.7,
-    },
-    {
-      id: "7",
-      name: "Vehicle Rental",
-      description: "Bikes, scooters & cars",
-      active: true,
-      price: 150,
-      duration: "Per hour",
-      image:
-        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=300",
-      rating: 4.4,
-    },
-    {
-      id: "8",
-      name: "Equipment Rental",
-      description: "Tools & machinery",
-      active: true,
-      price: 100,
-      duration: "Per day",
-      image:
-        "https://images.unsplash.com/photo-1504148455328-c376907d081c?q=80&w=300",
-      rating: 4.3,
-    },
-    {
-      id: "9",
-      name: "Plumbing Services",
-      description: "Repairs & installations",
-      active: true,
-      price: 400,
-      duration: "1-2 hrs",
-      image:
-        "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?q=80&w=300",
-      rating: 4.5,
-    },
-    {
-      id: "10",
-      name: "Electrical Repairs",
-      description: "Wiring & appliance repair",
-      active: true,
-      price: 350,
-      duration: "1-3 hrs",
-      image:
-        "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=300",
-      rating: 4.6,
-    },
-    {
-      id: "11",
-      name: "Beauty Services",
-      description: "Makeup & skincare",
-      active: true,
-      price: 500,
-      duration: "1-2 hrs",
-      image:
-        "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300",
-      rating: 4.8,
-    },
-    {
-      id: "12",
-      name: "Laundry & Dry Clean",
-      description: "Professional cleaning",
-      active: true,
-      price: 80,
-      duration: "24 hrs",
-      image:
-        "https://images.unsplash.com/photo-1545173168-9f1947eebb7f?q=80&w=300",
-      rating: 4.4,
-    },
-  ];
+  // ─── Real data from store ───────────────────────────────────────────────────
+  const products = (catalogProducts.filter((p) => p.storeId === id) || []).map((p) => {
+    const stockQuantity = Number(p.stockQuantity ?? 0);
+    const active = Boolean(p.available ?? true) && stockQuantity > 0;
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
+      stock: `${stockQuantity}`,
+      image: p.image,
+      status: (active ? "active" : "out-of-stock") as const,
+    };
+  });
+  const services = catalogServices.filter((s) => s.storeId === id) || [];
+  const openNow = isStoreOpenNow(store?.openingTime, store?.closingTime);
+  const displayHours = store?.openingTime && store?.closingTime
+    ? `${formatTime(store.openingTime)} - ${formatTime(store.closingTime)}`
+    : "Hours not set";
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleBookService = (service: any) => {
@@ -417,7 +294,7 @@ export default function StoreDetailScreen() {
           </View>
           <View style={styles.openPill}>
             <Clock size={10} color={colors.status.successDark} />
-            <Text style={styles.openPillText}>{t("store.openNow")}</Text>
+            <Text style={styles.openPillText}>{openNow ? t("store.openNow") : "Closed"}</Text>
           </View>
           <View style={styles.ratingPill}>
             <Star
@@ -433,10 +310,10 @@ export default function StoreDetailScreen() {
         <TouchableOpacity style={styles.locationChip}>
           <MapPin size={12} color={colors.text.secondary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            123 Market Street, City Center
+            {store.location || "Location not available"}
           </Text>
           <Clock size={12} color={colors.brand.star} style={{ marginLeft: 8 }} />
-          <Text style={styles.hoursText}>9:00 AM – 9:00 PM</Text>
+          <Text style={styles.hoursText}>{displayHours}</Text>
           <Navigation size={12} color={colors.brand.primary} />
         </TouchableOpacity>
 

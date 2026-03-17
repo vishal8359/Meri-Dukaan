@@ -24,6 +24,8 @@ export interface UpdateStorePayload {
   storeName?: string;
   category?: string;
   location?: string;
+  openingTime?: string; // Format: "HH:MM" (e.g., "09:00")
+  closingTime?: string; // Format: "HH:MM" (e.g., "21:00")
 }
 
 export interface AddStoreImagePayload {
@@ -274,5 +276,24 @@ export function removeStoreService(
 export function getStoreInventory(token: string, storeId: string) {
   return apiRequest<{ inventory: unknown }>(`/stores/${storeId}/inventory`, {
     token,
+  });
+}
+
+export function getStoreHours(storeId: string) {
+  return apiRequest<{ hours: unknown }>(`/stores/${storeId}/hours`);
+}
+
+export interface StoreHoursSchedule {
+  dayOfWeek: string;
+  openingTime?: string;
+  closingTime?: string;
+  isClosed?: boolean;
+}
+
+export function updateStoreHours(token: string, storeId: string, schedule: StoreHoursSchedule[]) {
+  return apiRequest<{ hours: unknown }>(`/stores/${storeId}/hours`, {
+    method: "PUT",
+    token,
+    body: { schedule },
   });
 }

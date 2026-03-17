@@ -31,7 +31,17 @@ CREATE TABLE IF NOT EXISTS stores (
   UNIQUE(owner_id)
 );
 
--- ===================== STORE IMAGES =====================
+-- ===================== STORE HOURS =====================
+CREATE TABLE IF NOT EXISTS store_hours (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  store_id        UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
+  day_of_week     VARCHAR(10) NOT NULL, -- 'Monday', 'Tuesday', ... 'Sunday'
+  opening_time    VARCHAR(5) NOT NULL, -- Format: "HH:MM" (e.g., "09:00")
+  closing_time    VARCHAR(5) NOT NULL, -- Format: "HH:MM" (e.g., "21:00")
+  is_closed       BOOLEAN NOT NULL DEFAULT FALSE, -- For closed days (e.g., Sundays)
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(store_id, day_of_week)
+);
 CREATE TABLE IF NOT EXISTS store_images (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   store_id        UUID NOT NULL REFERENCES stores(id) ON DELETE CASCADE,
@@ -163,6 +173,7 @@ CREATE TABLE IF NOT EXISTS replies (
 -- ===================== INDEXES =====================
 CREATE INDEX IF NOT EXISTS idx_stores_owner        ON stores(owner_id);
 CREATE INDEX IF NOT EXISTS idx_stores_category     ON stores(category);
+CREATE INDEX IF NOT EXISTS idx_store_hours_store   ON store_hours(store_id);
 CREATE INDEX IF NOT EXISTS idx_store_images_store   ON store_images(store_id);
 CREATE INDEX IF NOT EXISTS idx_products_store      ON products(store_id);
 CREATE INDEX IF NOT EXISTS idx_product_images_prod  ON product_images(product_id);

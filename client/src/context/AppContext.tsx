@@ -63,6 +63,8 @@ export interface CatalogProduct {
   unit?: string;
   delivery?: string;
   isSubscription?: boolean;
+  stockQuantity?: number;
+  available?: boolean;
 }
 
 export interface CatalogService {
@@ -190,6 +192,8 @@ export interface MyStore {
   services: MyStoreService[];
   reels: MyStoreReel[];
   createdAt: number;
+  openingTime?: string; // e.g., "09:00"
+  closingTime?: string; // e.g., "21:00"
 }
 
 // User Profile interface
@@ -289,18 +293,8 @@ interface AppContextType {
   removeMyService: (id: string) => void;
   addMyReel: (reel: MyStoreReel) => Promise<MyStoreReel>;
   removeMyReel: (id: string) => void;
+  updateStoreHours: (schedule: Array<{ dayOfWeek: string; openingTime?: string; closingTime?: string; isClosed?: boolean }>) => Promise<void>;
   canUploadReelToday: () => boolean;
-}
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  cartItemId?: string;
-  image?: string;
-  storeName?: string;
-  storeId?: string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -369,6 +363,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       distance: String(raw?.distance ?? "0 km"),
       image: primaryImage,
       images: imageUrls.length > 0 ? imageUrls : [primaryImage],
+      location: String(raw?.location ?? ""),
+      openingTime: raw?.opening_time ? String(raw.opening_time) : undefined,
+      closingTime: raw?.closing_time ? String(raw.closing_time) : undefined,
     };
   }, []);
 
@@ -536,6 +533,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       unit: "1 pc",
       delivery: "30-45 min",
       isSubscription: true,
+      stockQuantity: Number(raw?.stock ?? 0),
+      available: Boolean(raw?.available ?? true),
     };
   }, []);
 
@@ -740,6 +739,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           services: services.map(mapMyStoreService),
           reels: reelsData.map(mapMyStoreReel),
           createdAt: new Date(ownerStore.created_at ?? Date.now()).getTime(),
+          openingTime: String(ownerStore.opening_time ?? "09:00"),
+          closingTime: String(ownerStore.closing_time ?? "21:00"),
         });
       } catch {
         // No store found or error fetching it
@@ -1360,6 +1361,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  const updateStoreHours = useCallback(
+    async (schedule: Array<{ dayOfWeek: string; openingTime?: string; closingTime?: string; isClosed?: boolean }>) => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first.");
+      }
+
+      await storeApi.updateStoreHours(authToken, myStore.id, schedule);
+
+      const firstOpenDay = schedule.find((item) => !item?.isClosed);
+      setMyStore((prev) =>
+        prev
+          ? {
+              ...prev,
+              openingTime: firstOpenDay?.openingTime || prev.openingTime || "09:00",
+              closingTime: firstOpenDay?.closingTime || prev.closingTime || "21:00",
+            }
+          : prev,
+      );
+    },
+    [authToken, myStore?.id],
+  );
+
   const canUploadReelToday = useCallback((): boolean => {
     if (!myStore) return false;
     const todayStart = new Date();
@@ -1450,6 +1473,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       removeMyService,
       addMyReel,
       removeMyReel,
+      updateStoreHours,
       canUploadReelToday,
     }),
     [

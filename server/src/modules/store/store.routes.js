@@ -21,6 +21,10 @@ router.get("/me/store", protect, ctrl.getMyStore);
 router.post("/", protect, validate(schema.createStoreSchema), ctrl.createStore);
 router.put("/:id", protect, validate(schema.updateStoreSchema), ctrl.updateStore);
 
+// Store hours
+router.get("/:id/hours", ctrl.getStoreHours);
+router.put("/:id/hours", protect, validate(schema.updateStoreHoursSchema), ctrl.updateStoreHours);
+
 // Store images
 router.post("/:id/images", protect, validate(schema.addStoreImageSchema), ctrl.addStoreImage);
 router.delete("/:id/images/:imageId", protect, ctrl.removeStoreImage);

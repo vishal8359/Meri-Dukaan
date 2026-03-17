@@ -13,6 +13,29 @@ export const updateStoreSchema = Joi.object({
   location: Joi.string().max(500).optional(),
 });
 
+export const updateStoreHoursSchema = Joi.object({
+  schedule: Joi.array()
+    .items(
+      Joi.object({
+        dayOfWeek: Joi.string()
+          .valid(
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday"
+          )
+          .required(),
+        openingTime: Joi.string().pattern(/^\d{2}:\d{2}$/).optional(),
+        closingTime: Joi.string().pattern(/^\d{2}:\d{2}$/).optional(),
+        isClosed: Joi.boolean().optional(),
+      })
+    )
+    .required(),
+});
+
 export const addStoreImageSchema = Joi.object({
   imageUrl: Joi.string().uri().required(),
 });

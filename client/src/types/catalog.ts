@@ -7,6 +7,9 @@ export interface Store {
   distance: string;
   image: string;
   images?: string[];
+  location?: string;
+  openingTime?: string;
+  closingTime?: string;
 }
 
 export interface EnhancedReel {
