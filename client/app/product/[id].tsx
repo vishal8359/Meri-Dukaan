@@ -251,6 +251,7 @@ export default function ProductDetailScreen() {
     id: string;
     fallbackData?: string;
   }>();
+  const productId = Array.isArray(id) ? id[0] : id;
   const {
     addToCart,
     cart,
@@ -274,7 +275,7 @@ export default function ProductDetailScreen() {
 
   // ─── Look up the actual product by ID (with store fallback) ──────────────
   const product = useMemo(() => {
-    const found = catalogProducts.find((p) => p.id === id);
+    const found = catalogProducts.find((p) => p.id === productId);
     if (found) return found;
     // Fallback: item from store's local data passed via params
     if (fallbackData) {
@@ -283,23 +284,29 @@ export default function ProductDetailScreen() {
         return {
           ...parsed,
           images: parsed.image ? [parsed.image] : [],
-          originalPrice: parsed.originalPrice || Math.round(parsed.price * 1.2),
-          discount: parsed.discount || 20,
-          description:
-            parsed.description ||
-            `${parsed.name} from ${parsed.storeName || "Store"}`,
-          distance: parsed.distance || "Nearby",
-          unit: parsed.unit || "1 pc",
-          delivery: parsed.delivery || "30-45 min",
-          reviews: parsed.reviews || 0,
-          rating: parsed.rating || 4.5,
+          originalPrice: parsed.originalPrice,
+          discount: parsed.discount,
+          description: parsed.description || "",
+          distance: parsed.distance || "",
+          unit: parsed.unit,
+          delivery: parsed.delivery,
+          reviews: parsed.reviews ?? 0,
+          rating: parsed.rating ?? 0,
         } as CatalogProduct;
       } catch {
         /* ignore parse error */
       }
     }
     return null;
-  }, [id, fallbackData, catalogProducts]);
+  }, [productId, fallbackData, catalogProducts]);
+
+  const isProductInStock = useMemo(() => {
+    if (!product) return false;
+    const available = (product as any).available;
+    const qty = Number((product as any).stockQuantity ?? 0);
+    if (typeof available === "boolean") return available && qty > 0;
+    return qty > 0;
+  }, [product]);
 
   // ─── Store lookup for image ──────────────────────────────────────────────
   const store = useMemo(
@@ -353,7 +360,7 @@ export default function ProductDetailScreen() {
     });
 
     return () => task.cancel();
-  }, [id]);
+  }, [productId]);
 
   // ─── Cart check ──────────────────────────────────────────────────────────
   const cartItem = useMemo(
@@ -587,7 +594,7 @@ export default function ProductDetailScreen() {
                     </Text>
                   </View>
                 )}
-                {!product.inStock && (
+                {!isProductInStock && (
                   <View style={styles.outOfStockBanner}>
                     <Text style={styles.outOfStockBannerText}>
                       OUT OF STOCK
@@ -699,14 +706,14 @@ export default function ProductDetailScreen() {
             <View
               style={[
                 styles.stockBadge,
-                product.inStock ? styles.stockInBadge : styles.stockOutBadge,
+                isProductInStock ? styles.stockInBadge : styles.stockOutBadge,
               ]}
             >
               <View
                 style={[
                   styles.stockDot,
                   {
-                    backgroundColor: product.inStock
+                    backgroundColor: isProductInStock
                       ? colors.status.successDark
                       : colors.status.errorDark,
                   },
@@ -716,13 +723,13 @@ export default function ProductDetailScreen() {
                 style={[
                   styles.stockText,
                   {
-                    color: product.inStock
+                    color: isProductInStock
                       ? colors.status.successDark
                       : colors.status.errorDark,
                   },
                 ]}
               >
-                {product.inStock
+                {isProductInStock
                   ? t("product.inStock")
                   : t("product.outOfStock")}
               </Text>
@@ -919,14 +926,14 @@ export default function ProductDetailScreen() {
                         {item.category.toUpperCase()}
                       </Text>
                     </View>
-                    {!item.inStock && (
+                    {!(Boolean((item as any).available) && Number((item as any).stockQuantity ?? 0) > 0) && (
                       <View style={styles.relatedOutOfStock}>
                         <Text style={styles.relatedOutOfStockText}>
                           Out of Stock
                         </Text>
                       </View>
                     )}
-                    {item.inStock && (
+                    {Boolean((item as any).available) && Number((item as any).stockQuantity ?? 0) > 0 && (
                       <View style={styles.availableBadge}>
                         <Check size={10} color={colors.text.inverse} />
                       </View>
@@ -1029,7 +1036,7 @@ export default function ProductDetailScreen() {
 
       {/* Bottom Cart Section */}
       <View style={styles.bottomCard}>
-        {product.inStock ? (
+        {isProductInStock ? (
           cartItem && cartItem.quantity > 0 ? (
             /* ── Quantity Control (shown after adding to cart) ── */
             <>
