@@ -27,7 +27,11 @@ export const updateStore = asyncHandler(async (req, res) => {
 });
 
 export const addStoreImage = asyncHandler(async (req, res) => {
-  const image = await storeService.addImage(req.params.id, req.user.id, req.body.imageUrl);
+  const image = await storeService.addImage(
+    req.params.id,
+    req.user.id,
+    req.body.imageUrl,
+  );
   res.status(201).json({ image });
 });
 
@@ -42,6 +46,10 @@ export const getStoreHours = asyncHandler(async (req, res) => {
 });
 
 export const updateStoreHours = asyncHandler(async (req, res) => {
-  const hours = await storeService.updateStoreHours(req.params.id, req.user.id, req.body.schedule);
+  const hours = await storeService.updateStoreHours(
+    req.params.id,
+    req.user.id,
+    req.body.schedule,
+  );
   res.json({ hours });
 });

@@ -1,7 +1,14 @@
 // app/meri_dukaan/inventory/products.tsx
 import { MyStoreProduct } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
-import { ChevronDown, ChevronUp, Minus, Package, Plus, Trash2 } from "lucide-react-native";
+import {
+    ChevronDown,
+    ChevronUp,
+    Minus,
+    Package,
+    Plus,
+    Trash2,
+} from "lucide-react-native";
 import React, { useState } from "react";
 import {
     Image,
@@ -91,11 +98,15 @@ export default function ProductsTab({
                         true: colors.brand.primaryLight,
                       }}
                       thumbColor={
-                        p.inStock ? colors.brand.primary : colors.ui.surfaceHover
+                        p.inStock
+                          ? colors.brand.primary
+                          : colors.ui.surfaceHover
                       }
                       onValueChange={() => onToggleStock(p.id)}
                       value={p.inStock}
-                      style={{ transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }] }}
+                      style={{
+                        transform: [{ scaleX: 0.75 }, { scaleY: 0.75 }],
+                      }}
                     />
                   </View>
                   <View style={styles.itemBottomRow}>
@@ -116,10 +127,7 @@ export default function ProductsTab({
 
               {/* Inline Stock Manager */}
               {isExpanded && (
-                <StockEditor
-                  product={p}
-                  onUpdateStock={onUpdateStock}
-                />
+                <StockEditor product={p} onUpdateStock={onUpdateStock} />
               )}
             </View>
           );
@@ -161,7 +169,7 @@ function StockEditor({
   return (
     <View style={styles.stockEditor}>
       <Text style={styles.stockEditorTitle}>Manage Stock</Text>
-      
+
       {/* Description */}
       {product.description && (
         <View style={styles.descriptionBox}>

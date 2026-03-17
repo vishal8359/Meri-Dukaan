@@ -25,13 +25,17 @@ export const updateStoreHoursSchema = Joi.object({
             "Thursday",
             "Friday",
             "Saturday",
-            "Sunday"
+            "Sunday",
           )
           .required(),
-        openingTime: Joi.string().pattern(/^\d{2}:\d{2}$/).optional(),
-        closingTime: Joi.string().pattern(/^\d{2}:\d{2}$/).optional(),
+        openingTime: Joi.string()
+          .pattern(/^\d{2}:\d{2}$/)
+          .optional(),
+        closingTime: Joi.string()
+          .pattern(/^\d{2}:\d{2}$/)
+          .optional(),
         isClosed: Joi.boolean().optional(),
-      })
+      }),
     )
     .required(),
 });

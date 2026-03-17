@@ -290,7 +290,11 @@ export interface StoreHoursSchedule {
   isClosed?: boolean;
 }
 
-export function updateStoreHours(token: string, storeId: string, schedule: StoreHoursSchedule[]) {
+export function updateStoreHours(
+  token: string,
+  storeId: string,
+  schedule: StoreHoursSchedule[],
+) {
   return apiRequest<{ hours: unknown }>(`/stores/${storeId}/hours`, {
     method: "PUT",
     token,

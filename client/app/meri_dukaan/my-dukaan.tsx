@@ -61,7 +61,15 @@ function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
 }
 
 // ========== TIME SETTINGS MODAL ==========
-const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
 
 function TimeSettingsModal({
   visible,
@@ -72,7 +80,14 @@ function TimeSettingsModal({
   visible: boolean;
   store: MyStore;
   onClose: () => void;
-  onSave: (schedule: Array<{ dayOfWeek: string; openingTime?: string; closingTime?: string; isClosed?: boolean }>) => Promise<void>;
+  onSave: (
+    schedule: Array<{
+      dayOfWeek: string;
+      openingTime?: string;
+      closingTime?: string;
+      isClosed?: boolean;
+    }>,
+  ) => Promise<void>;
 }) {
   const [schedule, setSchedule] = useState(
     DAYS_OF_WEEK.map((day) => ({
@@ -80,7 +95,7 @@ function TimeSettingsModal({
       openingTime: day === "Sunday" ? undefined : store.openingTime || "09:00",
       closingTime: day === "Sunday" ? undefined : store.closingTime || "21:00",
       isClosed: day === "Sunday",
-    }))
+    })),
   );
   const [isSaving, setIsSaving] = useState(false);
 
@@ -96,7 +111,11 @@ function TimeSettingsModal({
     });
   };
 
-  const handleTimeChange = (dayIndex: number, field: "opening" | "closing", value: string) => {
+  const handleTimeChange = (
+    dayIndex: number,
+    field: "opening" | "closing",
+    value: string,
+  ) => {
     setSchedule((prev) => {
       const updated = [...prev];
       if (field === "opening") {
@@ -128,7 +147,10 @@ function TimeSettingsModal({
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.modalContent}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Store Hours</Text>
@@ -168,7 +190,9 @@ function TimeSettingsModal({
                       style={styles.timeInput}
                       placeholder="09:00"
                       value={day.openingTime || ""}
-                      onChangeText={(val) => handleTimeChange(idx, "opening", val)}
+                      onChangeText={(val) =>
+                        handleTimeChange(idx, "opening", val)
+                      }
                       placeholderTextColor={colors.ui.muted}
                       maxLength={5}
                     />
@@ -179,7 +203,9 @@ function TimeSettingsModal({
                       style={styles.timeInput}
                       placeholder="21:00"
                       value={day.closingTime || ""}
-                      onChangeText={(val) => handleTimeChange(idx, "closing", val)}
+                      onChangeText={(val) =>
+                        handleTimeChange(idx, "closing", val)
+                      }
                       placeholderTextColor={colors.ui.muted}
                       maxLength={5}
                     />
@@ -518,7 +544,9 @@ export default function MyDukaanScreen() {
                 products={myStore.products}
                 onToggleStock={handleToggleStock}
                 onRemove={handleRemoveProduct}
-                onAdd={() => router.push("/meri_dukaan/inventory/add-product" as any)}
+                onAdd={() =>
+                  router.push("/meri_dukaan/inventory/add-product" as any)
+                }
                 onUpdateStock={handleUpdateStock}
               />
             )}
@@ -527,7 +555,9 @@ export default function MyDukaanScreen() {
                 services={myStore.services}
                 onToggleAvailable={handleToggleAvailable}
                 onRemove={handleRemoveService}
-                onAdd={() => router.push("/meri_dukaan/inventory/add-service" as any)}
+                onAdd={() =>
+                  router.push("/meri_dukaan/inventory/add-service" as any)
+                }
               />
             )}
           </View>

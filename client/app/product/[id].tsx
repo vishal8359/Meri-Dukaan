@@ -3,42 +3,42 @@ import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Check,
-    ChevronLeft,
-    Clock,
-    Heart,
-    MapPin,
-    Minus,
-    Package,
-    Plus,
-    Share2,
-    ShoppingCart,
-    Star,
-    Store,
-    Truck,
+  Check,
+  ChevronLeft,
+  Clock,
+  Heart,
+  MapPin,
+  Minus,
+  Package,
+  Plus,
+  Share2,
+  ShoppingCart,
+  Star,
+  Store,
+  Truck,
 } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    InteractionManager,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  InteractionManager,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -926,18 +926,22 @@ export default function ProductDetailScreen() {
                         {item.category.toUpperCase()}
                       </Text>
                     </View>
-                    {!(Boolean((item as any).available) && Number((item as any).stockQuantity ?? 0) > 0) && (
+                    {!(
+                      Boolean((item as any).available) &&
+                      Number((item as any).stockQuantity ?? 0) > 0
+                    ) && (
                       <View style={styles.relatedOutOfStock}>
                         <Text style={styles.relatedOutOfStockText}>
                           Out of Stock
                         </Text>
                       </View>
                     )}
-                    {Boolean((item as any).available) && Number((item as any).stockQuantity ?? 0) > 0 && (
-                      <View style={styles.availableBadge}>
-                        <Check size={10} color={colors.text.inverse} />
-                      </View>
-                    )}
+                    {Boolean((item as any).available) &&
+                      Number((item as any).stockQuantity ?? 0) > 0 && (
+                        <View style={styles.availableBadge}>
+                          <Check size={10} color={colors.text.inverse} />
+                        </View>
+                      )}
                     {item.discount && (
                       <View style={styles.relatedDiscountBadge}>
                         <Text style={styles.relatedDiscountText}>

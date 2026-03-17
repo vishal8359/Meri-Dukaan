@@ -7,41 +7,39 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  MapPin,
-  Navigation,
-  Phone,
-  Play,
-  Search,
-  Share2,
-  ShoppingBag,
-  Star,
-  UserCheck,
-  UserPlus,
-  Wrench,
+    ChevronLeft,
+    Clock,
+    MapPin,
+    Navigation,
+    Phone,
+    Play,
+    Search,
+    Share2,
+    ShoppingBag,
+    Star,
+    UserCheck,
+    UserPlus,
+    Wrench
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Animated,
-  Dimensions,
-  FlatList,
-  Image,
-  Linking,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    FlatList,
+    Image,
+    Linking,
+    Platform,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } =
-  Dimensions.get("window");
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HERO_HEIGHT = 380;
 const AVATAR_SIZE = 72;
 const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
@@ -56,7 +54,10 @@ function formatTime(time?: string): string {
 
 function isStoreOpenNow(openingTime?: string, closingTime?: string): boolean {
   if (!openingTime || !closingTime) return true;
-  if (!/^\d{2}:\d{2}$/.test(openingTime) || !/^\d{2}:\d{2}$/.test(closingTime)) {
+  if (
+    !/^\d{2}:\d{2}$/.test(openingTime) ||
+    !/^\d{2}:\d{2}$/.test(closingTime)
+  ) {
     return true;
   }
 
@@ -78,8 +79,14 @@ export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { t } = useSettings();
-  const { getStoreById, reels, isFollowingStore, toggleFollowStore, catalogProducts, catalogServices } =
-    useApp();
+  const {
+    getStoreById,
+    reels,
+    isFollowingStore,
+    toggleFollowStore,
+    catalogProducts,
+    catalogServices,
+  } = useApp();
   const scrollY = useRef(new Animated.Value(0)).current;
   const imageCarouselRef = useRef<FlatList>(null);
   const searchBounceAnim = useRef(new Animated.Value(0)).current;
@@ -117,25 +124,28 @@ export default function StoreDetailScreen() {
   }, [isSearchVisible]);
 
   // ─── Real data from store ───────────────────────────────────────────────────
-  const products = (catalogProducts.filter((p) => p.storeId === id) || []).map((p) => {
-    const stockQuantity = Number(p.stockQuantity ?? 0);
-    const active = Boolean(p.available ?? true) && stockQuantity > 0;
-    return {
-      id: p.id,
-      name: p.name,
-      category: p.category,
-      price: p.price,
-      displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
-      stock: `${stockQuantity}`,
-      image: p.image,
-      status: (active ? "active" : "out-of-stock") as const,
-    };
-  });
+  const products = (catalogProducts.filter((p) => p.storeId === id) || []).map(
+    (p) => {
+      const stockQuantity = Number(p.stockQuantity ?? 0);
+      const active = Boolean(p.available ?? true) && stockQuantity > 0;
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
+        stock: `${stockQuantity}`,
+        image: p.image,
+        status: (active ? "active" : "out-of-stock") as const,
+      };
+    },
+  );
   const services = catalogServices.filter((s) => s.storeId === id) || [];
   const openNow = isStoreOpenNow(store?.openingTime, store?.closingTime);
-  const displayHours = store?.openingTime && store?.closingTime
-    ? `${formatTime(store.openingTime)} - ${formatTime(store.closingTime)}`
-    : "Hours not set";
+  const displayHours =
+    store?.openingTime && store?.closingTime
+      ? `${formatTime(store.openingTime)} - ${formatTime(store.closingTime)}`
+      : "Hours not set";
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleBookService = (service: any) => {
@@ -221,11 +231,7 @@ export default function StoreDetailScreen() {
 
         {/* Dark gradient overlay */}
         <LinearGradient
-          colors={[
-            "rgba(0,0,0,0.45)",
-            "transparent",
-            "rgba(15,23,42,0.85)",
-          ]}
+          colors={["rgba(0,0,0,0.45)", "transparent", "rgba(15,23,42,0.85)"]}
           locations={[0, 0.35, 1]}
           style={StyleSheet.absoluteFillObject}
         />
@@ -271,7 +277,6 @@ export default function StoreDetailScreen() {
             ))}
           </View>
         )}
-
       </View>
 
       {/* ══════ STORE PROFILE CARD ══════ */}
@@ -294,7 +299,9 @@ export default function StoreDetailScreen() {
           </View>
           <View style={styles.openPill}>
             <Clock size={10} color={colors.status.successDark} />
-            <Text style={styles.openPillText}>{openNow ? t("store.openNow") : "Closed"}</Text>
+            <Text style={styles.openPillText}>
+              {openNow ? t("store.openNow") : "Closed"}
+            </Text>
           </View>
           <View style={styles.ratingPill}>
             <Star
@@ -312,7 +319,11 @@ export default function StoreDetailScreen() {
           <Text style={styles.locationText} numberOfLines={1}>
             {store.location || "Location not available"}
           </Text>
-          <Clock size={12} color={colors.brand.star} style={{ marginLeft: 8 }} />
+          <Clock
+            size={12}
+            color={colors.brand.star}
+            style={{ marginLeft: 8 }}
+          />
           <Text style={styles.hoursText}>{displayHours}</Text>
           <Navigation size={12} color={colors.brand.primary} />
         </TouchableOpacity>
@@ -320,9 +331,7 @@ export default function StoreDetailScreen() {
         {/* ── Stats strip ── */}
         <View style={styles.statsStrip}>
           <View style={styles.statCell}>
-            <Text style={styles.statValue}>
-              {store.followers || "2.5K"}
-            </Text>
+            <Text style={styles.statValue}>{store.followers || "2.5K"}</Text>
             <Text style={styles.statLabel}>{t("store.followers")}</Text>
           </View>
           <View style={styles.statDivider} />
@@ -340,10 +349,7 @@ export default function StoreDetailScreen() {
         {/* ── Primary actions ── */}
         <View style={styles.primaryActions}>
           <TouchableOpacity
-            style={[
-              styles.followBtn,
-              isFollowing && styles.followBtnActive,
-            ]}
+            style={[styles.followBtn, isFollowing && styles.followBtnActive]}
             onPress={handleFollow}
             activeOpacity={0.8}
           >

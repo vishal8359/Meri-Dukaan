@@ -7,7 +7,10 @@ async function list({ category, search, page = 1, limit = 20 }) {
 
   let query = supabase
     .from("stores")
-    .select("*, owner:users(id, name, profile_image), images:store_images(id, image_url)", { count: "exact" })
+    .select(
+      "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
+      { count: "exact" },
+    )
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -22,13 +25,20 @@ async function list({ category, search, page = 1, limit = 20 }) {
     throw error;
   }
 
-  return { stores: data, total: count, page: Number(page), limit: Number(limit) };
+  return {
+    stores: data,
+    total: count,
+    page: Number(page),
+    limit: Number(limit),
+  };
 }
 
 async function findById(storeId) {
   const { data: store, error } = await supabase
     .from("stores")
-    .select("*, owner:users(id, name, profile_image), images:store_images(id, image_url)")
+    .select(
+      "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
+    )
     .eq("id", storeId)
     .single();
 
@@ -45,7 +55,9 @@ async function findById(storeId) {
 async function findByOwner(ownerId) {
   const { data: store, error } = await supabase
     .from("stores")
-    .select("*, owner:users(id, name, profile_image), images:store_images(id, image_url)")
+    .select(
+      "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
+    )
     .eq("owner_id", ownerId)
     .single();
 
@@ -114,7 +126,8 @@ async function update(storeId, ownerId, body) {
     .select()
     .single();
 
-  if (error || !store) throw AppError.notFound("Store not found or not authorized");
+  if (error || !store)
+    throw AppError.notFound("Store not found or not authorized");
   return store;
 }
 
@@ -143,7 +156,10 @@ async function removeImage(imageId, ownerId) {
     throw AppError.forbidden("Not authorized");
   }
 
-  const { error } = await supabase.from("store_images").delete().eq("id", imageId);
+  const { error } = await supabase
+    .from("store_images")
+    .delete()
+    .eq("id", imageId);
   if (error) throw error;
 }
 
@@ -186,7 +202,10 @@ async function getStoreHours(storeId) {
         ];
       }
 
-      if (!legacyError && (legacyStore?.opening_time || legacyStore?.closing_time)) {
+      if (
+        !legacyError &&
+        (legacyStore?.opening_time || legacyStore?.closing_time)
+      ) {
         return [
           {
             day_of_week: "Everyday",
@@ -280,4 +299,8 @@ async function updateStoreHours(storeId, ownerId, schedule) {
   return inserted;
 }
 
-export { list, findById, findByOwner, create, update, addImage, removeImage, verifyOwnership, getStoreHours, updateStoreHours };
+export {
+    addImage, create, findById,
+    findByOwner, getStoreHours, list, removeImage, update, updateStoreHours, verifyOwnership
+};
+

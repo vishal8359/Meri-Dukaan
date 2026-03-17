@@ -293,7 +293,14 @@ interface AppContextType {
   removeMyService: (id: string) => void;
   addMyReel: (reel: MyStoreReel) => Promise<MyStoreReel>;
   removeMyReel: (id: string) => void;
-  updateStoreHours: (schedule: Array<{ dayOfWeek: string; openingTime?: string; closingTime?: string; isClosed?: boolean }>) => Promise<void>;
+  updateStoreHours: (
+    schedule: Array<{
+      dayOfWeek: string;
+      openingTime?: string;
+      closingTime?: string;
+      isClosed?: boolean;
+    }>,
+  ) => Promise<void>;
   canUploadReelToday: () => boolean;
 }
 
@@ -498,68 +505,75 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const mapCatalogProduct = useCallback((store: any, raw: any): CatalogProduct => {
-    const offerPrice = Number(raw?.offer_price ?? 0);
-    const realPrice = Number(raw?.real_price ?? 0);
-    const price = offerPrice || realPrice;
-    const discount = realPrice > price && realPrice > 0
-      ? Math.round(((realPrice - price) / realPrice) * 100)
-      : 0;
+  const mapCatalogProduct = useCallback(
+    (store: any, raw: any): CatalogProduct => {
+      const offerPrice = Number(raw?.offer_price ?? 0);
+      const realPrice = Number(raw?.real_price ?? 0);
+      const price = offerPrice || realPrice;
+      const discount =
+        realPrice > price && realPrice > 0
+          ? Math.round(((realPrice - price) / realPrice) * 100)
+          : 0;
 
-    const imageUrls: string[] = Array.isArray(raw?.images)
-      ? raw.images
-          .map((img: any) => img?.image_url)
-          .filter((url: unknown): url is string => typeof url === "string")
-      : [];
+      const imageUrls: string[] = Array.isArray(raw?.images)
+        ? raw.images
+            .map((img: any) => img?.image_url)
+            .filter((url: unknown): url is string => typeof url === "string")
+        : [];
 
-    const fallbackImage =
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400";
+      const fallbackImage =
+        "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400";
 
-    return {
-      id: String(raw?.id ?? ""),
-      storeId: String(store?.id ?? raw?.store_id ?? ""),
-      storeName: String(store?.store_name ?? "Store"),
-      name: String(raw?.name ?? "Product"),
-      category: String(raw?.type ?? "general").toLowerCase(),
-      image: imageUrls[0] || fallbackImage,
-      images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
-      price,
-      originalPrice: realPrice > price ? realPrice : undefined,
-      discount: discount > 0 ? discount : undefined,
-      rating: Number(raw?.rating ?? 0),
-      reviews: 0,
-      distance: String(store?.distance ?? "0 km"),
-      description: String(raw?.description ?? ""),
-      unit: "1 pc",
-      delivery: "30-45 min",
-      isSubscription: true,
-      stockQuantity: Number(raw?.stock ?? 0),
-      available: Boolean(raw?.available ?? true),
-    };
-  }, []);
+      return {
+        id: String(raw?.id ?? ""),
+        storeId: String(store?.id ?? raw?.store_id ?? ""),
+        storeName: String(store?.store_name ?? "Store"),
+        name: String(raw?.name ?? "Product"),
+        category: String(raw?.type ?? "general").toLowerCase(),
+        image: imageUrls[0] || fallbackImage,
+        images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+        price,
+        originalPrice: realPrice > price ? realPrice : undefined,
+        discount: discount > 0 ? discount : undefined,
+        rating: Number(raw?.rating ?? 0),
+        reviews: 0,
+        distance: String(store?.distance ?? "0 km"),
+        description: String(raw?.description ?? ""),
+        unit: "1 pc",
+        delivery: "30-45 min",
+        isSubscription: true,
+        stockQuantity: Number(raw?.stock ?? 0),
+        available: Boolean(raw?.available ?? true),
+      };
+    },
+    [],
+  );
 
-  const mapCatalogService = useCallback((store: any, raw: any): CatalogService => {
-    const fallbackImage =
-      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
+  const mapCatalogService = useCallback(
+    (store: any, raw: any): CatalogService => {
+      const fallbackImage =
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
 
-    return {
-      id: String(raw?.id ?? ""),
-      storeId: String(store?.id ?? raw?.store_id ?? ""),
-      storeName: String(store?.store_name ?? "Store"),
-      name: String(raw?.name ?? "Service"),
-      category: String(raw?.type ?? "service").toLowerCase(),
-      image: fallbackImage,
-      images: [fallbackImage],
-      price: 0,
-      rating: Number(raw?.rating ?? 0),
-      reviewsCount: 0,
-      distance: String(store?.distance ?? "0 km"),
-      description: String(raw?.description ?? ""),
-      duration: String(raw?.timings ?? ""),
-      active: Boolean(raw?.availability ?? true),
-      features: [],
-    };
-  }, []);
+      return {
+        id: String(raw?.id ?? ""),
+        storeId: String(store?.id ?? raw?.store_id ?? ""),
+        storeName: String(store?.store_name ?? "Store"),
+        name: String(raw?.name ?? "Service"),
+        category: String(raw?.type ?? "service").toLowerCase(),
+        image: fallbackImage,
+        images: [fallbackImage],
+        price: 0,
+        rating: Number(raw?.rating ?? 0),
+        reviewsCount: 0,
+        distance: String(store?.distance ?? "0 km"),
+        description: String(raw?.description ?? ""),
+        duration: String(raw?.timings ?? ""),
+        active: Boolean(raw?.availability ?? true),
+        features: [],
+      };
+    },
+    [],
+  );
 
   useEffect(() => {
     (async () => {
@@ -613,13 +627,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
         const mappedProducts = results
           .flatMap((entry) =>
-            entry.products.map((product) => mapCatalogProduct(entry.store, product)),
+            entry.products.map((product) =>
+              mapCatalogProduct(entry.store, product),
+            ),
           )
           .filter((item) => item.id);
 
         const mappedServices = results
           .flatMap((entry) =>
-            entry.services.map((service) => mapCatalogService(entry.store, service)),
+            entry.services.map((service) =>
+              mapCatalogService(entry.store, service),
+            ),
           )
           .filter((item) => item.id);
 
@@ -1362,7 +1380,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const updateStoreHours = useCallback(
-    async (schedule: Array<{ dayOfWeek: string; openingTime?: string; closingTime?: string; isClosed?: boolean }>) => {
+    async (
+      schedule: Array<{
+        dayOfWeek: string;
+        openingTime?: string;
+        closingTime?: string;
+        isClosed?: boolean;
+      }>,
+    ) => {
       if (!authToken || !myStore?.id) {
         throw new Error("Create your store first.");
       }
@@ -1374,8 +1399,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         prev
           ? {
               ...prev,
-              openingTime: firstOpenDay?.openingTime || prev.openingTime || "09:00",
-              closingTime: firstOpenDay?.closingTime || prev.closingTime || "21:00",
+              openingTime:
+                firstOpenDay?.openingTime || prev.openingTime || "09:00",
+              closingTime:
+                firstOpenDay?.closingTime || prev.closingTime || "21:00",
             }
           : prev,
       );
