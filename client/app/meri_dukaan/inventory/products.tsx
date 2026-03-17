@@ -161,6 +161,15 @@ function StockEditor({
   return (
     <View style={styles.stockEditor}>
       <Text style={styles.stockEditorTitle}>Manage Stock</Text>
+      
+      {/* Description */}
+      {product.description && (
+        <View style={styles.descriptionBox}>
+          <Text style={styles.descriptionLabel}>Description</Text>
+          <Text style={styles.descriptionText}>{product.description}</Text>
+        </View>
+      )}
+
       <View style={styles.stockEditorRow}>
         {/* Decrement */}
         <TouchableOpacity
@@ -345,5 +354,24 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     textAlign: "center",
     marginTop: spacing.sm,
+  },
+  descriptionBox: {
+    backgroundColor: colors.ui.surface,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: 8,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  descriptionLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.text.secondary,
+    marginBottom: 4,
+  },
+  descriptionText: {
+    fontSize: 13,
+    color: colors.text.primary,
+    lineHeight: 18,
   },
 });

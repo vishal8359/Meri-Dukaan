@@ -153,6 +153,7 @@ export interface MyStoreProduct {
   quantity: number;
   unit: QuantityUnit;
   inStock: boolean;
+  description?: string;
 }
 
 export interface MyStoreService {
@@ -278,15 +279,15 @@ interface AppContextType {
 
   // My Store (owner) Management
   myStore: MyStore | null;
-  createMyStore: (store: MyStore) => void;
+  createMyStore: (store: MyStore) => Promise<MyStore>;
   updateMyStore: (updates: Partial<MyStore>) => void;
-  addMyProduct: (product: MyStoreProduct) => void;
+  addMyProduct: (product: MyStoreProduct) => Promise<MyStoreProduct>;
   updateMyProduct: (id: string, updates: Partial<MyStoreProduct>) => void;
   removeMyProduct: (id: string) => void;
-  addMyService: (service: MyStoreService) => void;
+  addMyService: (service: MyStoreService) => Promise<MyStoreService>;
   updateMyService: (id: string, updates: Partial<MyStoreService>) => void;
   removeMyService: (id: string) => void;
-  addMyReel: (reel: MyStoreReel) => void;
+  addMyReel: (reel: MyStoreReel) => Promise<MyStoreReel>;
   removeMyReel: (id: string) => void;
   canUploadReelToday: () => boolean;
 }
@@ -470,6 +471,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       quantity: Number(raw?.stock ?? 0),
       unit: "pcs",
       inStock: Number(raw?.stock ?? 0) > 0,
+      description: String(raw?.description ?? "").trim() || undefined,
     };
   }, []);
 
@@ -675,29 +677,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     })();
   }, [authToken, mapCartItemFromApi, mapOrderFromApi]);
 
+  // Load user's store when authenticated
   useEffect(() => {
     (async () => {
-      if (!authUser?.id) return;
+      if (!authUser?.id || !authToken) {
+        setMyStore(null);
+        return;
+      }
+
       try {
-        const storesResponse = await storeApi.getStores({
-          page: 1,
-          limit: 100,
-        });
-        const stores = Array.isArray(storesResponse.stores)
-          ? (storesResponse.stores as any[])
-          : [];
+        // First, try to get the user's store directly
+        const ownerStoreResponse = await storeApi.getMyStore(authToken);
+        const ownerStore = (ownerStoreResponse as any)?.store;
 
-        const ownerStore: any = stores.length
-          ? stores.find((s) => s?.owner?.id === authUser.id)
-          : null;
-
-        if (!ownerStore) return;
+        if (!ownerStore) {
+          setMyStore(null);
+          return;
+        }
 
         const storeId = String(ownerStore.id);
         const [inventoryRes, servicesRes, reelsRes] = await Promise.all([
-          authToken
-            ? storeApi.getStoreInventory(authToken, storeId)
-            : Promise.resolve({ inventory: { products: [] } as any }),
+          storeApi.getStoreInventory(authToken, storeId),
           storeApi.getStoreServices(storeId),
           reelApi.getStoreReels(storeId),
         ]);
@@ -742,6 +742,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date(ownerStore.created_at ?? Date.now()).getTime(),
         });
       } catch {
+        // No store found or error fetching it
         setMyStore(null);
       }
     })();
@@ -1179,21 +1180,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // --- My Store Functions ---
   const createMyStore = useCallback(
-    (store: MyStore) => {
-      if (authToken) {
-        void storeApi
-          .createStore(authToken, {
-            storeName: store.name,
-            category: store.category,
-            location: store.location,
-            images: store.images,
-          })
-          .catch(() => {
-            // Keep local fallback behavior.
-          });
+    async (store: MyStore): Promise<MyStore> => {
+      if (!authToken) {
+        throw new Error("Please login again to create your store.");
       }
 
-      setMyStore(store);
+      const response = await storeApi.createStore(authToken, {
+        storeName: store.name,
+        category: store.category,
+        location: store.location,
+        images: store.images,
+      });
+
+      const raw = (response as any)?.store ?? {};
+      const createdStore: MyStore = {
+        ...store,
+        id: String(raw?.id ?? store.id),
+        name: String(raw?.store_name ?? store.name),
+        category: String(raw?.category ?? store.category),
+        location: String(raw?.location ?? store.location),
+        rating: Number(raw?.rating ?? store.rating ?? 0),
+        followers: Number(raw?.followers_count ?? store.followers ?? 0),
+        createdAt: raw?.created_at
+          ? new Date(String(raw.created_at)).getTime()
+          : Date.now(),
+      };
+
+      setMyStore(createdStore);
+      return createdStore;
     },
     [authToken],
   );
@@ -1203,27 +1217,33 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addMyProduct = useCallback(
-    (product: MyStoreProduct) => {
-      if (authToken && myStore?.id) {
-        void storeApi
-          .addStoreProduct(authToken, myStore.id, {
-            name: product.name,
-            type: "General",
-            realPrice: product.price,
-            offerPrice: product.price,
-            stock: product.quantity,
-            description: "",
-            available: product.inStock,
-            images: product.images,
-          })
-          .catch(() => {
-            // Keep local fallback behavior.
-          });
+    async (product: MyStoreProduct): Promise<MyStoreProduct> => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first, then add products.");
       }
 
+      const response = await storeApi.addStoreProduct(authToken, myStore.id, {
+        name: product.name,
+        type: "General",
+        realPrice: product.price,
+        offerPrice: product.price,
+        stock: product.quantity,
+        description: product.description || "",
+        available: product.inStock,
+        images: product.images,
+      });
+
+      const raw = (response as any)?.product ?? {};
+      const savedProduct: MyStoreProduct = {
+        ...product,
+        id: String(raw?.id ?? product.id),
+      };
+
       setMyStore((prev) =>
-        prev ? { ...prev, products: [...prev.products, product] } : prev,
+        prev ? { ...prev, products: [...prev.products, savedProduct] } : prev,
       );
+
+      return savedProduct;
     },
     [authToken, myStore?.id],
   );
@@ -1253,24 +1273,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addMyService = useCallback(
-    (service: MyStoreService) => {
-      if (authToken && myStore?.id) {
-        void storeApi
-          .addStoreService(authToken, myStore.id, {
-            name: service.name,
-            type: "General",
-            availability: service.available,
-            timings: service.duration,
-            description: service.description,
-          })
-          .catch(() => {
-            // Keep local fallback behavior.
-          });
+    async (service: MyStoreService): Promise<MyStoreService> => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first, then add services.");
       }
 
+      const response = await storeApi.addStoreService(authToken, myStore.id, {
+        name: service.name,
+        type: "General",
+        availability: service.available,
+        timings: service.duration,
+        description: service.description,
+      });
+
+      const raw = (response as any)?.service ?? {};
+      const savedService: MyStoreService = {
+        ...service,
+        id: String(raw?.id ?? service.id),
+      };
+
       setMyStore((prev) =>
-        prev ? { ...prev, services: [...prev.services, service] } : prev,
+        prev ? { ...prev, services: [...prev.services, savedService] } : prev,
       );
+
+      return savedService;
     },
     [authToken, myStore?.id],
   );
@@ -1300,21 +1326,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addMyReel = useCallback(
-    (reel: MyStoreReel) => {
-      if (authToken && myStore?.id) {
-        void reelApi
-          .createStoreReel(authToken, myStore.id, {
-            videoUrl: reel.videoUrl,
-            description: reel.caption,
-          })
-          .catch(() => {
-            // Keep local fallback behavior.
-          });
+    async (reel: MyStoreReel): Promise<MyStoreReel> => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first, then add reels.");
       }
 
+      const response = await reelApi.createStoreReel(authToken, myStore.id, {
+        videoUrl: reel.videoUrl,
+        description: reel.caption,
+      });
+
+      const raw = (response as any)?.reel ?? {};
+      const savedReel: MyStoreReel = {
+        ...reel,
+        id: String(raw?.id ?? reel.id),
+        createdAt: raw?.created_at
+          ? new Date(String(raw.created_at)).getTime()
+          : reel.createdAt,
+      };
+
       setMyStore((prev) =>
-        prev ? { ...prev, reels: [reel, ...prev.reels] } : prev,
+        prev ? { ...prev, reels: [savedReel, ...prev.reels] } : prev,
       );
+
+      return savedReel;
     },
     [authToken, myStore?.id],
   );

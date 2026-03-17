@@ -46,6 +46,7 @@ export default function CreateStoreScreen() {
   >("");
   const [images, setImages] = useState<string[]>([]);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddImage = () => {
     if (images.length >= 5) {
@@ -61,7 +62,7 @@ export default function CreateStoreScreen() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!storeName.trim()) return Alert.alert("Error", "Enter store name");
     if (!location.trim()) return Alert.alert("Error", "Enter store location");
     if (!category) return Alert.alert("Error", "Select a category");
@@ -84,10 +85,23 @@ export default function CreateStoreScreen() {
       createdAt: Date.now(),
     };
 
-    createMyStore(store);
-    Alert.alert("Success", "Your Dukaan has been created!", [
-      { text: "OK", onPress: () => router.replace("/meri_dukaan/my-dukaan") },
-    ]);
+    try {
+      setIsSubmitting(true);
+      await createMyStore(store);
+      Alert.alert("Success", "Your Dukaan has been created!", [
+        {
+          text: "OK",
+          onPress: () => router.replace("/meri_dukaan/my-dukaan"),
+        },
+      ]);
+    } catch (err: any) {
+      Alert.alert(
+        "Create Store Failed",
+        err?.message || "Unable to create store right now.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -271,8 +285,14 @@ export default function CreateStoreScreen() {
         </View>
 
         {/* Create Button */}
-        <TouchableOpacity style={styles.createBtn} onPress={handleCreate}>
-          <Text style={styles.createBtnText}>Create My Dukaan</Text>
+        <TouchableOpacity
+          style={[styles.createBtn, isSubmitting && styles.createBtnDisabled]}
+          onPress={() => void handleCreate()}
+          disabled={isSubmitting}
+        >
+          <Text style={styles.createBtnText}>
+            {isSubmitting ? "Creating..." : "Create My Dukaan"}
+          </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -471,6 +491,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     ...shadows.medium,
   },
+  createBtnDisabled: { opacity: 0.7 },
   createBtnText: {
     fontSize: 16,
     fontWeight: "700",

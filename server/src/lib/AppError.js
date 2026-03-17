@@ -21,6 +21,9 @@ class AppError extends Error {
   static conflict(msg = "Conflict") {
     return new AppError(msg, 409);
   }
+  static serviceUnavailable(msg = "Service unavailable") {
+    return new AppError(msg, 503);
+  }
 }
 
 export default AppError;

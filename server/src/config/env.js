@@ -31,4 +31,12 @@ for (const key of required) {
   }
 }
 
+const serviceKey = env.supabase.serviceRoleKey || "";
+if (serviceKey.startsWith("sb_publishable_") || serviceKey.startsWith("sb_anon_")) {
+  console.error(
+    "SUPABASE_SERVICE_ROLE_KEY appears to be a publishable/anon key. Use the Supabase service_role secret key.",
+  );
+  process.exit(1);
+}
+
 export default env;

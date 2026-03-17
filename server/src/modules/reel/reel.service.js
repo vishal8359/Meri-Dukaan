@@ -8,7 +8,10 @@ async function listByStore(storeId) {
     .eq("store_id", storeId)
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "PGRST205") return [];
+    throw error;
+  }
   return data || [];
 }
 
@@ -22,7 +25,12 @@ async function feed({ page = 1, limit = 20 }) {
     .order("created_at", { ascending: false })
     .range(from, to);
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "PGRST205") {
+      return { reels: [], total: 0, page: Number(page), limit: Number(limit) };
+    }
+    throw error;
+  }
   return { reels: data, total: count, page: Number(page), limit: Number(limit) };
 }
 
@@ -32,6 +40,12 @@ async function findById(reelId) {
     .select("*, store:stores(id, store_name), engagement:reel_engagement(*)")
     .eq("id", reelId)
     .single();
+
+  if (error?.code === "PGRST205") {
+    throw AppError.serviceUnavailable(
+      "Database schema not initialized. Run server/src/database/schema.sql in your Supabase SQL editor.",
+    );
+  }
 
   if (error || !data) throw AppError.notFound("Reel not found");
   return data;

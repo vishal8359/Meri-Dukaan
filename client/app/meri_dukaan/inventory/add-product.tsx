@@ -45,8 +45,10 @@ export default function AddProductScreen() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [description, setDescription] = useState("");
   const [unit, setUnit] = useState<QuantityUnit>("pcs");
   const [images, setImages] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Quantity variant tags (e.g. "200 g", "400 g", "1 kg")
   const [variants, setVariants] = useState<QuantityVariant[]>([]);
@@ -87,7 +89,7 @@ export default function AddProductScreen() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return Alert.alert("Error", "Enter product name");
     if (!price.trim() || isNaN(Number(price)))
       return Alert.alert("Error", "Enter valid price");
@@ -96,19 +98,30 @@ export default function AddProductScreen() {
     if (images.length < 1)
       return Alert.alert("Error", "Add at least 1 product image");
 
-    addMyProduct({
-      id: `prod_${Date.now()}`,
-      name: name.trim(),
-      price: Number(price),
-      images,
-      quantity: Number(quantity),
-      unit,
-      inStock: true,
-    });
+    try {
+      setIsSaving(true);
+      await addMyProduct({
+        id: `prod_${Date.now()}`,
+        name: name.trim(),
+        price: Number(price),
+        images,
+        quantity: Number(quantity),
+        unit,
+        description: description.trim() || undefined,
+        inStock: true,
+      });
 
-    Alert.alert("Success", "Product added!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+      Alert.alert("Success", "Product added!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert(
+        "Add Product Failed",
+        err?.message || "Unable to add product right now.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const VARIANT_UNITS: { value: QuantityUnit; label: string }[] = [
@@ -187,6 +200,20 @@ export default function AddProductScreen() {
             value={price}
             onChangeText={setPrice}
             keyboardType="numeric"
+          />
+        </View>
+
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Description</Text>
+          <TextInput
+            style={[styles.textInput, styles.textArea]}
+            placeholder="Add details about your product (optional)"
+            placeholderTextColor={colors.ui.muted}
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
           />
         </View>
 
@@ -309,8 +336,14 @@ export default function AddProductScreen() {
         </View>
 
         {/* Save */}
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>Add Product</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
+          onPress={() => void handleSave()}
+          disabled={isSaving}
+        >
+          <Text style={styles.saveBtnText}>
+            {isSaving ? "Saving..." : "Add Product"}
+          </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -368,6 +401,11 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === "ios" ? 14 : 10,
     fontSize: 15,
     color: colors.text.primary,
+  },
+  textArea: {
+    minHeight: 90,
+    textAlignVertical: "top",
+    paddingTop: Platform.OS === "ios" ? 14 : 10,
   },
   qtyRow: { flexDirection: "row", gap: 12 },
 
@@ -519,6 +557,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     alignItems: "center",
     ...shadows.medium,
+  },
+  saveBtnDisabled: {
+    opacity: 0.7,
   },
   saveBtnText: {
     fontSize: 16,

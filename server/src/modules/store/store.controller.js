@@ -11,6 +11,11 @@ export const getStoreById = asyncHandler(async (req, res) => {
   res.json({ store });
 });
 
+export const getMyStore = asyncHandler(async (req, res) => {
+  const store = await storeService.findByOwner(req.user.id);
+  res.json({ store });
+});
+
 export const createStore = asyncHandler(async (req, res) => {
   const store = await storeService.create(req.user.id, req.body);
   res.status(201).json({ store });

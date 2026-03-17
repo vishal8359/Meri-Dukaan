@@ -15,7 +15,12 @@ async function list({ category, search, page = 1, limit = 20 }) {
   if (search) query = query.ilike("store_name", `%${search}%`);
 
   const { data, count, error } = await query;
-  if (error) throw error;
+  if (error) {
+    if (error.code === "PGRST205") {
+      return { stores: [], total: 0, page: Number(page), limit: Number(limit) };
+    }
+    throw error;
+  }
 
   return { stores: data, total: count, page: Number(page), limit: Number(limit) };
 }
@@ -27,8 +32,34 @@ async function findById(storeId) {
     .eq("id", storeId)
     .single();
 
+  if (error?.code === "PGRST205") {
+    throw AppError.serviceUnavailable(
+      "Database schema not initialized. Run server/src/database/schema.sql in your Supabase SQL editor.",
+    );
+  }
+
   if (error || !store) throw AppError.notFound("Store not found");
   return store;
+}
+
+async function findByOwner(ownerId) {
+  const { data: store, error } = await supabase
+    .from("stores")
+    .select("*, owner:users(id, name, profile_image), images:store_images(id, image_url)")
+    .eq("owner_id", ownerId)
+    .single();
+
+  // PGRST116: No rows returned when using .single()
+  // PGRST205: Schema table not found
+  if (error?.code === "PGRST116" || error?.code === "PGRST205") {
+    return null;
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  return store || null;
 }
 
 async function create(ownerId, { storeName, category, location, images }) {
@@ -126,4 +157,4 @@ async function verifyOwnership(storeId, ownerId) {
   return store;
 }
 
-export { list, findById, create, update, addImage, removeImage, verifyOwnership };
+export { list, findById, findByOwner, create, update, addImage, removeImage, verifyOwnership };

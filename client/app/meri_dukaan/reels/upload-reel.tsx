@@ -24,6 +24,7 @@ export default function UploadReelScreen() {
   const [caption, setCaption] = useState("");
   const [videoUri, setVideoUri] = useState<string | null>(null);
   const [videoName, setVideoName] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const alreadyUploaded = !canUploadReelToday();
 
@@ -73,7 +74,7 @@ export default function UploadReelScreen() {
     setVideoName(null);
   };
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (alreadyUploaded) {
       return Alert.alert(
         "Daily Limit",
@@ -82,19 +83,29 @@ export default function UploadReelScreen() {
     }
     if (!videoUri) return Alert.alert("Error", "Please select a video file");
 
-    addMyReel({
-      id: `reel_${Date.now()}`,
-      videoUrl: videoUri,
-      caption: caption.trim(),
-      createdAt: Date.now(),
-      likes: 0,
-      comments: 0,
-      views: 0,
-    });
+    try {
+      setIsUploading(true);
+      await addMyReel({
+        id: `reel_${Date.now()}`,
+        videoUrl: videoUri,
+        caption: caption.trim(),
+        createdAt: Date.now(),
+        likes: 0,
+        comments: 0,
+        views: 0,
+      });
 
-    Alert.alert("Success", "Reel uploaded!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+      Alert.alert("Success", "Reel uploaded!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert(
+        "Upload Failed",
+        err?.message || "Unable to upload reel right now.",
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const todayReels =
@@ -225,13 +236,15 @@ export default function UploadReelScreen() {
         <TouchableOpacity
           style={[
             styles.uploadBtn,
-            alreadyUploaded && styles.uploadBtnDisabled,
+            (alreadyUploaded || isUploading) && styles.uploadBtnDisabled,
           ]}
-          onPress={handleUpload}
-          disabled={alreadyUploaded}
+          onPress={() => void handleUpload()}
+          disabled={alreadyUploaded || isUploading}
         >
           <Upload size={18} color={colors.text.inverse} />
-          <Text style={styles.uploadBtnText}>Upload Reel</Text>
+          <Text style={styles.uploadBtnText}>
+            {isUploading ? "Uploading..." : "Upload Reel"}
+          </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />

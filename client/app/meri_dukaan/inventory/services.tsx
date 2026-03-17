@@ -51,6 +51,11 @@ export default function ServicesTab({
               <Text style={styles.itemName}>{s.name}</Text>
               <Text style={styles.itemPrice}>₹{s.price}</Text>
               <Text style={styles.itemMeta}>⏱ {s.duration}</Text>
+              {s.description && (
+                <Text style={styles.itemDescription} numberOfLines={2}>
+                  {s.description}
+                </Text>
+              )}
             </View>
             <View style={styles.itemActions}>
               <View style={styles.stockToggle}>
@@ -151,6 +156,12 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   itemMeta: { fontSize: 11, color: colors.text.tertiary, marginTop: 1 },
+  itemDescription: {
+    fontSize: 11,
+    color: colors.text.secondary,
+    marginTop: 4,
+    lineHeight: 15,
+  },
   itemActions: { alignItems: "flex-end", gap: 6 },
   stockToggle: { alignItems: "flex-end" },
   stockLabel: { fontSize: 10, fontWeight: "600", marginBottom: 1 },

@@ -5,7 +5,7 @@ export const addServiceSchema = Joi.object({
   type: Joi.string().max(100).required(),
   availability: Joi.boolean().default(true),
   timings: Joi.string().max(200).required(),
-  description: Joi.string().max(1000).required(),
+  description: Joi.string().max(1000).optional(),
 });
 
 export const updateServiceSchema = Joi.object({

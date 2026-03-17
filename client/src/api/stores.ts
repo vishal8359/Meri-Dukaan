@@ -81,6 +81,12 @@ export function getStoreById(storeId: string) {
   return apiRequest<{ store: unknown }>(`/stores/${storeId}`);
 }
 
+export function getMyStore(token: string) {
+  return apiRequest<{ store: unknown }>("/stores/me/store", {
+    token,
+  });
+}
+
 export function createStore(token: string, body: CreateStorePayload) {
   return apiRequest<{ store: unknown }>("/stores", {
     method: "POST",

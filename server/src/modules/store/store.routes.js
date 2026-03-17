@@ -17,6 +17,7 @@ router.get("/", optionalAuth, ctrl.getStores);
 router.get("/:id", optionalAuth, ctrl.getStoreById);
 
 // Protected
+router.get("/me/store", protect, ctrl.getMyStore);
 router.post("/", protect, validate(schema.createStoreSchema), ctrl.createStore);
 router.put("/:id", protect, validate(schema.updateStoreSchema), ctrl.updateStore);
 

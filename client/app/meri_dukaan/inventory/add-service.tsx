@@ -45,6 +45,7 @@ export default function AddServiceScreen() {
   const [customDuration, setCustomDuration] = useState("");
   const [description, setDescription] = useState("");
   const [images, setImages] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const isCustom = duration === "";
 
@@ -66,7 +67,7 @@ export default function AddServiceScreen() {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) return Alert.alert("Error", "Enter service name");
     if (!price.trim() || isNaN(Number(price)))
       return Alert.alert("Error", "Enter valid price");
@@ -75,19 +76,29 @@ export default function AddServiceScreen() {
     if (images.length < 1)
       return Alert.alert("Error", "Add at least 1 service image");
 
-    addMyService({
-      id: `svc_${Date.now()}`,
-      name: name.trim(),
-      price: Number(price),
-      images,
-      duration: finalDuration,
-      description: description.trim(),
-      available: true,
-    });
+    try {
+      setIsSaving(true);
+      await addMyService({
+        id: `svc_${Date.now()}`,
+        name: name.trim(),
+        price: Number(price),
+        images,
+        duration: finalDuration,
+        description: description.trim(),
+        available: true,
+      });
 
-    Alert.alert("Success", "Service added!", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+      Alert.alert("Success", "Service added!", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (err: any) {
+      Alert.alert(
+        "Add Service Failed",
+        err?.message || "Unable to add service right now.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -218,8 +229,14 @@ export default function AddServiceScreen() {
         </View>
 
         {/* Save */}
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>Add Service</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
+          onPress={() => void handleSave()}
+          disabled={isSaving}
+        >
+          <Text style={styles.saveBtnText}>
+            {isSaving ? "Saving..." : "Add Service"}
+          </Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -348,6 +365,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     alignItems: "center",
     ...shadows.medium,
+  },
+  saveBtnDisabled: {
+    opacity: 0.7,
   },
   saveBtnText: {
     fontSize: 16,
