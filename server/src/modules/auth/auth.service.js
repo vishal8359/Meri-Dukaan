@@ -5,6 +5,7 @@ import AppError from "../../lib/AppError.js";
 import { generateToken } from "../../lib/token.js";
 
 const SALT_ROUNDS = 10;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // ── OTP store (swap for Redis in production) ────────────────
 const otpStore = new Map();
@@ -24,13 +25,18 @@ async function register({
   profileImage,
   location,
 }) {
-  const { data: byEmail } = await supabase
-    .from("users")
-    .select("id")
-    .eq("email", email)
-    .single();
+  const rawEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  const normalizedEmail = rawEmail && EMAIL_REGEX.test(rawEmail) ? rawEmail : null;
 
-  if (byEmail) throw AppError.conflict("Email already registered");
+  if (normalizedEmail) {
+    const { data: byEmail } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .single();
+
+    if (byEmail) throw AppError.conflict("Email already registered");
+  }
 
   const { data: byPhone } = await supabase
     .from("users")
@@ -41,12 +47,13 @@ async function register({
   if (byPhone) throw AppError.conflict("Phone already registered");
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const emailForInsert = normalizedEmail || `${phone}@no-email.local`;
 
   const { data: user, error } = await supabase
     .from("users")
     .insert({
       name,
-      email,
+      email: emailForInsert,
       phone,
       password_hash: passwordHash,
       profile_image: profileImage || null,

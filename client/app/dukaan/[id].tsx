@@ -24,6 +24,7 @@ import {
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
     Animated,
     Dimensions,
     FlatList,
@@ -44,6 +45,40 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const HERO_HEIGHT = 380;
 const AVATAR_SIZE = 72;
 const SEARCH_SCROLL_THRESHOLD = 3 * SCREEN_HEIGHT;
+let canUseStoreHoursEndpoint: boolean | null = null;
+const STORE_META_TTL_MS = 5 * 60 * 1000;
+type StoreMetaCacheEntry = {
+  openingTime?: string;
+  closingTime?: string;
+  location?: string;
+  images?: string[];
+  fetchedAt: number;
+};
+const storeMetaCache = new Map<string, StoreMetaCacheEntry>();
+
+function extractStoreImages(rawStore: any): string[] {
+  const nestedImages = Array.isArray(rawStore?.images)
+    ? rawStore.images
+        .map((img: any) => {
+          if (typeof img === "string") return img;
+          if (typeof img?.image_url === "string") return img.image_url;
+          if (typeof img?.imageUrl === "string") return img.imageUrl;
+          return undefined;
+        })
+        .filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0)
+    : [];
+
+  if (nestedImages.length > 0) return nestedImages;
+
+  const singleImage =
+    typeof rawStore?.image === "string"
+      ? rawStore.image
+      : typeof rawStore?.image_url === "string"
+        ? rawStore.image_url
+        : undefined;
+
+  return singleImage ? [singleImage] : [];
+}
 
 function formatTime(time?: string): string {
   if (!time || !/^\d{2}:\d{2}$/.test(time)) return "--:--";
@@ -143,13 +178,20 @@ export default function StoreDetailScreen() {
     openingTime?: string;
     closingTime?: string;
   }>({});
+  const [apiStoreImages, setApiStoreImages] = useState<string[]>([]);
+  const [locationFromApi, setLocationFromApi] = useState<string | undefined>(
+    undefined,
+  );
+  const [isMetaLoading, setIsMetaLoading] = useState(true);
 
   const store = getStoreById(storeId as string);
   const isFollowing = store ? isFollowingStore(store.id) : false;
   const storeImages =
-    store?.images && store.images.length > 0
-      ? store.images
-      : [store?.image || ""];
+    apiStoreImages.length > 0
+      ? apiStoreImages
+      : store?.images && store.images.length > 0
+        ? store.images
+        : [store?.image || ""];
 
   const storeReelsCount = useMemo(
     () => reels.filter((r: Reel) => r.store.id === storeId).length,
@@ -161,67 +203,135 @@ export default function StoreDetailScreen() {
 
     const loadStoreHours = async () => {
       if (!storeId) {
-        if (isMounted) setHoursFromSchedule({});
+        if (isMounted) {
+          setHoursFromSchedule({});
+          setApiStoreImages([]);
+          setLocationFromApi(undefined);
+          setIsMetaLoading(false);
+        }
         return;
       }
 
+      const cacheKey = String(storeId);
+      const cachedMeta = storeMetaCache.get(cacheKey);
+      const isCacheFresh =
+        !!cachedMeta && Date.now() - cachedMeta.fetchedAt < STORE_META_TTL_MS;
+
+      if (isCacheFresh && cachedMeta) {
+        if (isMounted) {
+          setHoursFromSchedule({
+            openingTime: cachedMeta.openingTime,
+            closingTime: cachedMeta.closingTime,
+          });
+          setApiStoreImages(cachedMeta.images || []);
+          setLocationFromApi(cachedMeta.location);
+          setIsMetaLoading(false);
+        }
+
+        // Cache hit: avoid blocking network calls for this open.
+        return;
+      }
+
+      if (isMounted) setIsMetaLoading(true);
+
       try {
-        let scheduleOpeningTime: string | undefined;
-        let scheduleClosingTime: string | undefined;
+        const storeByIdResponse = await storeApi.getStoreById(String(storeId));
+        const rawStore = (storeByIdResponse as any)?.store;
+        const fallbackImages = extractStoreImages(rawStore);
 
-        try {
-          const response = await storeApi.getStoreHours(String(storeId));
-          const hours = Array.isArray((response as any)?.hours)
-            ? ((response as any).hours as any[])
-            : [];
-
-          const firstOpenDay = hours.find(
-            (item) => !toBoolean(item?.is_closed ?? item?.isClosed ?? false),
-          );
-
-          scheduleOpeningTime = normalizeApiTime(
-            firstOpenDay?.opening_time ?? firstOpenDay?.openingTime,
-          );
-          scheduleClosingTime = normalizeApiTime(
-            firstOpenDay?.closing_time ?? firstOpenDay?.closingTime,
-          );
-        } catch {
-          // Continue to store-level fallback when schedule endpoint is unavailable.
-        }
-
-        // Fallback to store-level fields for environments where schedule rows are absent.
-        let fallbackOpeningTime: string | undefined;
-        let fallbackClosingTime: string | undefined;
-        if (!scheduleOpeningTime || !scheduleClosingTime) {
-          try {
-            const storeByIdResponse = await storeApi.getStoreById(String(storeId));
-            const rawStore = (storeByIdResponse as any)?.store;
-            fallbackOpeningTime = normalizeApiTime(
-              rawStore?.opening_time ??
-                rawStore?.openingTime ??
-                rawStore?.open_time ??
-                rawStore?.openTime,
-            );
-            fallbackClosingTime = normalizeApiTime(
-              rawStore?.closing_time ??
-                rawStore?.closingTime ??
-                rawStore?.close_time ??
-                rawStore?.closeTime,
-            );
-          } catch {
-            fallbackOpeningTime = undefined;
-            fallbackClosingTime = undefined;
-          }
-        }
+        const fallbackOpeningTime = normalizeApiTime(
+          rawStore?.opening_time ??
+            rawStore?.openingTime ??
+            rawStore?.open_time ??
+            rawStore?.openTime,
+        );
+        const fallbackClosingTime = normalizeApiTime(
+          rawStore?.closing_time ??
+            rawStore?.closingTime ??
+            rawStore?.close_time ??
+            rawStore?.closeTime,
+        );
+        const fallbackLocation =
+          typeof rawStore?.location === "string" && rawStore.location.trim()
+            ? rawStore.location
+            : undefined;
 
         if (isMounted) {
           setHoursFromSchedule({
-            openingTime: scheduleOpeningTime ?? fallbackOpeningTime,
-            closingTime: scheduleClosingTime ?? fallbackClosingTime,
+            openingTime: fallbackOpeningTime,
+            closingTime: fallbackClosingTime,
           });
+          setApiStoreImages(fallbackImages);
+          setLocationFromApi(fallbackLocation);
+          setIsMetaLoading(false);
+        }
+
+        storeMetaCache.set(cacheKey, {
+          openingTime: fallbackOpeningTime,
+          closingTime: fallbackClosingTime,
+          location: fallbackLocation,
+          images: fallbackImages,
+          fetchedAt: Date.now(),
+        });
+
+        // Fetch normalized weekly hours in background so screen is not blocked.
+        if (canUseStoreHoursEndpoint !== false) {
+          try {
+            const response = await storeApi.getStoreHours(String(storeId));
+            canUseStoreHoursEndpoint = true;
+
+            const hours = Array.isArray((response as any)?.hours)
+              ? ((response as any).hours as any[])
+              : [];
+
+            const firstOpenDay = hours.find(
+              (item) => !toBoolean(item?.is_closed ?? item?.isClosed ?? false),
+            );
+
+            const scheduleOpeningTime = normalizeApiTime(
+              firstOpenDay?.opening_time ?? firstOpenDay?.openingTime,
+            );
+            const scheduleClosingTime = normalizeApiTime(
+              firstOpenDay?.closing_time ?? firstOpenDay?.closingTime,
+            );
+
+            if (isMounted && (scheduleOpeningTime || scheduleClosingTime)) {
+              setHoursFromSchedule((prev) => ({
+                openingTime: scheduleOpeningTime ?? prev.openingTime,
+                closingTime: scheduleClosingTime ?? prev.closingTime,
+              }));
+            }
+
+            if (scheduleOpeningTime || scheduleClosingTime) {
+              const previous = storeMetaCache.get(cacheKey);
+              storeMetaCache.set(cacheKey, {
+                openingTime: scheduleOpeningTime ?? previous?.openingTime,
+                closingTime: scheduleClosingTime ?? previous?.closingTime,
+                location: previous?.location,
+                images: previous?.images,
+                fetchedAt: Date.now(),
+              });
+            }
+          } catch (error) {
+            const message =
+              typeof (error as any)?.message === "string"
+                ? (error as any).message
+                : "";
+            if (
+              message.includes("Database schema missing store hours columns") ||
+              message.includes("store_hours")
+            ) {
+              canUseStoreHoursEndpoint = false;
+            }
+          }
         }
       } catch {
-        if (isMounted) setHoursFromSchedule({});
+        if (isMounted) {
+          setHoursFromSchedule({});
+          setApiStoreImages([]);
+          setLocationFromApi(undefined);
+          setIsMetaLoading(false);
+        }
       }
     };
 
@@ -278,11 +388,24 @@ export default function StoreDetailScreen() {
   );
   const effectiveOpeningTime = hoursFromSchedule.openingTime ?? store?.openingTime;
   const effectiveClosingTime = hoursFromSchedule.closingTime ?? store?.closingTime;
+  const displayLocation =
+    store?.location || locationFromApi || "Location not available";
   const openNow = isStoreOpenNow(effectiveOpeningTime, effectiveClosingTime);
   const displayHours =
     effectiveOpeningTime && effectiveClosingTime
       ? `${formatTime(effectiveOpeningTime)} - ${formatTime(effectiveClosingTime)}`
       : "Hours not set";
+
+  if (isMetaLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+          <Text style={styles.loadingText}>Loading store details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
   const handleBookService = (service: any) => {
@@ -454,7 +577,7 @@ export default function StoreDetailScreen() {
         <TouchableOpacity style={styles.locationChip}>
           <MapPin size={12} color={colors.text.secondary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {store.location || "Location not available"}
+            {displayLocation}
           </Text>
           <Clock
             size={12}
@@ -677,6 +800,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 10,
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    fontWeight: "600",
   },
   errorText: {
     fontSize: 18,
