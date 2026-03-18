@@ -192,14 +192,9 @@ async function getStoreHours(storeId) {
         .single();
 
       if (legacyError?.code === "PGRST204") {
-        return [
-          {
-            day_of_week: "Everyday",
-            opening_time: "09:00",
-            closing_time: "21:00",
-            is_closed: false,
-          },
-        ];
+        throw AppError.serviceUnavailable(
+          "Database schema missing store hours columns. Apply server/src/database/schema.sql (or compatibility migration) to create store_hours/opening_time/closing_time.",
+        );
       }
 
       if (
@@ -226,6 +221,12 @@ async function getStoreHours(storeId) {
 async function updateStoreHours(storeId, ownerId, schedule) {
   await verifyOwnership(storeId, ownerId);
 
+  const firstOpenDay = Array.isArray(schedule)
+    ? schedule.find((item) => !item?.isClosed)
+    : null;
+  const defaultOpeningTime = firstOpenDay?.openingTime || "09:00";
+  const defaultClosingTime = firstOpenDay?.closingTime || "21:00";
+
   // Delete existing hours for this store
   const { error: deleteError } = await supabase
     .from("store_hours")
@@ -235,18 +236,11 @@ async function updateStoreHours(storeId, ownerId, schedule) {
   if (deleteError) {
     // Fallback for environments still using legacy store-level hours fields.
     if (deleteError.code === "PGRST205") {
-      const firstOpenDay = Array.isArray(schedule)
-        ? schedule.find((item) => !item?.isClosed)
-        : null;
-
-      const openingTime = firstOpenDay?.openingTime || "09:00";
-      const closingTime = firstOpenDay?.closingTime || "21:00";
-
       const { data: updatedStore, error: legacyUpdateError } = await supabase
         .from("stores")
         .update({
-          opening_time: openingTime,
-          closing_time: closingTime,
+          opening_time: defaultOpeningTime,
+          closing_time: defaultClosingTime,
         })
         .eq("id", storeId)
         .eq("owner_id", ownerId)
@@ -254,15 +248,9 @@ async function updateStoreHours(storeId, ownerId, schedule) {
         .single();
 
       if (legacyUpdateError?.code === "PGRST204") {
-        // Neither store_hours table nor legacy columns exist yet.
-        // Return a normalized response so clients can proceed without 500s.
-        return (Array.isArray(schedule) ? schedule : []).map((item) => ({
-          store_id: storeId,
-          day_of_week: item.dayOfWeek,
-          opening_time: item.openingTime || "09:00",
-          closing_time: item.closingTime || "21:00",
-          is_closed: Boolean(item.isClosed),
-        }));
+        throw AppError.serviceUnavailable(
+          "Database schema missing store hours columns. Apply server/src/database/schema.sql (or compatibility migration) to create store_hours/opening_time/closing_time.",
+        );
       }
 
       if (legacyUpdateError) throw legacyUpdateError;
@@ -271,8 +259,8 @@ async function updateStoreHours(storeId, ownerId, schedule) {
         {
           store_id: storeId,
           day_of_week: "Everyday",
-          opening_time: updatedStore?.opening_time || openingTime,
-          closing_time: updatedStore?.closing_time || closingTime,
+          opening_time: updatedStore?.opening_time || defaultOpeningTime,
+          closing_time: updatedStore?.closing_time || defaultClosingTime,
           is_closed: false,
         },
       ];
@@ -296,6 +284,17 @@ async function updateStoreHours(storeId, ownerId, schedule) {
     .select();
 
   if (insertError) throw insertError;
+
+  // Keep store-level fields in sync for clients still reading legacy columns.
+  await supabase
+    .from("stores")
+    .update({
+      opening_time: defaultOpeningTime,
+      closing_time: defaultClosingTime,
+    })
+    .eq("id", storeId)
+    .eq("owner_id", ownerId);
+
   return inserted;
 }
 

@@ -1,3 +1,4 @@
+import * as storeApi from "@/src/api/stores";
 import { Reel, useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { ProductsSection } from "@/src/features/dukaan/components/ProductsSection";
@@ -52,6 +53,45 @@ function formatTime(time?: string): string {
   return `${hour12}:${String(mm).padStart(2, "0")} ${period}`;
 }
 
+function normalizeApiTime(time?: unknown): string | undefined {
+  if (typeof time !== "string") return undefined;
+  const value = time.trim();
+  if (!value) return undefined;
+
+  // Accept HH:MM, HH:MM:SS, HH:MM:SS+TZ, and 12-hour strings like 9:00 PM.
+  const compact24Hour = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?(?:[+-]\d{2}:?\d{2}|Z)?$/i);
+  if (compact24Hour) {
+    const hours = Number(compact24Hour[1]);
+    const minutes = Number(compact24Hour[2]);
+    if (hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59) {
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+  }
+
+  const meridiem = value.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+  if (meridiem) {
+    let hours = Number(meridiem[1]);
+    const minutes = Number(meridiem[2] ?? "00");
+    const period = meridiem[3].toUpperCase();
+    if (hours >= 1 && hours <= 12 && minutes >= 0 && minutes <= 59) {
+      if (period === "AM") {
+        hours = hours === 12 ? 0 : hours;
+      } else {
+        hours = hours === 12 ? 12 : hours + 12;
+      }
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+  }
+
+  return undefined;
+}
+
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value.toLowerCase() === "true";
+  return Boolean(value);
+}
+
 function isStoreOpenNow(openingTime?: string, closingTime?: string): boolean {
   if (!openingTime || !closingTime) return true;
   if (
@@ -78,6 +118,7 @@ function isStoreOpenNow(openingTime?: string, closingTime?: string): boolean {
 export default function StoreDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const storeId = Array.isArray(id) ? id[0] : id;
   const { t } = useSettings();
   const {
     getStoreById,
@@ -98,8 +139,12 @@ export default function StoreDetailScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [hoursFromSchedule, setHoursFromSchedule] = useState<{
+    openingTime?: string;
+    closingTime?: string;
+  }>({});
 
-  const store = getStoreById(id as string);
+  const store = getStoreById(storeId as string);
   const isFollowing = store ? isFollowingStore(store.id) : false;
   const storeImages =
     store?.images && store.images.length > 0
@@ -107,9 +152,85 @@ export default function StoreDetailScreen() {
       : [store?.image || ""];
 
   const storeReelsCount = useMemo(
-    () => reels.filter((r: Reel) => r.store.id === id).length,
-    [reels, id],
+    () => reels.filter((r: Reel) => r.store.id === storeId).length,
+    [reels, storeId],
   );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStoreHours = async () => {
+      if (!storeId) {
+        if (isMounted) setHoursFromSchedule({});
+        return;
+      }
+
+      try {
+        let scheduleOpeningTime: string | undefined;
+        let scheduleClosingTime: string | undefined;
+
+        try {
+          const response = await storeApi.getStoreHours(String(storeId));
+          const hours = Array.isArray((response as any)?.hours)
+            ? ((response as any).hours as any[])
+            : [];
+
+          const firstOpenDay = hours.find(
+            (item) => !toBoolean(item?.is_closed ?? item?.isClosed ?? false),
+          );
+
+          scheduleOpeningTime = normalizeApiTime(
+            firstOpenDay?.opening_time ?? firstOpenDay?.openingTime,
+          );
+          scheduleClosingTime = normalizeApiTime(
+            firstOpenDay?.closing_time ?? firstOpenDay?.closingTime,
+          );
+        } catch {
+          // Continue to store-level fallback when schedule endpoint is unavailable.
+        }
+
+        // Fallback to store-level fields for environments where schedule rows are absent.
+        let fallbackOpeningTime: string | undefined;
+        let fallbackClosingTime: string | undefined;
+        if (!scheduleOpeningTime || !scheduleClosingTime) {
+          try {
+            const storeByIdResponse = await storeApi.getStoreById(String(storeId));
+            const rawStore = (storeByIdResponse as any)?.store;
+            fallbackOpeningTime = normalizeApiTime(
+              rawStore?.opening_time ??
+                rawStore?.openingTime ??
+                rawStore?.open_time ??
+                rawStore?.openTime,
+            );
+            fallbackClosingTime = normalizeApiTime(
+              rawStore?.closing_time ??
+                rawStore?.closingTime ??
+                rawStore?.close_time ??
+                rawStore?.closeTime,
+            );
+          } catch {
+            fallbackOpeningTime = undefined;
+            fallbackClosingTime = undefined;
+          }
+        }
+
+        if (isMounted) {
+          setHoursFromSchedule({
+            openingTime: scheduleOpeningTime ?? fallbackOpeningTime,
+            closingTime: scheduleClosingTime ?? fallbackClosingTime,
+          });
+        }
+      } catch {
+        if (isMounted) setHoursFromSchedule({});
+      }
+    };
+
+    loadStoreHours();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [storeId]);
 
   useEffect(() => {
     if (isSearchVisible) {
@@ -124,10 +245,13 @@ export default function StoreDetailScreen() {
   }, [isSearchVisible]);
 
   // ─── Real data from store ───────────────────────────────────────────────────
-  const products = (catalogProducts.filter((p) => p.storeId === id) || []).map(
+  const products = (catalogProducts.filter((p) => p.storeId === storeId) || []).map(
     (p) => {
       const stockQuantity = Number(p.stockQuantity ?? 0);
       const active = Boolean(p.available ?? true) && stockQuantity > 0;
+      const status: "active" | "out-of-stock" = active
+        ? "active"
+        : "out-of-stock";
       return {
         id: p.id,
         name: p.name,
@@ -136,15 +260,28 @@ export default function StoreDetailScreen() {
         displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
         stock: `${stockQuantity}`,
         image: p.image,
-        status: (active ? "active" : "out-of-stock") as const,
+        status,
       };
     },
   );
-  const services = catalogServices.filter((s) => s.storeId === id) || [];
-  const openNow = isStoreOpenNow(store?.openingTime, store?.closingTime);
+  const services = (catalogServices.filter((s) => s.storeId === storeId) || []).map(
+    (service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description ?? "",
+      active: Boolean(service.active ?? true),
+      price: Number(service.price ?? 0),
+      image: service.image,
+      duration: service.duration,
+      rating: service.rating,
+    }),
+  );
+  const effectiveOpeningTime = hoursFromSchedule.openingTime ?? store?.openingTime;
+  const effectiveClosingTime = hoursFromSchedule.closingTime ?? store?.closingTime;
+  const openNow = isStoreOpenNow(effectiveOpeningTime, effectiveClosingTime);
   const displayHours =
-    store?.openingTime && store?.closingTime
-      ? `${formatTime(store.openingTime)} - ${formatTime(store.closingTime)}`
+    effectiveOpeningTime && effectiveClosingTime
+      ? `${formatTime(effectiveOpeningTime)} - ${formatTime(effectiveClosingTime)}`
       : "Hours not set";
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
@@ -153,7 +290,7 @@ export default function StoreDetailScreen() {
   };
 
   const handleReelsPress = () => {
-    router.push(`/dukaan/reels/${id}`);
+    router.push(`/dukaan/reels/${storeId}`);
   };
 
   const handleBack = () => {

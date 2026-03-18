@@ -71,6 +71,45 @@ const DAYS_OF_WEEK = [
   "Sunday",
 ];
 
+function buildDefaultSchedule(openingTime?: string, closingTime?: string) {
+  return DAYS_OF_WEEK.map((day) => ({
+    dayOfWeek: day,
+    openingTime: day === "Sunday" ? undefined : openingTime || "09:00",
+    closingTime: day === "Sunday" ? undefined : closingTime || "21:00",
+    isClosed: day === "Sunday",
+  }));
+}
+
+function normalizeTimeInput(value?: string): string | undefined {
+  if (!value) return undefined;
+
+  const raw = value.trim().toUpperCase();
+  if (!raw) return undefined;
+
+  const match = raw.match(/^(\d{1,2})(?::?(\d{2}))?\s*(AM|PM)?$/);
+  if (!match) return undefined;
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] ?? "00");
+  const period = match[3];
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return undefined;
+  if (minutes < 0 || minutes > 59) return undefined;
+
+  if (period) {
+    if (hours < 1 || hours > 12) return undefined;
+    if (period === "AM") {
+      hours = hours === 12 ? 0 : hours;
+    } else {
+      hours = hours === 12 ? 12 : hours + 12;
+    }
+  } else if (hours < 0 || hours > 23) {
+    return undefined;
+  }
+
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 function TimeSettingsModal({
   visible,
   store,
@@ -90,14 +129,14 @@ function TimeSettingsModal({
   ) => Promise<void>;
 }) {
   const [schedule, setSchedule] = useState(
-    DAYS_OF_WEEK.map((day) => ({
-      dayOfWeek: day,
-      openingTime: day === "Sunday" ? undefined : store.openingTime || "09:00",
-      closingTime: day === "Sunday" ? undefined : store.closingTime || "21:00",
-      isClosed: day === "Sunday",
-    })),
+    buildDefaultSchedule(store.openingTime, store.closingTime),
   );
   const [isSaving, setIsSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    setSchedule(buildDefaultSchedule(store.openingTime, store.closingTime));
+  }, [visible, store.openingTime, store.closingTime]);
 
   const handleDayToggle = (dayIndex: number) => {
     setSchedule((prev) => {
@@ -130,10 +169,38 @@ function TimeSettingsModal({
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await onSave(schedule);
+
+      const normalizedSchedule = schedule.map((day) => {
+        if (day.isClosed) {
+          return {
+            ...day,
+            openingTime: undefined,
+            closingTime: undefined,
+          };
+        }
+
+        const openingTime = normalizeTimeInput(day.openingTime);
+        const closingTime = normalizeTimeInput(day.closingTime);
+
+        if (!openingTime || !closingTime) {
+          throw new Error(
+            `${day.dayOfWeek}: enter valid time in HH:MM (e.g. 09:00 or 9:00 PM)`,
+          );
+        }
+
+        return {
+          ...day,
+          openingTime,
+          closingTime,
+        };
+      });
+
+      await onSave(normalizedSchedule);
+      Alert.alert("Success", "Store hours updated successfully.");
       onClose();
     } catch (error) {
-      Alert.alert("Error", "Failed to update store hours");
+      const err = error as { message?: string };
+      Alert.alert("Error", err?.message || "Failed to update store hours");
     } finally {
       setIsSaving(false);
     }
@@ -194,7 +261,8 @@ function TimeSettingsModal({
                         handleTimeChange(idx, "opening", val)
                       }
                       placeholderTextColor={colors.ui.muted}
-                      maxLength={5}
+                      keyboardType="numbers-and-punctuation"
+                      maxLength={8}
                     />
                   </View>
                   <View style={styles.timeInputGroup}>
@@ -207,7 +275,8 @@ function TimeSettingsModal({
                         handleTimeChange(idx, "closing", val)
                       }
                       placeholderTextColor={colors.ui.muted}
-                      maxLength={5}
+                      keyboardType="numbers-and-punctuation"
+                      maxLength={8}
                     />
                   </View>
                 </View>
