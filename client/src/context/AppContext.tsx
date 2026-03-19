@@ -10,6 +10,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as cartApi from "../api/cart";
 import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
@@ -306,6 +307,16 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const CATALOG_CACHE_KEY = "app:catalog:v1";
+const CATALOG_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+type CatalogCachePayload = {
+  savedAt: number;
+  stores: Store[];
+  products: CatalogProduct[];
+  services: CatalogService[];
+};
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const { authToken, user: authUser } = useAuth();
 
@@ -322,6 +333,49 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [reels, setReels] = useState<EnhancedReel[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [myStore, setMyStore] = useState<MyStore | null>(null);
+
+  const hydrateCatalogFromCache = useCallback(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(CATALOG_CACHE_KEY);
+      if (!raw) return;
+
+      const parsed = JSON.parse(raw) as CatalogCachePayload;
+      if (!parsed || !parsed.savedAt) return;
+
+      if (Date.now() - parsed.savedAt > CATALOG_CACHE_TTL_MS) {
+        await AsyncStorage.removeItem(CATALOG_CACHE_KEY);
+        return;
+      }
+
+      if (Array.isArray(parsed.stores)) setAllStores(parsed.stores);
+      if (Array.isArray(parsed.products)) setCatalogProducts(parsed.products);
+      if (Array.isArray(parsed.services)) setCatalogServices(parsed.services);
+    } catch {
+      // Best-effort cache hydration.
+    }
+  }, []);
+
+  const persistCatalogCache = useCallback(
+    async (
+      stores: Store[],
+      products: CatalogProduct[],
+      services: CatalogService[],
+    ) => {
+      try {
+        const payload: CatalogCachePayload = {
+          savedAt: Date.now(),
+          stores,
+          products,
+          services,
+        };
+
+        await AsyncStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify(payload));
+      } catch {
+        // Best-effort cache persistence.
+      }
+    },
+    [],
+  );
 
   // --- Address State ---
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([
@@ -576,79 +630,63 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await storeApi.getStores({ page: 1, limit: 100 });
-        const mapped = Array.isArray(response.stores)
-          ? response.stores.map(mapStoreFromApi)
-          : [];
-        setAllStores(mapped);
-      } catch {
-        setAllStores([]);
-      }
-    })();
-  }, [mapStoreFromApi]);
+    void hydrateCatalogFromCache();
+  }, [hydrateCatalogFromCache]);
 
   useEffect(() => {
     (async () => {
-      if (!allStores.length) {
-        setCatalogProducts([]);
-        setCatalogServices([]);
-        return;
-      }
-
       try {
-        const results = await Promise.all(
-          allStores.map(async (store) => {
-            const [productsRes, servicesRes] = await Promise.allSettled([
-              storeApi.getStoreProducts(store.id),
-              storeApi.getStoreServices(store.id),
-            ]);
-
-            const products =
-              productsRes.status === "fulfilled" &&
-              Array.isArray(productsRes.value?.products)
-                ? (productsRes.value.products as any[])
-                : [];
-
-            const services =
-              servicesRes.status === "fulfilled" &&
-              Array.isArray(servicesRes.value?.services)
-                ? (servicesRes.value.services as any[])
-                : [];
-
-            return {
-              store,
-              products,
-              services,
-            };
-          }),
+        const response = await storeApi.getCatalog({ page: 1, limit: 100 });
+        const rawStores = Array.isArray(response.stores) ? response.stores : [];
+        const mappedStores = rawStores.map(mapStoreFromApi);
+        const storeById = new Map<string, Store>(
+          mappedStores.map((store) => [store.id, store]),
         );
 
-        const mappedProducts = results
-          .flatMap((entry) =>
-            entry.products.map((product) =>
-              mapCatalogProduct(entry.store, product),
-            ),
-          )
-          .filter((item) => item.id);
+        const productsByStore =
+          response.productsByStore && typeof response.productsByStore === "object"
+            ? response.productsByStore
+            : {};
+        const servicesByStore =
+          response.servicesByStore && typeof response.servicesByStore === "object"
+            ? response.servicesByStore
+            : {};
 
-        const mappedServices = results
-          .flatMap((entry) =>
-            entry.services.map((service) =>
-              mapCatalogService(entry.store, service),
-            ),
-          )
-          .filter((item) => item.id);
+        const mappedProducts = Object.entries(productsByStore)
+          .flatMap(([storeId, products]) => {
+            const rawStore = rawStores.find((store: any) => String(store?.id) === String(storeId));
+            if (!rawStore) return [];
+            return (Array.isArray(products) ? products : []).map((product: any) =>
+              mapCatalogProduct(rawStore, product),
+            );
+          })
+          .filter((item) => item.id && storeById.has(item.storeId));
 
+        const mappedServices = Object.entries(servicesByStore)
+          .flatMap(([storeId, services]) => {
+            const rawStore = rawStores.find((store: any) => String(store?.id) === String(storeId));
+            if (!rawStore) return [];
+            return (Array.isArray(services) ? services : []).map((service: any) =>
+              mapCatalogService(rawStore, service),
+            );
+          })
+          .filter((item) => item.id && storeById.has(item.storeId));
+
+        setAllStores(mappedStores);
         setCatalogProducts(mappedProducts);
         setCatalogServices(mappedServices);
+
+        await persistCatalogCache(mappedStores, mappedProducts, mappedServices);
       } catch {
-        setCatalogProducts([]);
-        setCatalogServices([]);
+        // If fresh request fails, keep previous cached/in-memory data.
       }
     })();
-  }, [allStores, mapCatalogProduct, mapCatalogService]);
+  }, [
+    mapStoreFromApi,
+    mapCatalogProduct,
+    mapCatalogService,
+    persistCatalogCache,
+  ]);
 
   useEffect(() => {
     (async () => {

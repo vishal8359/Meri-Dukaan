@@ -6,6 +6,11 @@ export const getStores = asyncHandler(async (req, res) => {
   res.json(result);
 });
 
+export const getCatalog = asyncHandler(async (req, res) => {
+  const result = await storeService.getCatalog(req.query);
+  res.json(result);
+});
+
 export const getStoreById = asyncHandler(async (req, res) => {
   const store = await storeService.findById(req.params.id);
   res.json({ store });

@@ -19,6 +19,11 @@ const env = {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   },
+
+  redis: {
+    url: process.env.REDIS_URL || "",
+    ttlSeconds: Number(process.env.REDIS_TTL_SECONDS || 120),
+  },
 };
 
 // Fail fast on missing critical env vars

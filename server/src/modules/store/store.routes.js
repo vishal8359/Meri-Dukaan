@@ -14,6 +14,7 @@ const router = Router();
 
 // Public
 router.get("/", optionalAuth, ctrl.getStores);
+router.get("/catalog", optionalAuth, ctrl.getCatalog);
 router.get("/:id", optionalAuth, ctrl.getStoreById);
 
 // Protected

@@ -79,6 +79,20 @@ export function getStores(query?: Record<string, string | number | undefined>) {
   }>(`/stores${suffix}`);
 }
 
+export function getCatalog(query?: Record<string, string | number | undefined>) {
+  const suffix = buildQueryString(query);
+  return apiRequest<{
+    stores: unknown[];
+    productsByStore: Record<string, unknown[]>;
+    servicesByStore: Record<string, unknown[]>;
+    total: number;
+    page: number;
+    limit: number;
+    fetchedAt: string;
+    cache?: { hit: boolean; key: string };
+  }>(`/stores/catalog${suffix}`);
+}
+
 export function getStoreById(storeId: string) {
   return apiRequest<{ store: unknown }>(`/stores/${storeId}`);
 }

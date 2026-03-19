@@ -1,5 +1,10 @@
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
+import { deleteCachedKeys, getCachedJson, setCachedJson } from "../../lib/cache.js";
+
+function catalogCacheKey(page, limit) {
+  return `catalog:v1:page:${page}:limit:${limit}`;
+}
 
 async function list({ category, search, page = 1, limit = 20 }) {
   const from = (page - 1) * limit;
@@ -31,6 +36,109 @@ async function list({ category, search, page = 1, limit = 20 }) {
     page: Number(page),
     limit: Number(limit),
   };
+}
+
+async function getCatalog({ page = 1, limit = 20 }) {
+  const normalizedPage = Math.max(Number(page) || 1, 1);
+  const normalizedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+  const key = catalogCacheKey(normalizedPage, normalizedLimit);
+
+  const cached = await getCachedJson(key);
+  if (cached) {
+    return {
+      ...cached,
+      cache: { hit: true, key },
+    };
+  }
+
+  const storesResult = await list({ page: normalizedPage, limit: normalizedLimit });
+  const stores = Array.isArray(storesResult.stores) ? storesResult.stores : [];
+  const storeIds = stores.map((store) => store?.id).filter(Boolean);
+
+  if (storeIds.length === 0) {
+    const emptyPayload = {
+      stores: [],
+      productsByStore: {},
+      servicesByStore: {},
+      total: storesResult.total,
+      page: storesResult.page,
+      limit: storesResult.limit,
+      fetchedAt: new Date().toISOString(),
+    };
+
+    await setCachedJson(key, emptyPayload, 120);
+
+    return {
+      ...emptyPayload,
+      cache: { hit: false, key },
+    };
+  }
+
+  const [{ data: products, error: productsError }, { data: services, error: servicesError }] =
+    await Promise.all([
+      supabase
+        .from("products")
+        .select("*, images:product_images(id, image_url)")
+        .in("store_id", storeIds)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("services")
+        .select("*")
+        .in("store_id", storeIds)
+        .order("created_at", { ascending: false }),
+    ]);
+
+  if (productsError) throw productsError;
+  if (servicesError) throw servicesError;
+
+  const productsByStore = {};
+  const servicesByStore = {};
+
+  for (const storeId of storeIds) {
+    productsByStore[storeId] = [];
+    servicesByStore[storeId] = [];
+  }
+
+  (products || []).forEach((product) => {
+    if (!productsByStore[product.store_id]) {
+      productsByStore[product.store_id] = [];
+    }
+    productsByStore[product.store_id].push(product);
+  });
+
+  (services || []).forEach((service) => {
+    if (!servicesByStore[service.store_id]) {
+      servicesByStore[service.store_id] = [];
+    }
+    servicesByStore[service.store_id].push(service);
+  });
+
+  const payload = {
+    stores,
+    productsByStore,
+    servicesByStore,
+    total: storesResult.total,
+    page: storesResult.page,
+    limit: storesResult.limit,
+    fetchedAt: new Date().toISOString(),
+  };
+
+  await setCachedJson(key, payload, 120);
+
+  return {
+    ...payload,
+    cache: { hit: false, key },
+  };
+}
+
+async function invalidateCatalogCache() {
+  const keys = [];
+  for (let page = 1; page <= 5; page += 1) {
+    keys.push(catalogCacheKey(page, 20));
+    keys.push(catalogCacheKey(page, 50));
+    keys.push(catalogCacheKey(page, 100));
+  }
+  await deleteCachedKeys(keys);
 }
 
 async function findById(storeId) {
@@ -107,6 +215,8 @@ async function create(ownerId, { storeName, category, location, images }) {
   // Also create empty inventory row for this store
   await supabase.from("inventory").insert({ store_id: store.id });
 
+  await invalidateCatalogCache();
+
   return store;
 }
 
@@ -128,6 +238,8 @@ async function update(storeId, ownerId, body) {
 
   if (error || !store)
     throw AppError.notFound("Store not found or not authorized");
+
+  await invalidateCatalogCache();
   return store;
 }
 
@@ -299,7 +411,7 @@ async function updateStoreHours(storeId, ownerId, schedule) {
 }
 
 export {
-    addImage, create, findById,
-    findByOwner, getStoreHours, list, removeImage, update, updateStoreHours, verifyOwnership
+  addImage, create, findById,
+  findByOwner, getCatalog, getStoreHours, list, removeImage, update, updateStoreHours, verifyOwnership
 };
 
