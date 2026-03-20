@@ -1,7 +1,3 @@
--- =============================================================
--- Sangam App – Database Schema
--- Run this in: Supabase Dashboard → SQL Editor
--- =============================================================
 
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
