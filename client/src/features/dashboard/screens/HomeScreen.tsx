@@ -21,7 +21,6 @@ import {
 import React, { useEffect, useMemo, useRef } from "react";
 import {
     Animated,
-  ActivityIndicator,
     Dimensions,
     FlatList,
     Image,
@@ -110,6 +109,7 @@ export default function HomeScreen() {
   const { cart, allStores, getSelectedAddress } = useApp();
   const selectedAddress = getSelectedAddress();
   const scrollY = useRef(new Animated.Value(0)).current;
+  const shimmerProgress = useRef(new Animated.Value(0)).current;
   const [flashDealProducts, setFlashDealProducts] = React.useState<
     DashboardProduct[]
   >([]);
@@ -117,11 +117,29 @@ export default function HomeScreen() {
     DashboardService[]
   >([]);
   const [isDealsLoading, setIsDealsLoading] = React.useState(true);
+  const [isTrendingLoading, setIsTrendingLoading] = React.useState(true);
 
   const bannerScrollRef = useRef<FlatList>(null);
   const bannerIndexRef = useRef(0);
   const trendingScrollRef = useRef<FlatList>(null);
   const trendingIndexRef = useRef(0);
+
+  useEffect(() => {
+    const shimmerLoop = Animated.loop(
+      Animated.timing(shimmerProgress, {
+        toValue: 1,
+        duration: 1100,
+        useNativeDriver: true,
+      }),
+    );
+
+    shimmerLoop.start();
+
+    return () => {
+      shimmerLoop.stop();
+      shimmerProgress.setValue(0);
+    };
+  }, [shimmerProgress]);
 
   useEffect(() => {
     (async () => {
@@ -224,6 +242,80 @@ export default function HomeScreen() {
       })
       .slice(0, 8);
   }, [allStores]);
+
+  useEffect(() => {
+    if (trendingStores.length > 0) {
+      setIsTrendingLoading(false);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setIsTrendingLoading(false);
+    }, 1800);
+
+    return () => clearTimeout(timeout);
+  }, [trendingStores.length]);
+
+  const showDealSkeleton = isDealsLoading && flashDealProducts.length === 0;
+  const showServiceSkeleton = isDealsLoading && flashDealServices.length === 0;
+  const showTrendingSkeleton =
+    isTrendingLoading && trendingStores.length === 0;
+
+  const dealSkeletonItems = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => `deal-skeleton-${i}`),
+    [],
+  );
+  const serviceSkeletonItems = useMemo(
+    () => Array.from({ length: 5 }, (_, i) => `service-skeleton-${i}`),
+    [],
+  );
+  const trendingSkeletonItems = useMemo(
+    () => Array.from({ length: 4 }, (_, i) => `trending-skeleton-${i}`),
+    [],
+  );
+
+  const shimmerTranslateX = shimmerProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-80, 210],
+  });
+
+  const SkeletonBlock = ({ style }: { style?: any }) => (
+    <View style={[styles.skeletonBlock, style]}>
+      <Animated.View
+        style={[
+          styles.skeletonSplash,
+          {
+            transform: [{ translateX: shimmerTranslateX }, { rotate: "18deg" }],
+          },
+        ]}
+      />
+    </View>
+  );
+
+  const FlashDealSkeletonCard = () => (
+    <View style={styles.flashDealCard}>
+      <SkeletonBlock style={styles.flashDealImage} />
+      <View style={styles.flashDealInfo}>
+        <SkeletonBlock style={styles.skeletonFlashName} />
+        <SkeletonBlock style={styles.skeletonFlashStore} />
+        <View style={styles.priceRow}>
+          <SkeletonBlock style={styles.skeletonFlashPrice} />
+          <SkeletonBlock style={styles.skeletonFlashPriceSmall} />
+        </View>
+      </View>
+    </View>
+  );
+
+  const TrendingStoreSkeletonCard = () => (
+    <View style={styles.trendingCard}>
+      <SkeletonBlock style={styles.trendingImage} />
+      <View style={styles.trendingContent}>
+        <SkeletonBlock style={styles.skeletonTrendingName} />
+        <SkeletonBlock style={styles.skeletonTrendingType} />
+        <SkeletonBlock style={styles.skeletonTrendingFollowers} />
+      </View>
+    </View>
+  );
 
   useEffect(() => {
     if (TOP_OFFERS.length <= 1) return;
@@ -555,9 +647,17 @@ export default function HomeScreen() {
           </View>
           <FlatList
             horizontal
-            data={flashDealProducts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <FlashDealCard item={item} />}
+            data={showDealSkeleton ? dealSkeletonItems : flashDealProducts}
+            keyExtractor={(item, index) =>
+              typeof item === "string" ? item : `${item.id}-${index}`
+            }
+            renderItem={({ item }) =>
+              showDealSkeleton ? (
+                <FlashDealSkeletonCard />
+              ) : (
+                <FlashDealCard item={item as DashboardProduct} />
+              )
+            }
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.flashDealsList}
             snapToInterval={156}
@@ -569,7 +669,7 @@ export default function HomeScreen() {
         </View>
 
         {/* Flash Services */}
-        {flashDealServices.length > 0 && (
+        {(showServiceSkeleton || flashDealServices.length > 0) && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={styles.sectionTitleContainer}>
@@ -589,9 +689,17 @@ export default function HomeScreen() {
             </View>
             <FlatList
               horizontal
-              data={flashDealServices}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => <FlashServiceCard item={item} />}
+              data={showServiceSkeleton ? serviceSkeletonItems : flashDealServices}
+              keyExtractor={(item, index) =>
+                typeof item === "string" ? item : `${item.id}-${index}`
+              }
+              renderItem={({ item }) =>
+                showServiceSkeleton ? (
+                  <FlashDealSkeletonCard />
+                ) : (
+                  <FlashServiceCard item={item as DashboardService} />
+                )
+              }
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.flashDealsList}
               snapToInterval={156}
@@ -626,9 +734,17 @@ export default function HomeScreen() {
           <FlatList
             ref={trendingScrollRef}
             horizontal
-            data={trendingStores}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <TrendingStoreCard store={item} />}
+            data={showTrendingSkeleton ? trendingSkeletonItems : trendingStores}
+            keyExtractor={(item, index) =>
+              typeof item === "string" ? item : `${item.id}-${index}`
+            }
+            renderItem={({ item }) =>
+              showTrendingSkeleton ? (
+                <TrendingStoreSkeletonCard />
+              ) : (
+                <TrendingStoreCard store={item} />
+              )
+            }
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.storesList}
             snapToInterval={186}
@@ -976,5 +1092,57 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: colors.text.secondary,
+  },
+  skeletonBlock: {
+    backgroundColor: "#131313",
+    borderColor: "#252525",
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  skeletonSplash: {
+    position: "absolute",
+    top: -30,
+    bottom: -30,
+    width: 44,
+    backgroundColor: "rgba(255,255,255,0.48)",
+  },
+  skeletonFlashName: {
+    height: 14,
+    borderRadius: 6,
+    width: "90%",
+    marginBottom: 8,
+  },
+  skeletonFlashStore: {
+    height: 11,
+    borderRadius: 6,
+    width: "74%",
+    marginBottom: 10,
+  },
+  skeletonFlashPrice: {
+    height: 16,
+    borderRadius: 6,
+    width: 54,
+  },
+  skeletonFlashPriceSmall: {
+    height: 12,
+    borderRadius: 6,
+    width: 36,
+  },
+  skeletonTrendingName: {
+    height: 14,
+    borderRadius: 6,
+    width: "82%",
+    marginBottom: 8,
+  },
+  skeletonTrendingType: {
+    height: 11,
+    borderRadius: 6,
+    width: "64%",
+    marginBottom: 10,
+  },
+  skeletonTrendingFollowers: {
+    height: 10,
+    borderRadius: 6,
+    width: "56%",
   },
 });
