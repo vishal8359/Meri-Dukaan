@@ -1,6 +1,7 @@
 // src/context/AppContext.tsx
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { InteractionManager } from "react-native";
 import React, {
     createContext,
     ReactNode,
@@ -346,6 +347,19 @@ async function saveBusinessType(storeId: string, businessType: BusinessType) {
   await AsyncStorage.setItem(MY_STORE_BUSINESS_TYPE_KEY, JSON.stringify(saved));
 }
 
+function runAfterInteractions(task: () => void, delayMs = 0) {
+  const interactionHandle = InteractionManager.runAfterInteractions(() => {
+    if (delayMs > 0) {
+      setTimeout(task, delayMs);
+      return;
+    }
+
+    task();
+  });
+
+  return () => interactionHandle.cancel();
+}
+
 type CatalogCachePayload = {
   savedAt: number;
   stores: Store[];
@@ -369,6 +383,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [reels, setReels] = useState<EnhancedReel[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [myStore, setMyStore] = useState<MyStore | null>(null);
+
+  useEffect(() => {
+    if (!authUser) {
+      setUser(null);
+      return;
+    }
+
+    setUser((prev) => ({
+      name: authUser.name || prev?.name || "",
+      isLoggedIn: true,
+      email: authUser.email || prev?.email,
+      phone: authUser.phone || prev?.phone,
+      address: authUser.address || prev?.address,
+      bio: prev?.bio,
+      city: prev?.city,
+      state: prev?.state,
+      pincode: prev?.pincode,
+    }));
+  }, [authUser]);
 
   const hydrateCatalogFromCache = useCallback(async () => {
     try {
@@ -670,59 +703,69 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [hydrateCatalogFromCache]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await storeApi.getCatalog({ page: 1, limit: 100 });
-        const rawStores = Array.isArray(response.stores) ? response.stores : [];
-        const mappedStores = rawStores.map(mapStoreFromApi);
-        const storeById = new Map<string, Store>(
-          mappedStores.map((store) => [store.id, store]),
-        );
+    let cancelled = false;
+    const cancelDeferred = runAfterInteractions(() => {
+      void (async () => {
+        try {
+          const response = await storeApi.getCatalog({ page: 1, limit: 100 });
+          if (cancelled) return;
 
-        const productsByStore =
-          response.productsByStore &&
-          typeof response.productsByStore === "object"
-            ? response.productsByStore
-            : {};
-        const servicesByStore =
-          response.servicesByStore &&
-          typeof response.servicesByStore === "object"
-            ? response.servicesByStore
-            : {};
+          const rawStores = Array.isArray(response.stores) ? response.stores : [];
+          const mappedStores = rawStores.map(mapStoreFromApi);
+          const storeById = new Map<string, Store>(
+            mappedStores.map((store) => [store.id, store]),
+          );
 
-        const mappedProducts = Object.entries(productsByStore)
-          .flatMap(([storeId, products]) => {
-            const rawStore = rawStores.find(
-              (store: any) => String(store?.id) === String(storeId),
-            );
-            if (!rawStore) return [];
-            return (Array.isArray(products) ? products : []).map(
-              (product: any) => mapCatalogProduct(rawStore, product),
-            );
-          })
-          .filter((item) => item.id && storeById.has(item.storeId));
+          const productsByStore =
+            response.productsByStore &&
+            typeof response.productsByStore === "object"
+              ? response.productsByStore
+              : {};
+          const servicesByStore =
+            response.servicesByStore &&
+            typeof response.servicesByStore === "object"
+              ? response.servicesByStore
+              : {};
 
-        const mappedServices = Object.entries(servicesByStore)
-          .flatMap(([storeId, services]) => {
-            const rawStore = rawStores.find(
-              (store: any) => String(store?.id) === String(storeId),
-            );
-            if (!rawStore) return [];
-            return (Array.isArray(services) ? services : []).map(
-              (service: any) => mapCatalogService(rawStore, service),
-            );
-          })
-          .filter((item) => item.id && storeById.has(item.storeId));
+          const mappedProducts = Object.entries(productsByStore)
+            .flatMap(([storeId, products]) => {
+              const rawStore = rawStores.find(
+                (store: any) => String(store?.id) === String(storeId),
+              );
+              if (!rawStore) return [];
+              return (Array.isArray(products) ? products : []).map(
+                (product: any) => mapCatalogProduct(rawStore, product),
+              );
+            })
+            .filter((item) => item.id && storeById.has(item.storeId));
 
-        setAllStores(mappedStores);
-        setCatalogProducts(mappedProducts);
-        setCatalogServices(mappedServices);
+          const mappedServices = Object.entries(servicesByStore)
+            .flatMap(([storeId, services]) => {
+              const rawStore = rawStores.find(
+                (store: any) => String(store?.id) === String(storeId),
+              );
+              if (!rawStore) return [];
+              return (Array.isArray(services) ? services : []).map(
+                (service: any) => mapCatalogService(rawStore, service),
+              );
+            })
+            .filter((item) => item.id && storeById.has(item.storeId));
 
-        await persistCatalogCache(mappedStores, mappedProducts, mappedServices);
-      } catch {
-        // If fresh request fails, keep previous cached/in-memory data.
-      }
-    })();
+          setAllStores(mappedStores);
+          setCatalogProducts(mappedProducts);
+          setCatalogServices(mappedServices);
+
+          await persistCatalogCache(mappedStores, mappedProducts, mappedServices);
+        } catch {
+          // If fresh request fails, keep previous cached/in-memory data.
+        }
+      })();
+    }, 120);
+
+    return () => {
+      cancelled = true;
+      cancelDeferred();
+    };
   }, [
     mapStoreFromApi,
     mapCatalogProduct,
@@ -731,17 +774,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   ]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const response = await reelApi.getReelFeed({ page: 1, limit: 50 });
-        const mapped = Array.isArray(response.reels)
-          ? response.reels.map(mapReelFromApi)
-          : [];
-        setReels(mapped);
-      } catch {
-        setReels([]);
-      }
-    })();
+    let cancelled = false;
+    const cancelDeferred = runAfterInteractions(() => {
+      void (async () => {
+        try {
+          const response = await reelApi.getReelFeed({ page: 1, limit: 50 });
+          if (cancelled) return;
+
+          const mapped = Array.isArray(response.reels)
+            ? response.reels.map(mapReelFromApi)
+            : [];
+          setReels(mapped);
+        } catch {
+          if (!cancelled) setReels([]);
+        }
+      })();
+    }, 260);
+
+    return () => {
+      cancelled = true;
+      cancelDeferred();
+    };
   }, [mapReelFromApi]);
 
   useEffect(() => {
@@ -752,23 +805,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      try {
-        const cartRes = await cartApi.getCart(authToken);
-        const mappedCart = Array.isArray(cartRes.items)
-          ? cartRes.items.map(mapCartItemFromApi)
+      const [cartRes, orderRes] = await Promise.allSettled([
+        cartApi.getCart(authToken),
+        orderApi.getOrders(authToken),
+      ]);
+
+      if (cartRes.status === "fulfilled") {
+        const mappedCart = Array.isArray(cartRes.value.items)
+          ? cartRes.value.items.map(mapCartItemFromApi)
           : [];
         setCart(mappedCart);
-      } catch {
+      } else {
         setCart([]);
       }
 
-      try {
-        const orderRes = await orderApi.getOrders(authToken);
-        const mappedOrders = Array.isArray(orderRes.orders)
-          ? orderRes.orders.map(mapOrderFromApi)
+      if (orderRes.status === "fulfilled") {
+        const mappedOrders = Array.isArray(orderRes.value.orders)
+          ? orderRes.value.orders.map(mapOrderFromApi)
           : [];
         setOrders(mappedOrders);
-      } catch {
+      } else {
         setOrders([]);
       }
     })();
@@ -1334,7 +1390,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         updates.name !== undefined ? updates.name.trim() : myStore.name;
       const nextCategory = updates.category ?? myStore.category;
       const nextLocation =
-        updates.location !== undefined ? updates.location.trim() : myStore.location;
+        updates.location !== undefined
+          ? updates.location.trim()
+          : myStore.location;
 
       if (!nextName || !nextCategory || !nextLocation) {
         throw new Error("Store name, category and location are required.");

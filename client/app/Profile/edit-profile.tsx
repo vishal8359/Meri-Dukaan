@@ -109,14 +109,14 @@ export default function EditProfileScreen() {
   const { user, updateProfile } = useApp();
 
   const [formData, setFormData] = useState({
-    name: user?.name || "Vishal Kumar",
-    email: user?.email || "vishal@sangam.in",
-    phone: user?.phone || "+91 98765 43210",
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
     bio: user?.bio || "",
-    address: user?.address || "Rajendra Nagar, Patna - 800016",
-    city: user?.city || "Patna",
-    state: user?.state || "Bihar",
-    pincode: user?.pincode || "800016",
+    address: user?.address || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    pincode: user?.pincode || "",
   });
 
   const [focusedField, setFocusedField] = useState<string | null>(null);

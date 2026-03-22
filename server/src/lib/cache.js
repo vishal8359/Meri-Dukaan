@@ -11,7 +11,10 @@ if (env.redis.url) {
   redisClient.on("error", (error) => {
     redisReady = false;
     if (env.isDev) {
-      console.warn("[cache] Redis unavailable, using in-memory fallback:", error.message);
+      console.warn(
+        "[cache] Redis unavailable, using in-memory fallback:",
+        error.message,
+      );
     }
   });
 
@@ -26,7 +29,9 @@ if (env.redis.url) {
     .catch(() => {
       redisReady = false;
       if (env.isDev) {
-        console.warn("[cache] Failed to connect Redis, using in-memory fallback");
+        console.warn(
+          "[cache] Failed to connect Redis, using in-memory fallback",
+        );
       }
     });
 }

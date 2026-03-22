@@ -215,9 +215,9 @@ function CustomDrawerContent(props: any) {
             <View style={styles.onlineIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.name || "Vishal Kumar"}</Text>
+            <Text style={styles.userName}>{user?.name || "Guest User"}</Text>
             <Text style={styles.userEmail}>
-              {user?.email || "vishal@sangam.in"}
+              {user?.email || "No email"}
             </Text>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>{t("drawer.customer")}</Text>

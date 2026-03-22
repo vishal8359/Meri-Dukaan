@@ -80,7 +80,7 @@ export default function ProfileScreen() {
           <View style={styles.avatarWrapper}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {user?.name?.charAt(0) || "V"}
+                {user?.name?.charAt(0) || "G"}
               </Text>
             </View>
             <TouchableOpacity
@@ -91,7 +91,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.userName}>{user?.name || "Vishal Kumar"}</Text>
+          <Text style={styles.userName}>{user?.name || "Guest User"}</Text>
           <Text style={styles.memberSince}>{t("profile.premiumMember")}</Text>
 
           <View style={styles.ratingRow}>

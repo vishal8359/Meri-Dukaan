@@ -419,7 +419,9 @@ function EditStoreDetailsModal({
               style={styles.editInput}
               onPress={() => setShowCategoryPicker((prev) => !prev)}
             >
-              <Text style={styles.editCategoryText}>{category || "Select category"}</Text>
+              <Text style={styles.editCategoryText}>
+                {category || "Select category"}
+              </Text>
               <Ionicons
                 name={showCategoryPicker ? "chevron-up" : "chevron-down"}
                 size={18}
@@ -427,7 +429,10 @@ function EditStoreDetailsModal({
               />
             </TouchableOpacity>
             {showCategoryPicker && (
-              <ScrollView style={styles.editPickerList} nestedScrollEnabled={true}>
+              <ScrollView
+                style={styles.editPickerList}
+                nestedScrollEnabled={true}
+              >
                 {STORE_CATEGORIES.map((item) => (
                   <TouchableOpacity
                     key={item}
@@ -475,7 +480,9 @@ function EditStoreDetailsModal({
                     >
                       {type.label}
                     </Text>
-                    <Text style={styles.editBusinessTypeDesc}>{type.description}</Text>
+                    <Text style={styles.editBusinessTypeDesc}>
+                      {type.description}
+                    </Text>
                   </TouchableOpacity>
                 );
               })}

@@ -1,6 +1,6 @@
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import dotenv from "dotenv";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: join(__dirname, "..", "..", ".env") });
@@ -37,7 +37,10 @@ for (const key of required) {
 }
 
 const serviceKey = env.supabase.serviceRoleKey || "";
-if (serviceKey.startsWith("sb_publishable_") || serviceKey.startsWith("sb_anon_")) {
+if (
+  serviceKey.startsWith("sb_publishable_") ||
+  serviceKey.startsWith("sb_anon_")
+) {
   console.error(
     "SUPABASE_SERVICE_ROLE_KEY appears to be a publishable/anon key. Use the Supabase service_role secret key.",
   );
