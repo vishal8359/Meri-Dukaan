@@ -1,9 +1,9 @@
 ﻿// src/features/dashboard/screens/HomeScreen.tsx
-import {
-  PRODUCT_CATEGORIES,
-  SERVICE_CATEGORY_IDS,
-} from "@/src/constants/catalog";
 import * as storeApi from "@/src/api/stores";
+import {
+    PRODUCT_CATEGORIES,
+    SERVICE_CATEGORY_IDS,
+} from "@/src/constants/catalog";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -163,15 +163,17 @@ export default function HomeScreen() {
               return products.map((p) => {
                 const offer = Number(p?.offer_price ?? 0);
                 const real = Number(p?.real_price ?? 0);
-                const discount = real > offer && real > 0
-                  ? Math.round(((real - offer) / real) * 100)
-                  : 0;
+                const discount =
+                  real > offer && real > 0
+                    ? Math.round(((real - offer) / real) * 100)
+                    : 0;
 
                 return {
                   id: String(p?.id ?? ""),
                   name: String(p?.name ?? "Product"),
                   image: Array.isArray(p?.images)
-                    ? p.images[0]?.image_url || "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400"
+                    ? p.images[0]?.image_url ||
+                      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400"
                     : "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400",
                   price: offer || real,
                   originalPrice: real > offer ? real : undefined,
@@ -258,8 +260,7 @@ export default function HomeScreen() {
 
   const showDealSkeleton = isDealsLoading && flashDealProducts.length === 0;
   const showServiceSkeleton = isDealsLoading && flashDealServices.length === 0;
-  const showTrendingSkeleton =
-    isTrendingLoading && trendingStores.length === 0;
+  const showTrendingSkeleton = isTrendingLoading && trendingStores.length === 0;
 
   const dealSkeletonItems = useMemo(
     () => Array.from({ length: 5 }, (_, i) => `deal-skeleton-${i}`),
@@ -360,10 +361,26 @@ export default function HomeScreen() {
     } as any);
   };
 
-  const navigateToService = (serviceId: string) => {
+  const navigateToService = (service: DashboardService) => {
     router.push({
       pathname: "/service/[id]",
-      params: { id: serviceId },
+      params: {
+        id: service.id,
+        fallbackData: JSON.stringify({
+          id: service.id,
+          name: service.name,
+          image: service.image,
+          price: service.price,
+          rating: service.rating,
+          duration: service.duration || "",
+          storeId: service.storeId,
+          storeName: service.storeName,
+          distance: service.distance,
+          category: "service",
+          description: `${service.name} service`,
+          reviewsCount: 0,
+        }),
+      },
     } as any);
   };
 
@@ -426,7 +443,7 @@ export default function HomeScreen() {
   const FlashServiceCard = ({ item }: { item: DashboardService }) => (
     <TouchableOpacity
       style={styles.flashDealCard}
-      onPress={() => navigateToService(item.id)}
+      onPress={() => navigateToService(item)}
       activeOpacity={0.85}
     >
       <Image source={{ uri: item.image }} style={styles.flashDealImage} />
@@ -689,7 +706,9 @@ export default function HomeScreen() {
             </View>
             <FlatList
               horizontal
-              data={showServiceSkeleton ? serviceSkeletonItems : flashDealServices}
+              data={
+                showServiceSkeleton ? serviceSkeletonItems : flashDealServices
+              }
               keyExtractor={(item, index) =>
                 typeof item === "string" ? item : `${item.id}-${index}`
               }

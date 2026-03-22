@@ -216,9 +216,7 @@ function CustomDrawerContent(props: any) {
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{user?.name || "Guest User"}</Text>
-            <Text style={styles.userEmail}>
-              {user?.email || "No email"}
-            </Text>
+            <Text style={styles.userEmail}>{user?.email || "No email"}</Text>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>{t("drawer.customer")}</Text>
             </View>

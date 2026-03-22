@@ -1,7 +1,6 @@
 // src/context/AppContext.tsx
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { InteractionManager } from "react-native";
 import React, {
     createContext,
     ReactNode,
@@ -12,6 +11,7 @@ import React, {
     useRef,
     useState,
 } from "react";
+import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
 import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
@@ -710,7 +710,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           const response = await storeApi.getCatalog({ page: 1, limit: 100 });
           if (cancelled) return;
 
-          const rawStores = Array.isArray(response.stores) ? response.stores : [];
+          const rawStores = Array.isArray(response.stores)
+            ? response.stores
+            : [];
           const mappedStores = rawStores.map(mapStoreFromApi);
           const storeById = new Map<string, Store>(
             mappedStores.map((store) => [store.id, store]),
@@ -755,7 +757,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           setCatalogProducts(mappedProducts);
           setCatalogServices(mappedServices);
 
-          await persistCatalogCache(mappedStores, mappedProducts, mappedServices);
+          await persistCatalogCache(
+            mappedStores,
+            mappedProducts,
+            mappedServices,
+          );
         } catch {
           // If fresh request fails, keep previous cached/in-memory data.
         }
@@ -1405,6 +1411,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const response = await storeApi.updateStore(authToken, myStore.id, {
         storeName: nextName,
         category: nextCategory,
+        businessType:
+          updates.businessType !== undefined
+            ? updates.businessType
+            : myStore.businessType,
         location: nextLocation,
       });
 

@@ -24,6 +24,7 @@ export interface CreateStorePayload {
 export interface UpdateStorePayload {
   storeName?: string;
   category?: string;
+  businessType?: "products" | "services" | "both";
   location?: string;
   openingTime?: string; // Format: "HH:MM" (e.g., "09:00")
   closingTime?: string; // Format: "HH:MM" (e.g., "21:00")

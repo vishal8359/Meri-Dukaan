@@ -20,11 +20,11 @@ import {
     Star,
     UserCheck,
     UserPlus,
-    Wrench
+    Wrench,
 } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
+    ActivityIndicator,
     Animated,
     Dimensions,
     FlatList,
@@ -65,7 +65,10 @@ function extractStoreImages(rawStore: any): string[] {
           if (typeof img?.imageUrl === "string") return img.imageUrl;
           return undefined;
         })
-        .filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0)
+        .filter(
+          (url: unknown): url is string =>
+            typeof url === "string" && url.trim().length > 0,
+        )
     : [];
 
   if (nestedImages.length > 0) return nestedImages;
@@ -94,7 +97,9 @@ function normalizeApiTime(time?: unknown): string | undefined {
   if (!value) return undefined;
 
   // Accept HH:MM, HH:MM:SS, HH:MM:SS+TZ, and 12-hour strings like 9:00 PM.
-  const compact24Hour = value.match(/^(\d{1,2}):(\d{2})(?::\d{2})?(?:[+-]\d{2}:?\d{2}|Z)?$/i);
+  const compact24Hour = value.match(
+    /^(\d{1,2}):(\d{2})(?::\d{2})?(?:[+-]\d{2}:?\d{2}|Z)?$/i,
+  );
   if (compact24Hour) {
     const hours = Number(compact24Hour[1]);
     const minutes = Number(compact24Hour[2]);
@@ -182,6 +187,7 @@ export default function StoreDetailScreen() {
   const [locationFromApi, setLocationFromApi] = useState<string | undefined>(
     undefined,
   );
+  const [storeServicesFromApi, setStoreServicesFromApi] = useState<any[]>([]);
   const [isMetaLoading, setIsMetaLoading] = useState(true);
 
   const store = getStoreById(storeId as string);
@@ -207,6 +213,7 @@ export default function StoreDetailScreen() {
           setHoursFromSchedule({});
           setApiStoreImages([]);
           setLocationFromApi(undefined);
+          setStoreServicesFromApi([]);
           setIsMetaLoading(false);
         }
         return;
@@ -237,6 +244,12 @@ export default function StoreDetailScreen() {
       try {
         const storeByIdResponse = await storeApi.getStoreById(String(storeId));
         const rawStore = (storeByIdResponse as any)?.store;
+        const servicesResponse = await storeApi.getStoreServices(
+          String(storeId),
+        );
+        const rawServices = Array.isArray((servicesResponse as any)?.services)
+          ? ((servicesResponse as any).services as any[])
+          : [];
         const fallbackImages = extractStoreImages(rawStore);
 
         const fallbackOpeningTime = normalizeApiTime(
@@ -263,6 +276,7 @@ export default function StoreDetailScreen() {
           });
           setApiStoreImages(fallbackImages);
           setLocationFromApi(fallbackLocation);
+          setStoreServicesFromApi(rawServices);
           setIsMetaLoading(false);
         }
 
@@ -355,39 +369,48 @@ export default function StoreDetailScreen() {
   }, [isSearchVisible]);
 
   // ─── Real data from store ───────────────────────────────────────────────────
-  const products = (catalogProducts.filter((p) => p.storeId === storeId) || []).map(
-    (p) => {
-      const stockQuantity = Number(p.stockQuantity ?? 0);
-      const active = Boolean(p.available ?? true) && stockQuantity > 0;
-      const status: "active" | "out-of-stock" = active
-        ? "active"
-        : "out-of-stock";
-      return {
-        id: p.id,
-        name: p.name,
-        category: p.category,
-        price: p.price,
-        displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
-        stock: `${stockQuantity}`,
-        image: p.image,
-        status,
-      };
-    },
-  );
-  const services = (catalogServices.filter((s) => s.storeId === storeId) || []).map(
-    (service) => ({
-      id: service.id,
-      name: service.name,
-      description: service.description ?? "",
-      active: Boolean(service.active ?? true),
-      price: Number(service.price ?? 0),
-      image: service.image,
-      duration: service.duration,
-      rating: service.rating,
-    }),
-  );
-  const effectiveOpeningTime = hoursFromSchedule.openingTime ?? store?.openingTime;
-  const effectiveClosingTime = hoursFromSchedule.closingTime ?? store?.closingTime;
+  const products = (
+    catalogProducts.filter((p) => String(p.storeId) === String(storeId)) || []
+  ).map((p) => {
+    const stockQuantity = Number(p.stockQuantity ?? 0);
+    const active = Boolean(p.available ?? true) && stockQuantity > 0;
+    const status: "active" | "out-of-stock" = active
+      ? "active"
+      : "out-of-stock";
+    return {
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      price: p.price,
+      displayPrice: `₹${p.price}${p.unit ? `/${p.unit}` : ""}`,
+      stock: `${stockQuantity}`,
+      image: p.image,
+      status,
+    };
+  });
+  const catalogStoreServices =
+    catalogServices.filter((s) => String(s.storeId) === String(storeId)) || [];
+  const servicesSource =
+    storeServicesFromApi.length > 0
+      ? storeServicesFromApi
+      : catalogStoreServices;
+  const services = servicesSource.map((service: any) => ({
+    id: String(service.id),
+    name: String(service.name ?? "Service"),
+    description: String(service.description ?? ""),
+    active: Boolean(service.active ?? service.availability ?? true),
+    price: Number(service.price ?? 0),
+    image:
+      typeof service.image === "string"
+        ? service.image
+        : "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+    duration: String(service.duration ?? service.timings ?? ""),
+    rating: Number(service.rating ?? 0),
+  }));
+  const effectiveOpeningTime =
+    hoursFromSchedule.openingTime ?? store?.openingTime;
+  const effectiveClosingTime =
+    hoursFromSchedule.closingTime ?? store?.closingTime;
   const displayLocation =
     store?.location || locationFromApi || "Location not available";
   const openNow = isStoreOpenNow(effectiveOpeningTime, effectiveClosingTime);
@@ -759,7 +782,7 @@ export default function StoreDetailScreen() {
                 onBookService={handleBookService}
                 storeImage={storeImages[0] || ""}
                 storeName={store?.name}
-                storeId={id as string}
+                storeId={String(storeId || "")}
               />
             )}
           </View>

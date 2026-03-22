@@ -11,6 +11,7 @@ export const createStoreSchema = Joi.object({
 export const updateStoreSchema = Joi.object({
   storeName: Joi.string().min(2).max(150).optional(),
   category: Joi.string().max(100).optional(),
+  businessType: Joi.string().valid("products", "services", "both").optional(),
   location: Joi.string().max(500).optional(),
 });
 

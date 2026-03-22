@@ -377,7 +377,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
               {item.price > 0 && (
                 <Text style={styles.servicePrice}>₹{item.price}</Text>
               )}
-              {item.rating && (
+              {typeof item.rating === "number" && item.rating > 0 && (
                 <View style={styles.ratingBadge}>
                   <Star
                     size={12}
@@ -455,7 +455,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
         ListHeaderComponent={<StoreBanner />}
         scrollEnabled={false}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
-        // Performance optimizations
         maxToRenderPerBatch={10}
         updateCellsBatchingPeriod={50}
         initialNumToRender={8}

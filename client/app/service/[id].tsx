@@ -1,4 +1,8 @@
-import { BookedService, CatalogService, useApp } from "@/src/context/AppContext";
+import {
+    BookedService,
+    CatalogService,
+    useApp,
+} from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -298,6 +302,10 @@ export default function ServiceDetailScreen() {
     id: string;
     fallbackData?: string;
   }>();
+  const serviceId = Array.isArray(id) ? id[0] : id;
+  const normalizedFallbackData = Array.isArray(fallbackData)
+    ? fallbackData[0]
+    : fallbackData;
   const {
     addToWishlist,
     removeFromWishlist,
@@ -333,12 +341,14 @@ export default function ServiceDetailScreen() {
 
   // ─── Dynamic service lookup (with store fallback) ────────────────────────
   const service = useMemo(() => {
-    const found = catalogServices.find((s) => s.id === id);
+    const found = catalogServices.find(
+      (s) => String(s.id) === String(serviceId),
+    );
     if (found) return found;
     // Fallback: item from store's local data passed via params
-    if (fallbackData) {
+    if (normalizedFallbackData) {
       try {
-        const parsed = JSON.parse(fallbackData);
+        const parsed = JSON.parse(normalizedFallbackData);
         return {
           ...parsed,
           images: parsed.image ? [parsed.image] : [],
@@ -356,7 +366,7 @@ export default function ServiceDetailScreen() {
       }
     }
     return null;
-  }, [id, fallbackData, catalogServices]);
+  }, [serviceId, normalizedFallbackData, catalogServices]);
 
   const serviceImages = useMemo(() => {
     if (!service) return [];
@@ -403,7 +413,7 @@ export default function ServiceDetailScreen() {
       }).start();
     });
     return () => task.cancel();
-  }, [id]);
+  }, [serviceId]);
 
   // ─── Gallery helpers ──────────────────────────────────────────────────────
   const scrollToImage = useCallback((index: number) => {

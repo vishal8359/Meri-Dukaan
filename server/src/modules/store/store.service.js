@@ -1,6 +1,10 @@
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
-import { deleteCachedKeys, getCachedJson, setCachedJson } from "../../lib/cache.js";
+import {
+    deleteCachedKeys,
+    getCachedJson,
+    setCachedJson,
+} from "../../lib/cache.js";
 
 function catalogCacheKey(page, limit) {
   return `catalog:v1:page:${page}:limit:${limit}`;
@@ -51,7 +55,10 @@ async function getCatalog({ page = 1, limit = 20 }) {
     };
   }
 
-  const storesResult = await list({ page: normalizedPage, limit: normalizedLimit });
+  const storesResult = await list({
+    page: normalizedPage,
+    limit: normalizedLimit,
+  });
   const stores = Array.isArray(storesResult.stores) ? storesResult.stores : [];
   const storeIds = stores.map((store) => store?.id).filter(Boolean);
 
@@ -74,19 +81,21 @@ async function getCatalog({ page = 1, limit = 20 }) {
     };
   }
 
-  const [{ data: products, error: productsError }, { data: services, error: servicesError }] =
-    await Promise.all([
-      supabase
-        .from("products")
-        .select("*, images:product_images(id, image_url)")
-        .in("store_id", storeIds)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("services")
-        .select("*")
-        .in("store_id", storeIds)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [
+    { data: products, error: productsError },
+    { data: services, error: servicesError },
+  ] = await Promise.all([
+    supabase
+      .from("products")
+      .select("*, images:product_images(id, image_url)")
+      .in("store_id", storeIds)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("services")
+      .select("*")
+      .in("store_id", storeIds)
+      .order("created_at", { ascending: false }),
+  ]);
 
   if (productsError) throw productsError;
   if (servicesError) throw servicesError;
@@ -182,7 +191,10 @@ async function findByOwner(ownerId) {
   return store || null;
 }
 
-async function create(ownerId, { storeName, category, location, images }) {
+async function create(
+  ownerId,
+  { storeName, category, businessType = "products", location, images },
+) {
   const { data: existing } = await supabase
     .from("stores")
     .select("id")
@@ -197,6 +209,7 @@ async function create(ownerId, { storeName, category, location, images }) {
       owner_id: ownerId,
       store_name: storeName,
       category,
+      business_type: businessType,
       location,
       rating: 0,
       followers_count: 0,
@@ -224,6 +237,8 @@ async function update(storeId, ownerId, body) {
   const updates = {};
   if (body.storeName !== undefined) updates.store_name = body.storeName;
   if (body.category !== undefined) updates.category = body.category;
+  if (body.businessType !== undefined)
+    updates.business_type = body.businessType;
   if (body.location !== undefined) updates.location = body.location;
   if (body.openingTime !== undefined) updates.opening_time = body.openingTime;
   if (body.closingTime !== undefined) updates.closing_time = body.closingTime;
@@ -411,7 +426,16 @@ async function updateStoreHours(storeId, ownerId, schedule) {
 }
 
 export {
-  addImage, create, findById,
-  findByOwner, getCatalog, getStoreHours, list, removeImage, update, updateStoreHours, verifyOwnership
+    addImage,
+    create,
+    findById,
+    findByOwner,
+    getCatalog,
+    getStoreHours,
+    list,
+    removeImage,
+    update,
+    updateStoreHours,
+    verifyOwnership
 };
 
