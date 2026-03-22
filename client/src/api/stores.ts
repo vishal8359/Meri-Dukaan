@@ -16,6 +16,7 @@ function buildQueryString(query?: Record<string, string | number | undefined>) {
 export interface CreateStorePayload {
   storeName: string;
   category: string;
+  businessType?: "products" | "services" | "both";
   location: string;
   images?: string[];
 }
@@ -79,7 +80,9 @@ export function getStores(query?: Record<string, string | number | undefined>) {
   }>(`/stores${suffix}`);
 }
 
-export function getCatalog(query?: Record<string, string | number | undefined>) {
+export function getCatalog(
+  query?: Record<string, string | number | undefined>,
+) {
   const suffix = buildQueryString(query);
   return apiRequest<{
     stores: unknown[];

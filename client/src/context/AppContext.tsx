@@ -1,16 +1,16 @@
 // src/context/AppContext.tsx
 
-import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import * as cartApi from "../api/cart";
 import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
@@ -285,7 +285,7 @@ interface AppContextType {
   // My Store (owner) Management
   myStore: MyStore | null;
   createMyStore: (store: MyStore) => Promise<MyStore>;
-  updateMyStore: (updates: Partial<MyStore>) => void;
+  updateMyStore: (updates: Partial<MyStore>) => Promise<void>;
   addMyProduct: (product: MyStoreProduct) => Promise<MyStoreProduct>;
   updateMyProduct: (id: string, updates: Partial<MyStoreProduct>) => void;
   removeMyProduct: (id: string) => void;
@@ -309,6 +309,42 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const CATALOG_CACHE_KEY = "app:catalog:v1";
 const CATALOG_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const MY_STORE_BUSINESS_TYPE_KEY = "app:myStoreBusinessType:v1";
+
+type BusinessType = MyStore["businessType"];
+
+function isBusinessType(value: unknown): value is BusinessType {
+  return value === "products" || value === "services" || value === "both";
+}
+
+async function loadSavedBusinessTypes(): Promise<Record<string, BusinessType>> {
+  try {
+    const raw = await AsyncStorage.getItem(MY_STORE_BUSINESS_TYPE_KEY);
+    if (!raw) return {};
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object") return {};
+
+    const sanitized: Record<string, BusinessType> = {};
+    Object.entries(parsed).forEach(([storeId, businessType]) => {
+      if (isBusinessType(businessType)) {
+        sanitized[storeId] = businessType;
+      }
+    });
+
+    return sanitized;
+  } catch {
+    return {};
+  }
+}
+
+async function saveBusinessType(storeId: string, businessType: BusinessType) {
+  if (!storeId || !isBusinessType(businessType)) return;
+
+  const saved = await loadSavedBusinessTypes();
+  saved[storeId] = businessType;
+  await AsyncStorage.setItem(MY_STORE_BUSINESS_TYPE_KEY, JSON.stringify(saved));
+}
 
 type CatalogCachePayload = {
   savedAt: number;
@@ -644,30 +680,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         );
 
         const productsByStore =
-          response.productsByStore && typeof response.productsByStore === "object"
+          response.productsByStore &&
+          typeof response.productsByStore === "object"
             ? response.productsByStore
             : {};
         const servicesByStore =
-          response.servicesByStore && typeof response.servicesByStore === "object"
+          response.servicesByStore &&
+          typeof response.servicesByStore === "object"
             ? response.servicesByStore
             : {};
 
         const mappedProducts = Object.entries(productsByStore)
           .flatMap(([storeId, products]) => {
-            const rawStore = rawStores.find((store: any) => String(store?.id) === String(storeId));
+            const rawStore = rawStores.find(
+              (store: any) => String(store?.id) === String(storeId),
+            );
             if (!rawStore) return [];
-            return (Array.isArray(products) ? products : []).map((product: any) =>
-              mapCatalogProduct(rawStore, product),
+            return (Array.isArray(products) ? products : []).map(
+              (product: any) => mapCatalogProduct(rawStore, product),
             );
           })
           .filter((item) => item.id && storeById.has(item.storeId));
 
         const mappedServices = Object.entries(servicesByStore)
           .flatMap(([storeId, services]) => {
-            const rawStore = rawStores.find((store: any) => String(store?.id) === String(storeId));
+            const rawStore = rawStores.find(
+              (store: any) => String(store?.id) === String(storeId),
+            );
             if (!rawStore) return [];
-            return (Array.isArray(services) ? services : []).map((service: any) =>
-              mapCatalogService(rawStore, service),
+            return (Array.isArray(services) ? services : []).map(
+              (service: any) => mapCatalogService(rawStore, service),
             );
           })
           .filter((item) => item.id && storeById.has(item.storeId));
@@ -777,16 +819,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           ? (reelsRes as any).reels
           : [];
 
+        const persistedBusinessTypes = await loadSavedBusinessTypes();
+        const explicitBusinessType =
+          ownerStore?.business_type ?? ownerStore?.businessType;
+        const inferredBusinessType: BusinessType =
+          services.length > 0 && inventoryProducts.length > 0
+            ? "both"
+            : services.length > 0
+              ? "services"
+              : inventoryProducts.length > 0
+                ? "products"
+                : persistedBusinessTypes[storeId] || "products";
+        const businessType = isBusinessType(explicitBusinessType)
+          ? explicitBusinessType
+          : inferredBusinessType;
+
         setMyStore({
           id: storeId,
           name: String(ownerStore.store_name ?? ownerStore.name ?? "My Store"),
           category: String(ownerStore.category ?? "General"),
-          businessType:
-            services.length > 0 && inventoryProducts.length > 0
-              ? "both"
-              : services.length > 0
-                ? "services"
-                : "products",
+          businessType,
           location: String(ownerStore.location ?? ""),
           images: storeImages,
           rating: Number(ownerStore.rating ?? 0),
@@ -1245,6 +1297,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const response = await storeApi.createStore(authToken, {
         storeName: store.name,
         category: store.category,
+        businessType: store.businessType,
         location: store.location,
         images: store.images,
       });
@@ -1263,15 +1316,65 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           : Date.now(),
       };
 
+      await saveBusinessType(createdStore.id, createdStore.businessType);
+
       setMyStore(createdStore);
       return createdStore;
     },
     [authToken],
   );
 
-  const updateMyStore = useCallback((updates: Partial<MyStore>) => {
-    setMyStore((prev) => (prev ? { ...prev, ...updates } : prev));
-  }, []);
+  const updateMyStore = useCallback(
+    async (updates: Partial<MyStore>) => {
+      if (!myStore?.id) {
+        throw new Error("Create your store first.");
+      }
+
+      const nextName =
+        updates.name !== undefined ? updates.name.trim() : myStore.name;
+      const nextCategory = updates.category ?? myStore.category;
+      const nextLocation =
+        updates.location !== undefined ? updates.location.trim() : myStore.location;
+
+      if (!nextName || !nextCategory || !nextLocation) {
+        throw new Error("Store name, category and location are required.");
+      }
+
+      if (!authToken) {
+        throw new Error("Please login again to update your store.");
+      }
+
+      const response = await storeApi.updateStore(authToken, myStore.id, {
+        storeName: nextName,
+        category: nextCategory,
+        location: nextLocation,
+      });
+
+      const raw = (response as any)?.store ?? {};
+      const nextBusinessType =
+        updates.businessType !== undefined
+          ? updates.businessType
+          : myStore.businessType;
+
+      if (nextBusinessType) {
+        await saveBusinessType(myStore.id, nextBusinessType);
+      }
+
+      setMyStore((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...updates,
+              name: String(raw?.store_name ?? nextName),
+              category: String(raw?.category ?? nextCategory),
+              location: String(raw?.location ?? nextLocation),
+              businessType: nextBusinessType,
+            }
+          : prev,
+      );
+    },
+    [authToken, myStore],
+  );
 
   const addMyProduct = useCallback(
     async (product: MyStoreProduct): Promise<MyStoreProduct> => {

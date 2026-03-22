@@ -1,5 +1,6 @@
 import ProductsTab from "@/app/meri_dukaan/inventory/products";
 import ServicesTab from "@/app/meri_dukaan/inventory/services";
+import { BUSINESS_TYPES, STORE_CATEGORIES } from "@/src/assets/storeCategories";
 import { MyStore, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
@@ -309,6 +310,202 @@ function TimeSettingsModal({
   );
 }
 
+// ========== EDIT STORE DETAILS MODAL ==========
+function EditStoreDetailsModal({
+  visible,
+  store,
+  onClose,
+  onSave,
+}: {
+  visible: boolean;
+  store: MyStore;
+  onClose: () => void;
+  onSave: (updates: Partial<MyStore>) => Promise<void>;
+}) {
+  const [storeName, setStoreName] = useState(store.name);
+  const [location, setLocation] = useState(store.location);
+  const [category, setCategory] = useState(store.category);
+  const [businessType, setBusinessType] = useState<MyStore["businessType"]>(
+    store.businessType,
+  );
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  React.useEffect(() => {
+    if (!visible) return;
+    setStoreName(store.name);
+    setLocation(store.location);
+    setCategory(store.category);
+    setBusinessType(store.businessType);
+    setShowCategoryPicker(false);
+  }, [visible, store]);
+
+  const handleSave = async () => {
+    if (!storeName.trim()) {
+      Alert.alert("Error", "Enter store name");
+      return;
+    }
+    if (!location.trim()) {
+      Alert.alert("Error", "Enter store location");
+      return;
+    }
+    if (!category.trim()) {
+      Alert.alert("Error", "Select a category");
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await onSave({
+        name: storeName.trim(),
+        location: location.trim(),
+        category,
+        businessType,
+      });
+      Alert.alert("Success", "Store details updated successfully.");
+      onClose();
+    } catch (error) {
+      const err = error as { message?: string };
+      Alert.alert("Error", err?.message || "Failed to update store details");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <ScrollView
+          style={styles.modalContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Edit Store Details</Text>
+            <TouchableOpacity onPress={onClose}>
+              <X size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.editFieldWrap}>
+            <Text style={styles.editFieldLabel}>Store Name</Text>
+            <TextInput
+              style={styles.editInput}
+              value={storeName}
+              onChangeText={setStoreName}
+              placeholder="Enter store name"
+              placeholderTextColor={colors.ui.muted}
+            />
+          </View>
+
+          <View style={styles.editFieldWrap}>
+            <Text style={styles.editFieldLabel}>Location</Text>
+            <TextInput
+              style={styles.editInput}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Enter store location"
+              placeholderTextColor={colors.ui.muted}
+            />
+          </View>
+
+          <View style={styles.editFieldWrap}>
+            <Text style={styles.editFieldLabel}>Category</Text>
+            <TouchableOpacity
+              style={styles.editInput}
+              onPress={() => setShowCategoryPicker((prev) => !prev)}
+            >
+              <Text style={styles.editCategoryText}>{category || "Select category"}</Text>
+              <Ionicons
+                name={showCategoryPicker ? "chevron-up" : "chevron-down"}
+                size={18}
+                color={colors.text.secondary}
+              />
+            </TouchableOpacity>
+            {showCategoryPicker && (
+              <ScrollView style={styles.editPickerList} nestedScrollEnabled={true}>
+                {STORE_CATEGORIES.map((item) => (
+                  <TouchableOpacity
+                    key={item}
+                    style={styles.editPickerItem}
+                    onPress={() => {
+                      setCategory(item);
+                      setShowCategoryPicker(false);
+                    }}
+                  >
+                    <Text style={styles.editPickerItemText}>{item}</Text>
+                    {category === item && (
+                      <Ionicons
+                        name="checkmark"
+                        size={18}
+                        color={colors.brand.primary}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+
+          <View style={styles.editFieldWrap}>
+            <Text style={styles.editFieldLabel}>Business Type</Text>
+            <View style={styles.editBusinessTypeWrap}>
+              {BUSINESS_TYPES.map((type) => {
+                const selected = businessType === type.id;
+                return (
+                  <TouchableOpacity
+                    key={type.id}
+                    style={[
+                      styles.editBusinessTypeCard,
+                      selected && styles.editBusinessTypeCardActive,
+                    ]}
+                    onPress={() =>
+                      setBusinessType(type.id as MyStore["businessType"])
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.editBusinessTypeLabel,
+                        selected && styles.editBusinessTypeLabelActive,
+                      ]}
+                    >
+                      {type.label}
+                    </Text>
+                    <Text style={styles.editBusinessTypeDesc}>{type.description}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={onClose}
+              disabled={isSaving}
+            >
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.saveBtn}
+              onPress={handleSave}
+              disabled={isSaving}
+            >
+              <Text style={styles.saveBtnText}>
+                {isSaving ? "Saving..." : "Save"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 // ========== STORE PROFILE HEADER ==========
 function StoreHeader({
   store,
@@ -502,6 +699,7 @@ export default function MyDukaanScreen() {
   const router = useRouter();
   const {
     myStore,
+    updateMyStore,
     updateMyProduct,
     removeMyProduct,
     updateMyService,
@@ -513,6 +711,21 @@ export default function MyDukaanScreen() {
     myStore?.businessType === "services" ? "services" : "products";
   const [activeTab, setActiveTab] = useState<DashboardTab>(defaultTab);
   const [showTimeModal, setShowTimeModal] = useState(false);
+  const [showEditStoreModal, setShowEditStoreModal] = useState(false);
+
+  const openSettingsOptions = () => {
+    Alert.alert("Store Settings", "Choose an option", [
+      {
+        text: "Edit Store Details",
+        onPress: () => setShowEditStoreModal(true),
+      },
+      {
+        text: "Edit Store Hours",
+        onPress: () => setShowTimeModal(true),
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   // Product stock toggle
   const handleToggleStock = (id: string) => {
@@ -571,7 +784,7 @@ export default function MyDukaanScreen() {
         {myStore ? (
           <TouchableOpacity
             style={styles.settingsBtn}
-            onPress={() => router.push("/meri_dukaan/create-store" as any)}
+            onPress={openSettingsOptions}
           >
             <Settings size={20} color={colors.text.secondary} />
           </TouchableOpacity>
@@ -637,12 +850,20 @@ export default function MyDukaanScreen() {
 
       {/* Time Settings Modal */}
       {myStore && (
-        <TimeSettingsModal
-          visible={showTimeModal}
-          store={myStore}
-          onClose={() => setShowTimeModal(false)}
-          onSave={updateStoreHours}
-        />
+        <>
+          <TimeSettingsModal
+            visible={showTimeModal}
+            store={myStore}
+            onClose={() => setShowTimeModal(false)}
+            onSave={updateStoreHours}
+          />
+          <EditStoreDetailsModal
+            visible={showEditStoreModal}
+            store={myStore}
+            onClose={() => setShowEditStoreModal(false)}
+            onSave={updateMyStore}
+          />
+        </>
       )}
     </SafeAreaView>
   );
@@ -908,6 +1129,83 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
     color: colors.text.primary,
+  },
+
+  editFieldWrap: {
+    marginBottom: spacing.md,
+  },
+  editFieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.secondary,
+    marginBottom: spacing.xs,
+  },
+  editInput: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    fontSize: 14,
+    color: colors.text.primary,
+    backgroundColor: colors.ui.background,
+  },
+  editCategoryText: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: 14,
+  },
+  editPickerList: {
+    maxHeight: 180,
+    marginTop: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    backgroundColor: colors.ui.surface,
+  },
+  editPickerItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.border,
+  },
+  editPickerItemText: {
+    fontSize: 14,
+    color: colors.text.primary,
+  },
+  editBusinessTypeWrap: {
+    gap: spacing.sm,
+  },
+  editBusinessTypeCard: {
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.ui.background,
+  },
+  editBusinessTypeCardActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary + "10",
+  },
+  editBusinessTypeLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+  editBusinessTypeLabelActive: {
+    color: colors.brand.primary,
+  },
+  editBusinessTypeDesc: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginTop: 2,
   },
   dayCard: {
     borderWidth: 1,

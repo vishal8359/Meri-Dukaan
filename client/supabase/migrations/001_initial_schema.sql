@@ -23,7 +23,10 @@ CREATE TABLE IF NOT EXISTS users (
 -- ===================== STORES =====================
 CREATE TABLE IF NOT EXISTS stores (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  owner_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  owner_id        
+  
+  
+   NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name            VARCHAR(150) NOT NULL,
   category        VARCHAR(100) NOT NULL,
   business_type   VARCHAR(20) NOT NULL CHECK (business_type IN ('products', 'services', 'both')),

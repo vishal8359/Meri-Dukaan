@@ -3,6 +3,7 @@ import Joi from "joi";
 export const createStoreSchema = Joi.object({
   storeName: Joi.string().min(2).max(150).required(),
   category: Joi.string().max(100).required(),
+  businessType: Joi.string().valid("products", "services", "both").optional(),
   location: Joi.string().max(500).required(),
   images: Joi.array().items(Joi.string().uri()).max(10).default([]),
 });
