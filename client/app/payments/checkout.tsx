@@ -315,7 +315,11 @@ export default function CheckoutScreen() {
           razorpaySignature: String(razorpayResult.razorpay_signature),
         });
 
-        await refreshOrders();
+        try {
+          await refreshOrders();
+        } catch {
+          // Checkout success should not be blocked by a background refresh issue.
+        }
       }
 
       finalizePostOrderState();

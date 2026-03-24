@@ -26,7 +26,8 @@ async function register({
   location,
 }) {
   const rawEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
-  const normalizedEmail = rawEmail && EMAIL_REGEX.test(rawEmail) ? rawEmail : null;
+  const normalizedEmail =
+    rawEmail && EMAIL_REGEX.test(rawEmail) ? rawEmail : null;
 
   if (normalizedEmail) {
     const { data: byEmail } = await supabase
@@ -198,6 +199,6 @@ export {
   updateProfile,
   verifyOtp,
   verifyPin,
-  verifyPinFromHeaders,
+  verifyPinFromHeaders
 };
 

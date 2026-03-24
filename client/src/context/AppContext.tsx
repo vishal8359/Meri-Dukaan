@@ -600,11 +600,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const res = await orderApi.getOrders(authToken);
-    const mappedOrders = Array.isArray(res.orders)
-      ? res.orders.map(mapOrderFromApi)
-      : [];
-    setOrders(mappedOrders);
+    try {
+      const res = await orderApi.getOrders(authToken);
+      const mappedOrders = Array.isArray(res.orders)
+        ? res.orders.map(mapOrderFromApi)
+        : [];
+      setOrders(mappedOrders);
+    } catch {
+      // Keep current in-memory orders if refresh fails temporarily.
+    }
   }, [authToken, mapOrderFromApi]);
 
   const mapMyStoreProduct = useCallback((raw: any): MyStoreProduct => {
@@ -1294,7 +1298,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      await orderApi.placeOrder(authToken, {
+      const response = await orderApi.placeOrder(authToken, {
         storeId: firstStoreId,
         items: order.items.map((i) => ({
           productId: i.id,
@@ -1306,9 +1310,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         deliveryPhone: order.deliveryPhone,
       });
 
+      const created = mapOrderFromApi((response as any)?.order);
+      setOrders((prev) => [created, ...prev.filter((o) => o.id !== created.id)]);
+
       await refreshOrders();
     },
-    [authToken, refreshOrders],
+    [authToken, mapOrderFromApi, refreshOrders],
   );
 
   const getOrderById = useCallback(
