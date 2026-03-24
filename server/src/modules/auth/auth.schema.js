@@ -38,3 +38,11 @@ export const updateProfileSchema = Joi.object({
   profileImage: Joi.string().uri().optional(),
   location: Joi.string().max(500).optional(),
 });
+
+export const setPinSchema = Joi.object({
+  pin: Joi.string().pattern(/^\d{4}$/).required(),
+});
+
+export const verifyPinSchema = Joi.object({
+  pin: Joi.string().pattern(/^\d{4}$/).required(),
+});

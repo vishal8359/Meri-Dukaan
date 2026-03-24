@@ -26,6 +26,7 @@ router.put(
   validate(schema.updateStoreSchema),
   ctrl.updateStore,
 );
+router.delete("/:id", protect, ctrl.removeStore);
 
 // Store hours
 router.get("/:id/hours", ctrl.getStoreHours);

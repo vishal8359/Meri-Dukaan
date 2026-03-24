@@ -145,5 +145,59 @@ async function updateProfile(userId, body) {
   return user;
 }
 
-export { login, register, sendOtp, updateProfile, verifyOtp };
+async function setPin(userId, pin) {
+  const pinHash = await bcrypt.hash(pin, SALT_ROUNDS);
+
+  const { error } = await supabase
+    .from("users")
+    .update({ pin_hash: pinHash })
+    .eq("id", userId);
+
+  if (error) throw error;
+  return { success: true };
+}
+
+async function verifyPin(userId, pin) {
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("pin_hash")
+    .eq("id", userId)
+    .single();
+
+  if (error || !user) throw AppError.notFound("User not found");
+  if (!user.pin_hash) {
+    throw AppError.badRequest("PIN is not set. Please set your PIN first.");
+  }
+
+  const valid = await bcrypt.compare(pin, user.pin_hash);
+  if (!valid) throw AppError.unauthorized("Invalid PIN");
+
+  return { verified: true };
+}
+
+async function verifyPinFromHeaders(userId, headers) {
+  const rawPin = headers?.["x-owner-pin"];
+  const pin = Array.isArray(rawPin) ? rawPin[0] : rawPin;
+
+  if (!pin || typeof pin !== "string") {
+    throw AppError.badRequest("x-owner-pin header is required");
+  }
+
+  if (!/^\d{4}$/.test(pin)) {
+    throw AppError.badRequest("PIN must be a 4-digit number");
+  }
+
+  return verifyPin(userId, pin);
+}
+
+export {
+  login,
+  register,
+  sendOtp,
+  setPin,
+  updateProfile,
+  verifyOtp,
+  verifyPin,
+  verifyPinFromHeaders,
+};
 

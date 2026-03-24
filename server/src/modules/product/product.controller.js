@@ -1,6 +1,7 @@
 import asyncHandler from "../../lib/asyncHandler.js";
 import * as productService from "./product.service.js";
 import * as storeService from "../store/store.service.js";
+import * as authService from "../auth/auth.service.js";
 
 export const getStoreProducts = asyncHandler(async (req, res) => {
   const products = await productService.listByStore(req.params.id);
@@ -26,8 +27,9 @@ export const updateProduct = asyncHandler(async (req, res) => {
 
 export const removeProduct = asyncHandler(async (req, res) => {
   await storeService.verifyOwnership(req.params.id, req.user.id);
+  await authService.verifyPinFromHeaders(req.user.id, req.headers);
   await productService.remove(req.params.productId, req.params.id);
-  res.json({ message: "Product removed" });
+  res.json({ message: "Product hidden" });
 });
 
 export const addProductImage = asyncHandler(async (req, res) => {

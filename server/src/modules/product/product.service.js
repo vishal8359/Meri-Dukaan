@@ -6,6 +6,7 @@ async function listByStore(storeId) {
     .from("products")
     .select("*, images:product_images(id, image_url)")
     .eq("store_id", storeId)
+    .eq("shown", true)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -17,6 +18,7 @@ async function findById(productId) {
     .from("products")
     .select("*, images:product_images(id, image_url), store:stores(id, store_name)")
     .eq("id", productId)
+    .eq("shown", true)
     .single();
 
   if (error || !data) throw AppError.notFound("Product not found");
@@ -83,7 +85,7 @@ async function update(productId, storeId, body) {
 async function remove(productId, storeId) {
   const { error } = await supabase
     .from("products")
-    .delete()
+    .update({ shown: false })
     .eq("id", productId)
     .eq("store_id", storeId);
 

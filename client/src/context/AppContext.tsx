@@ -289,10 +289,11 @@ interface AppContextType {
   updateMyStore: (updates: Partial<MyStore>) => Promise<void>;
   addMyProduct: (product: MyStoreProduct) => Promise<MyStoreProduct>;
   updateMyProduct: (id: string, updates: Partial<MyStoreProduct>) => void;
-  removeMyProduct: (id: string) => void;
+  removeMyProduct: (id: string, ownerPin: string) => Promise<void>;
   addMyService: (service: MyStoreService) => Promise<MyStoreService>;
   updateMyService: (id: string, updates: Partial<MyStoreService>) => void;
-  removeMyService: (id: string) => void;
+  removeMyService: (id: string, ownerPin: string) => Promise<void>;
+  removeMyStore: (ownerPin: string) => Promise<void>;
   addMyReel: (reel: MyStoreReel) => Promise<MyStoreReel>;
   removeMyReel: (id: string) => void;
   updateStoreHours: (
@@ -1492,13 +1493,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
-  const removeMyProduct = useCallback((id: string) => {
-    setMyStore((prev) =>
-      prev
-        ? { ...prev, products: prev.products.filter((p) => p.id !== id) }
-        : prev,
-    );
-  }, []);
+  const removeMyProduct = useCallback(
+    async (id: string, ownerPin: string) => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first, then manage products.");
+      }
+
+      await storeApi.removeStoreProduct(authToken, myStore.id, id, ownerPin);
+
+      setMyStore((prev) =>
+        prev
+          ? { ...prev, products: prev.products.filter((p) => p.id !== id) }
+          : prev,
+      );
+    },
+    [authToken, myStore?.id],
+  );
 
   const addMyService = useCallback(
     async (service: MyStoreService): Promise<MyStoreService> => {
@@ -1545,13 +1555,34 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
 
-  const removeMyService = useCallback((id: string) => {
-    setMyStore((prev) =>
-      prev
-        ? { ...prev, services: prev.services.filter((s) => s.id !== id) }
-        : prev,
-    );
-  }, []);
+  const removeMyService = useCallback(
+    async (id: string, ownerPin: string) => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("Create your store first, then manage services.");
+      }
+
+      await storeApi.removeStoreService(authToken, myStore.id, id, ownerPin);
+
+      setMyStore((prev) =>
+        prev
+          ? { ...prev, services: prev.services.filter((s) => s.id !== id) }
+          : prev,
+      );
+    },
+    [authToken, myStore?.id],
+  );
+
+  const removeMyStore = useCallback(
+    async (ownerPin: string) => {
+      if (!authToken || !myStore?.id) {
+        throw new Error("No store found to delete.");
+      }
+
+      await storeApi.removeStore(authToken, myStore.id, ownerPin);
+      setMyStore(null);
+    },
+    [authToken, myStore?.id],
+  );
 
   const addMyReel = useCallback(
     async (reel: MyStoreReel): Promise<MyStoreReel> => {
@@ -1707,6 +1738,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       addMyService,
       updateMyService,
       removeMyService,
+      removeMyStore,
       addMyReel,
       removeMyReel,
       updateStoreHours,

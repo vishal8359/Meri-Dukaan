@@ -6,6 +6,7 @@ async function listByStore(storeId) {
     .from("services")
     .select("*")
     .eq("store_id", storeId)
+    .eq("shown", true)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -17,6 +18,7 @@ async function findById(serviceId) {
     .from("services")
     .select("*, store:stores(id, store_name)")
     .eq("id", serviceId)
+    .eq("shown", true)
     .single();
 
   if (error || !data) throw AppError.notFound("Service not found");
@@ -65,7 +67,7 @@ async function update(serviceId, storeId, body) {
 async function remove(serviceId, storeId) {
   const { error } = await supabase
     .from("services")
-    .delete()
+    .update({ shown: false })
     .eq("id", serviceId)
     .eq("store_id", storeId);
 

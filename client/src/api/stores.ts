@@ -127,6 +127,16 @@ export function updateStore(
   });
 }
 
+export function removeStore(token: string, storeId: string, ownerPin: string) {
+  return apiRequest<{ message: string }>(`/stores/${storeId}`, {
+    method: "DELETE",
+    token,
+    headers: {
+      "x-owner-pin": ownerPin,
+    },
+  });
+}
+
 export function addStoreImage(
   token: string,
   storeId: string,
@@ -196,12 +206,16 @@ export function removeStoreProduct(
   token: string,
   storeId: string,
   productId: string,
+  ownerPin: string,
 ) {
   return apiRequest<{ message: string }>(
     `/stores/${storeId}/products/${productId}`,
     {
       method: "DELETE",
       token,
+      headers: {
+        "x-owner-pin": ownerPin,
+      },
     },
   );
 }
@@ -280,12 +294,16 @@ export function removeStoreService(
   token: string,
   storeId: string,
   serviceId: string,
+  ownerPin: string,
 ) {
   return apiRequest<{ message: string }>(
     `/stores/${storeId}/services/${serviceId}`,
     {
       method: "DELETE",
       token,
+      headers: {
+        "x-owner-pin": ownerPin,
+      },
     },
   );
 }

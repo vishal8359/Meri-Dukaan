@@ -84,3 +84,19 @@ export function updateProfile(
     body,
   });
 }
+
+export function setOwnerPin(token: string, pin: string) {
+  return apiRequest<{ message: string }>("/auth/pin/set", {
+    method: "POST",
+    token,
+    body: { pin },
+  });
+}
+
+export function verifyOwnerPin(token: string, pin: string) {
+  return apiRequest<{ verified: boolean }>("/auth/pin/verify", {
+    method: "POST",
+    token,
+    body: { pin },
+  });
+}

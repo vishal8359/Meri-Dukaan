@@ -32,3 +32,13 @@ export const updateProfile = asyncHandler(async (req, res) => {
   const user = await authService.updateProfile(req.user.id, req.body);
   res.json({ user });
 });
+
+export const setPin = asyncHandler(async (req, res) => {
+  await authService.setPin(req.user.id, req.body.pin);
+  res.json({ message: "PIN set successfully" });
+});
+
+export const verifyPin = asyncHandler(async (req, res) => {
+  await authService.verifyPin(req.user.id, req.body.pin);
+  res.json({ verified: true });
+});

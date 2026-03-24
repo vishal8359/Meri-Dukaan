@@ -40,6 +40,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - spacing.md * 2;
 
 type DashboardTab = "products" | "services";
+type PinAction = "remove-product" | "remove-service" | "remove-store";
 
 // ========== NO STORE STATE ==========
 function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
@@ -711,6 +712,7 @@ export default function MyDukaanScreen() {
     removeMyProduct,
     updateMyService,
     removeMyService,
+    removeMyStore,
     updateStoreHours,
   } = useApp();
 
@@ -719,6 +721,66 @@ export default function MyDukaanScreen() {
   const [activeTab, setActiveTab] = useState<DashboardTab>(defaultTab);
   const [showTimeModal, setShowTimeModal] = useState(false);
   const [showEditStoreModal, setShowEditStoreModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [ownerPin, setOwnerPin] = useState("");
+  const [pinAction, setPinAction] = useState<PinAction | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [isPinSubmitting, setIsPinSubmitting] = useState(false);
+
+  const openPinFlow = (action: PinAction, id?: string) => {
+    setPinAction(action);
+    setPendingId(id || null);
+    setOwnerPin("");
+    setShowPinModal(true);
+  };
+
+  const getPinTitle = () => {
+    if (pinAction === "remove-product") return "Delete Product";
+    if (pinAction === "remove-service") return "Delete Service";
+    if (pinAction === "remove-store") return "Delete Store";
+    return "Verify PIN";
+  };
+
+  const getPinSubtitle = () => {
+    if (pinAction === "remove-store") {
+      return "Enter your 4-digit PIN to hide your shop.";
+    }
+    return "Enter your 4-digit PIN to confirm this delete action.";
+  };
+
+  const handlePinSubmit = async () => {
+    if (!pinAction) return;
+
+    if (!/^\d{4}$/.test(ownerPin)) {
+      Alert.alert("Invalid PIN", "Please enter a valid 4-digit PIN.");
+      return;
+    }
+
+    try {
+      setIsPinSubmitting(true);
+
+      if (pinAction === "remove-product" && pendingId) {
+        await removeMyProduct(pendingId, ownerPin);
+        Alert.alert("Success", "Product deleted successfully.");
+      } else if (pinAction === "remove-service" && pendingId) {
+        await removeMyService(pendingId, ownerPin);
+        Alert.alert("Success", "Service deleted successfully.");
+      } else if (pinAction === "remove-store") {
+        await removeMyStore(ownerPin);
+        Alert.alert("Success", "Store deleted successfully.");
+      }
+
+      setShowPinModal(false);
+      setOwnerPin("");
+      setPendingId(null);
+      setPinAction(null);
+    } catch (error) {
+      const err = error as { message?: string };
+      Alert.alert("Delete failed", err?.message || "Please try again.");
+    } finally {
+      setIsPinSubmitting(false);
+    }
+  };
 
   const openSettingsOptions = () => {
     Alert.alert("Store Settings", "Choose an option", [
@@ -729,6 +791,24 @@ export default function MyDukaanScreen() {
       {
         text: "Edit Store Hours",
         onPress: () => setShowTimeModal(true),
+      },
+      {
+        text: "Delete Store",
+        style: "destructive",
+        onPress: () => {
+          Alert.alert(
+            "Delete Store",
+            "Your store will be hidden from everyone. Continue?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Continue",
+                style: "destructive",
+                onPress: () => openPinFlow("remove-store"),
+              },
+            ],
+          );
+        },
       },
       { text: "Cancel", style: "cancel" },
     ]);
@@ -752,7 +832,7 @@ export default function MyDukaanScreen() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => removeMyProduct(id),
+        onPress: () => openPinFlow("remove-product", id),
       },
     ]);
   };
@@ -770,7 +850,7 @@ export default function MyDukaanScreen() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => removeMyService(id),
+        onPress: () => openPinFlow("remove-service", id),
       },
     ]);
   };
@@ -872,6 +952,51 @@ export default function MyDukaanScreen() {
           />
         </>
       )}
+
+      <Modal
+        visible={showPinModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowPinModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.pinModalCard}>
+            <Text style={styles.pinTitle}>{getPinTitle()}</Text>
+            <Text style={styles.pinSubtitle}>{getPinSubtitle()}</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={ownerPin}
+              onChangeText={(val) => setOwnerPin(val.replace(/[^0-9]/g, ""))}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={4}
+              placeholder="••••"
+              placeholderTextColor={colors.ui.muted}
+            />
+
+            <View style={styles.pinActions}>
+              <TouchableOpacity
+                style={styles.cancelBtn}
+                onPress={() => {
+                  if (isPinSubmitting) return;
+                  setShowPinModal(false);
+                }}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={handlePinSubmit}
+                disabled={isPinSubmitting}
+              >
+                <Text style={styles.saveBtnText}>
+                  {isPinSubmitting ? "Verifying..." : "Verify & Delete"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1304,5 +1429,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: colors.text.inverse,
+  },
+  pinModalCard: {
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    ...shadows.medium,
+  },
+  pinTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.text.primary,
+  },
+  pinSubtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  pinInput: {
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    textAlign: "center",
+    letterSpacing: 8,
+    fontSize: 24,
+    color: colors.text.primary,
+    backgroundColor: colors.ui.background,
+    marginBottom: spacing.md,
+  },
+  pinActions: {
+    flexDirection: "row",
+    gap: spacing.md,
   },
 });

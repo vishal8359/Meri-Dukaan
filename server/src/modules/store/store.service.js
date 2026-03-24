@@ -20,6 +20,7 @@ async function list({ category, search, page = 1, limit = 20 }) {
       "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
       { count: "exact" },
     )
+    .eq("shown", true)
     .order("created_at", { ascending: false })
     .range(from, to);
 
@@ -89,11 +90,13 @@ async function getCatalog({ page = 1, limit = 20 }) {
       .from("products")
       .select("*, images:product_images(id, image_url)")
       .in("store_id", storeIds)
+      .eq("shown", true)
       .order("created_at", { ascending: false }),
     supabase
       .from("services")
       .select("*")
       .in("store_id", storeIds)
+      .eq("shown", true)
       .order("created_at", { ascending: false }),
   ]);
 
@@ -157,6 +160,7 @@ async function findById(storeId) {
       "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
     )
     .eq("id", storeId)
+    .eq("shown", true)
     .single();
 
   if (error?.code === "PGRST205") {
@@ -176,6 +180,7 @@ async function findByOwner(ownerId) {
       "*, owner:users(id, name, profile_image), images:store_images(id, image_url)",
     )
     .eq("owner_id", ownerId)
+    .eq("shown", true)
     .single();
 
   // PGRST116: No rows returned when using .single()
@@ -288,6 +293,19 @@ async function removeImage(imageId, ownerId) {
     .delete()
     .eq("id", imageId);
   if (error) throw error;
+}
+
+async function remove(storeId, ownerId) {
+  await verifyOwnership(storeId, ownerId);
+
+  const { error } = await supabase
+    .from("stores")
+    .update({ shown: false })
+    .eq("id", storeId)
+    .eq("owner_id", ownerId);
+
+  if (error) throw error;
+  await invalidateCatalogCache();
 }
 
 async function verifyOwnership(storeId, ownerId) {
@@ -433,6 +451,7 @@ export {
     getCatalog,
     getStoreHours,
     list,
+    remove,
     removeImage,
     update,
     updateStoreHours,
