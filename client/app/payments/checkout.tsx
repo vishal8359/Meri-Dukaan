@@ -1,5 +1,7 @@
 // app/checkout.tsx
 import { useApp } from "@/src/context/AppContext";
+import { useAuth } from "@/src/context/AuthContext";
+import * as orderApi from "@/src/api/orders";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -15,6 +17,7 @@ import {
     Wrench,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
+import RazorpayCheckout from "react-native-razorpay";
 import {
     Alert,
     Image,
@@ -28,22 +31,28 @@ import {
 import Toast from "react-native-toast-message";
 
 type CheckoutMode = "cart" | "product" | "service";
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_REGEX.test(value);
+}
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const {
     cart,
-    cartTotal,
     clearCart,
     removeFromCart,
     bookedServices,
-    cancelBooking,
     confirmBooking,
     placeOrder,
+    refreshOrders,
     user,
     savedAddresses,
     selectedAddressId,
   } = useApp();
+  const { authToken } = useAuth();
   const params = useLocalSearchParams<{
     mode?: string;
     productId?: string;
@@ -60,6 +69,7 @@ export default function CheckoutScreen() {
   const [selectedPayment, setSelectedPayment] = useState<
     "cod" | "online" | null
   >(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(
     selectedAddressId ||
       savedAddresses.find((a) => a.isDefault)?.id ||
@@ -119,36 +129,7 @@ export default function CheckoutScreen() {
     },
   ];
 
-  const handlePostOrder = () => {
-    // Create an order record for product orders
-    if (mode !== "service" && orderProducts.length > 0) {
-      const selectedAddr = addresses.find((a) => a.id === selectedAddress);
-      const now = new Date();
-      const deliveryEst = new Date(now);
-      deliveryEst.setDate(deliveryEst.getDate() + 3);
-
-      placeOrder({
-        id: `ORD${Date.now()}`,
-        items: orderProducts.map((p) => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          quantity: p.quantity,
-          image: p.image,
-          storeName: p.storeName,
-          storeId: p.storeId,
-        })),
-        subtotal: productsSubtotal,
-        deliveryFee,
-        totalAmount,
-        status: "processing",
-        paymentMethod: selectedPayment as "cod" | "online",
-        orderDate: now.toISOString(),
-        deliveryDate: deliveryEst.toISOString(),
-        deliveryAddress: selectedAddr?.address || "Rajendra Nagar, Patna",
-        deliveryPhone: selectedAddr?.phone || user?.phone || "+91 98765 43210",
-      });
-    }
+  const finalizePostOrderState = () => {
 
     // Show success toast based on mode
     if (
@@ -214,45 +195,138 @@ export default function CheckoutScreen() {
     }
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!selectedPayment) {
       Alert.alert("Payment Required", "Please select a payment method");
       return;
     }
 
-    if (selectedPayment === "cod") {
+    if (!selectedAddress) {
+      Alert.alert("Address Required", "Please select a delivery address");
+      return;
+    }
+
+    const selectedAddr = addresses.find((a) => a.id === selectedAddress);
+    const hasProducts =
+      mode === "product" ||
+      (mode === "cart" && includeProducts && orderProducts.length > 0);
+
+    const uniqueStoreIds = Array.from(
+      new Set(orderProducts.map((item) => item.storeId).filter(Boolean)),
+    );
+
+    if (hasProducts && uniqueStoreIds.length !== 1) {
       Alert.alert(
-        "Order Placed!",
-        `Your order of ₹${totalAmount} has been placed successfully. Pay on delivery.`,
-        [
-          {
-            text: "View Orders",
-            onPress: handlePostOrder,
-          },
-        ],
+        "Checkout Limitation",
+        "Please checkout items from one store at a time.",
       );
-    } else {
-      Alert.alert("Payment Gateway", "Redirecting to payment gateway...", [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Pay Now",
-          onPress: () => {
-            Alert.alert(
-              "Payment Successful!",
-              `Your payment of ₹${totalAmount} has been processed.`,
-              [
-                {
-                  text: "Done",
-                  onPress: handlePostOrder,
-                },
-              ],
-            );
+      return;
+    }
+
+    const orderPayload = {
+      storeId: String(uniqueStoreIds[0] || ""),
+      items: orderProducts.map((item) => ({
+        productId: item.id,
+        quantity: item.quantity,
+      })),
+      deliveryFee,
+      deliveryAddress: selectedAddr?.address || "",
+      deliveryPhone: selectedAddr?.phone || user?.phone || "",
+    };
+
+    if (hasProducts && (!orderPayload.deliveryAddress || !orderPayload.deliveryPhone)) {
+      Alert.alert("Address Incomplete", "Please provide a valid delivery address and phone number.");
+      return;
+    }
+
+    const hasOnlyUuidItems = orderPayload.items.every((item) =>
+      isUuid(item.productId),
+    );
+    const hasUuidStore = isUuid(orderPayload.storeId);
+
+    if (hasProducts && selectedPayment === "online" && (!hasOnlyUuidItems || !hasUuidStore)) {
+      Alert.alert(
+        "Online Payment Unavailable",
+        "This order contains local/mock items not synced with backend yet. Please use COD for this order.",
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      if (hasProducts && selectedPayment === "cod") {
+        const now = new Date();
+        const deliveryEst = new Date(now);
+        deliveryEst.setDate(deliveryEst.getDate() + 3);
+
+        await placeOrder({
+          id: `ORD${Date.now()}`,
+          items: orderProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            quantity: p.quantity,
+            image: p.image,
+            storeName: p.storeName,
+            storeId: p.storeId,
+          })),
+          subtotal: productsSubtotal,
+          deliveryFee,
+          totalAmount,
+          status: "processing",
+          paymentMethod: "cod",
+          orderDate: now.toISOString(),
+          deliveryDate: deliveryEst.toISOString(),
+          deliveryAddress: orderPayload.deliveryAddress,
+          deliveryPhone: orderPayload.deliveryPhone,
+        });
+      }
+
+      if (hasProducts && selectedPayment === "online") {
+        if (!authToken) {
+          throw new Error("Please log in again to continue payment.");
+        }
+
+        const onlineOrder = await orderApi.createOnlineOrder(authToken, orderPayload);
+
+        const checkoutOptions = {
+          key: onlineOrder.checkout.keyId,
+          amount: String(onlineOrder.checkout.amount),
+          currency: onlineOrder.checkout.currency,
+          name: onlineOrder.checkout.name,
+          description: onlineOrder.checkout.description,
+          order_id: onlineOrder.checkout.orderId,
+          prefill: {
+            name: user?.name || "Sangam User",
+            contact: orderPayload.deliveryPhone,
           },
-        },
-      ]);
+          theme: {
+            color: colors.brand.primary,
+          },
+        };
+
+        const razorpayResult = await RazorpayCheckout.open(checkoutOptions);
+
+        await orderApi.verifyOnlinePayment(authToken, {
+          localOrderId: onlineOrder.localOrderId,
+          razorpayOrderId: String(razorpayResult.razorpay_order_id),
+          razorpayPaymentId: String(razorpayResult.razorpay_payment_id),
+          razorpaySignature: String(razorpayResult.razorpay_signature),
+        });
+
+        await refreshOrders();
+      }
+
+      finalizePostOrderState();
+    } catch (error: any) {
+      const message =
+        error?.description ||
+        error?.message ||
+        "Unable to complete checkout. Please try again.";
+      Alert.alert("Checkout Failed", message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -500,11 +574,16 @@ export default function CheckoutScreen() {
           <Text style={styles.bottomAmount}>₹{totalAmount}</Text>
         </View>
         <TouchableOpacity
-          style={[styles.placeOrderBtn, !selectedPayment && styles.disabledBtn]}
+          style={[
+            styles.placeOrderBtn,
+            (!selectedPayment || isSubmitting) && styles.disabledBtn,
+          ]}
           onPress={handlePlaceOrder}
-          disabled={!selectedPayment}
+          disabled={!selectedPayment || isSubmitting}
         >
-          <Text style={styles.placeOrderText}>Place Order</Text>
+          <Text style={styles.placeOrderText}>
+            {isSubmitting ? "Processing..." : "Place Order"}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

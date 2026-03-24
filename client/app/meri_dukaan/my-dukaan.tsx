@@ -49,7 +49,7 @@ function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
       <View style={styles.noStoreIcon}>
         <Store size={48} color={colors.brand.primary} />
       </View>
-      <Text style={styles.noStoreTitle}>You don't have a store yet</Text>
+      <Text style={styles.noStoreTitle}>You don&apos;t have a store yet</Text>
       <Text style={styles.noStoreSubtitle}>
         Create your dukaan and start selling your products & services to the
         community

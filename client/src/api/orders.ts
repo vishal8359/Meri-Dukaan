@@ -4,10 +4,57 @@ export function placeOrder(
   token: string,
   body: {
     storeId: string;
-    items: Array<{ productId: string; quantity: number }>;
+    items: { productId: string; quantity: number }[];
+    paymentMethod?: "cod";
+    deliveryFee: number;
+    deliveryAddress: string;
+    deliveryPhone: string;
   },
 ) {
   return apiRequest<{ order: unknown }>("/orders", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function createOnlineOrder(
+  token: string,
+  body: {
+    storeId: string;
+    items: { productId: string; quantity: number }[];
+    deliveryFee: number;
+    deliveryAddress: string;
+    deliveryPhone: string;
+  },
+) {
+  return apiRequest<{
+    localOrderId: string;
+    checkout: {
+      keyId: string;
+      orderId: string;
+      amount: number;
+      currency: string;
+      name: string;
+      description: string;
+    };
+  }>("/orders/online/create", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function verifyOnlinePayment(
+  token: string,
+  body: {
+    localOrderId: string;
+    razorpayOrderId: string;
+    razorpayPaymentId: string;
+    razorpaySignature: string;
+  },
+) {
+  return apiRequest<{ order: unknown; message: string }>("/orders/online/verify", {
     method: "POST",
     token,
     body,

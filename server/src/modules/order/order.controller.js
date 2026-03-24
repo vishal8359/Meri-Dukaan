@@ -6,6 +6,16 @@ export const placeOrder = asyncHandler(async (req, res) => {
   res.status(201).json({ order });
 });
 
+export const createOnlineOrder = asyncHandler(async (req, res) => {
+  const result = await orderService.createOnline(req.user.id, req.body);
+  res.status(201).json(result);
+});
+
+export const verifyOnlinePayment = asyncHandler(async (req, res) => {
+  const order = await orderService.verifyOnlinePayment(req.user.id, req.body);
+  res.json({ order, message: "Payment verified successfully" });
+});
+
 export const getOrders = asyncHandler(async (req, res) => {
   const orders = await orderService.listByUser(req.user.id);
   res.json({ orders });
@@ -17,6 +27,10 @@ export const getOrderById = asyncHandler(async (req, res) => {
 });
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-  const order = await orderService.updateStatus(req.params.id, req.body.status);
+  const order = await orderService.updateStatus(
+    req.params.id,
+    req.user.id,
+    req.body.status,
+  );
   res.json({ order });
 });

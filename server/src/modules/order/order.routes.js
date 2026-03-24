@@ -9,6 +9,16 @@ const router = Router();
 router.use(protect);
 
 router.post("/", validate(schema.placeOrderSchema), ctrl.placeOrder);
+router.post(
+	"/online/create",
+	validate(schema.createOnlineOrderSchema),
+	ctrl.createOnlineOrder,
+);
+router.post(
+	"/online/verify",
+	validate(schema.verifyOnlinePaymentSchema),
+	ctrl.verifyOnlinePayment,
+);
 router.get("/", ctrl.getOrders);
 router.get("/:id", ctrl.getOrderById);
 router.put("/:id/status", validate(schema.updateOrderStatusSchema), ctrl.updateOrderStatus);

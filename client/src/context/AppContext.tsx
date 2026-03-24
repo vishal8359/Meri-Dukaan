@@ -270,7 +270,8 @@ interface AppContextType {
 
   // Order Management
   orders: Order[];
-  placeOrder: (order: Order) => void;
+  placeOrder: (order: Order) => Promise<void>;
+  refreshOrders: () => Promise<void>;
   getOrderById: (orderId: string) => Order | undefined;
   updateOrderStatus: (orderId: string, status: Order["status"]) => void;
 
@@ -312,6 +313,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const CATALOG_CACHE_KEY = "app:catalog:v1";
 const CATALOG_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MY_STORE_BUSINESS_TYPE_KEY = "app:myStoreBusinessType:v1";
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_REGEX.test(value);
+}
 
 type BusinessType = MyStore["businessType"];
 
@@ -562,27 +569,43 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const items: OrderItem[] = Array.isArray(raw?.items)
       ? raw.items.map((i: any) => ({
           id: String(i?.product_id ?? i?.id ?? ""),
-          name: String(i?.product?.name ?? "Item"),
-          price: Number(i?.price_at_purchase ?? 0),
+          name: String(i?.name ?? i?.product?.name ?? "Item"),
+          price: Number(i?.price ?? i?.price_at_purchase ?? 0),
           quantity: Number(i?.quantity ?? 1),
-          image: i?.product?.images?.[0]?.image_url,
+          image: i?.image ?? i?.product?.images?.[0]?.image_url,
+          storeName: i?.store_name,
+          storeId: i?.store_id,
         }))
       : [];
 
     return {
       id: String(raw?.id ?? ""),
       items,
-      subtotal: Number(raw?.total_price ?? 0),
-      deliveryFee: 0,
-      totalAmount: Number(raw?.total_price ?? 0),
+      subtotal: Number(raw?.subtotal ?? raw?.total_price ?? 0),
+      deliveryFee: Number(raw?.delivery_fee ?? 0),
+      totalAmount: Number(raw?.total_amount ?? raw?.total_price ?? 0),
       status: (raw?.status as Order["status"]) ?? "processing",
-      paymentMethod: "online",
+      paymentMethod:
+        raw?.payment_method === "cod" ? "cod" : "online",
       orderDate: String(raw?.created_at ?? new Date().toISOString()),
       deliveryDate: undefined,
-      deliveryAddress: "",
-      deliveryPhone: "",
+      deliveryAddress: String(raw?.delivery_address ?? ""),
+      deliveryPhone: String(raw?.delivery_phone ?? ""),
     };
   }, []);
+
+  const refreshOrders = useCallback(async () => {
+    if (!authToken) {
+      setOrders([]);
+      return;
+    }
+
+    const res = await orderApi.getOrders(authToken);
+    const mappedOrders = Array.isArray(res.orders)
+      ? res.orders.map(mapOrderFromApi)
+      : [];
+    setOrders(mappedOrders);
+  }, [authToken, mapOrderFromApi]);
 
   const mapMyStoreProduct = useCallback((raw: any): MyStoreProduct => {
     const imageUrls: string[] = Array.isArray(raw?.images)
@@ -943,7 +966,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Cart Functions ---
   const addToCart = (product: any) => {
-    if (authToken && product?.id) {
+    if (authToken && isUuid(String(product?.id ?? ""))) {
       void cartApi
         .addToCart(authToken, String(product.id), 1)
         .then(() => cartApi.getCart(authToken))
@@ -1252,35 +1275,40 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Order Functions ---
   const placeOrder = useCallback(
-    (order: Order) => {
-      if (authToken && order.items.length > 0) {
-        const firstStoreId = order.items[0]?.storeId;
-        if (firstStoreId) {
-          void orderApi
-            .placeOrder(authToken, {
-              storeId: firstStoreId,
-              items: order.items.map((i) => ({
-                productId: i.id,
-                quantity: i.quantity,
-              })),
-            })
-            .then(() => orderApi.getOrders(authToken))
-            .then((res) => {
-              const mappedOrders = Array.isArray(res.orders)
-                ? res.orders.map(mapOrderFromApi)
-                : [];
-              setOrders(mappedOrders);
-              setCart([]);
-            })
-            .catch(() => {
-              // Keep local fallback behavior.
-            });
-        }
+    async (order: Order) => {
+      if (!authToken || order.items.length === 0) {
+        throw new Error("Unable to place order.");
       }
 
-      setOrders((prev) => [order, ...prev]);
+      const firstStoreId = order.items[0]?.storeId;
+      if (!firstStoreId) {
+        throw new Error("Store information missing for order items.");
+      }
+
+      const hasOnlyUuidItems = order.items.every((item) => isUuid(item.id));
+      const hasUuidStore = isUuid(firstStoreId);
+
+      // Fallback for local/mock catalog ids that are not UUID-backed records.
+      if (!hasOnlyUuidItems || !hasUuidStore) {
+        setOrders((prev) => [order, ...prev]);
+        return;
+      }
+
+      await orderApi.placeOrder(authToken, {
+        storeId: firstStoreId,
+        items: order.items.map((i) => ({
+          productId: i.id,
+          quantity: i.quantity,
+        })),
+        paymentMethod: "cod",
+        deliveryFee: order.deliveryFee,
+        deliveryAddress: order.deliveryAddress,
+        deliveryPhone: order.deliveryPhone,
+      });
+
+      await refreshOrders();
     },
-    [authToken, mapOrderFromApi],
+    [authToken, refreshOrders],
   );
 
   const getOrderById = useCallback(
@@ -1716,6 +1744,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       // Orders
       orders,
       placeOrder,
+      refreshOrders,
       getOrderById,
       updateOrderStatus,
 
