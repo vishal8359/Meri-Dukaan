@@ -1,0 +1,4 @@
+# Geo constitution and guardrails require review from repository owner.
+/docs/geo-standards.md @vishal8359
+/scripts/check-geo-queries.mjs @vishal8359
+/server/src/** @vishal8359

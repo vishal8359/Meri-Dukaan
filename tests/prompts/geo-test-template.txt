@@ -1,0 +1,24 @@
+Generate test cases for a geo-based nearby API with a radius of 5 km.
+
+Requirements:
+- Include boundary cases:
+  - Exactly 0 km (same location)
+  - Exactly 5 km (must be INCLUDED)
+  - Slightly less than 5 km (included)
+  - Slightly more than 5 km (excluded)
+- Include invalid inputs:
+  - Latitude > 90 or < -90
+  - Longitude > 180 or < -180
+  - Missing coordinates
+- Include edge geography cases:
+  - Near poles
+  - Near International Date Line
+- Include multiple stores:
+  - Some inside radius
+  - Some outside radius
+
+Output format:
+- Test name
+- Input coordinates
+- Store coordinates
+- Expected result (included/excluded)

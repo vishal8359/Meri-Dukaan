@@ -37,6 +37,11 @@ This command will move the starter code to the **app-example** directory and cre
 
 ## Learn more
 
+## Team docs
+
+- [Project onboarding](../docs/onboarding.md)
+- [Geo standards (single source of truth)](../docs/geo-standards.md)
+
 To learn more about developing your project with Expo, look at the following resources:
 
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
