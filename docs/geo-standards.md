@@ -5,6 +5,7 @@ This document is the mandatory source of truth for all geo-related modules in Sa
 ## Scope
 
 Applies to all geo logic in:
+
 - `server/src/**`
 - `client/src/**`
 - any new backend services/controllers/modules that implement nearby search
@@ -14,6 +15,7 @@ Applies to all geo logic in:
 All incoming coordinates must be validated before any query.
 
 Rules:
+
 - Latitude range: `-90` to `90`
 - Longitude range: `-180` to `180`
 - Reject `null` or `undefined`
@@ -22,6 +24,7 @@ Rules:
 - Always parse to number before query construction
 
 Validation checklist:
+
 - Use numeric parsing (`Number(...)`) and finite checks
 - Reject if `!Number.isFinite(lat)` or `!Number.isFinite(lng)`
 - Reject if ranges are violated
@@ -32,6 +35,7 @@ Validation checklist:
 Canonical internal distance unit is kilometers.
 
 Rules:
+
 - Internal contract and business logic use `distance_km`
 - If query requires radians, convert with:
   - `distance_km / 6378.1`
@@ -42,6 +46,7 @@ Rules:
 ## C) Query Rules
 
 Rules:
+
 - Geo queries are allowed only on geo-indexed fields (Mongo `2dsphere`)
 - Every nearby query must include a radius limit
 - Unbounded geo queries are forbidden
@@ -49,6 +54,7 @@ Rules:
 - Direct lat/lng comparison filtering is forbidden
 
 Forbidden examples:
+
 - latitude/longitude bounding conditions (`lat > x && lat < y`)
 - `$geoWithin` without `$centerSphere`
 - `$near` / `$nearSphere` without explicit max distance
@@ -56,6 +62,7 @@ Forbidden examples:
 ## D) Response Contract
 
 Every nearby API must:
+
 - return `distance_km`
 - sort by nearest first (ascending distance)
 
@@ -75,6 +82,7 @@ Recommended shape:
 ## Code Review Enforcement
 
 PRs touching geo logic must pass all checks:
+
 - [ ] Coordinate validation conforms to this document
 - [ ] Radius hard cap is enforced (`<= 5 km` for MVP)
 - [ ] Query uses geo operator over indexed field
@@ -84,6 +92,7 @@ PRs touching geo logic must pass all checks:
 ## Operational Notes
 
 If a geo change must intentionally break a rule, it requires:
+
 - explicit rationale in PR
 - dedicated reviewer approval
 - update to this document in the same PR

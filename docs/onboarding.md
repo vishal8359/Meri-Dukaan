@@ -3,9 +3,11 @@
 ## Geo Rules You Must Follow
 
 Before touching nearby search, location filtering, or geo APIs, read:
+
 - [Geo Standards](./geo-standards.md)
 
 This is the single source of truth for:
+
 - coordinate validation
 - distance units and conversion
 - mandatory radius limits

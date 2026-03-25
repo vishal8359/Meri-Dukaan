@@ -8,6 +8,7 @@
 If this PR touches any geo-related code, compliance with [Geo Standards](../docs/geo-standards.md) is mandatory.
 
 Checklist:
+
 - [ ] Coordinate validation enforced (`lat`, `lng` numeric + range-safe)
 - [ ] Radius hard cap enforced (`<= 5 km` for MVP)
 - [ ] Geo query uses indexed field (`2dsphere`) and safe operators
