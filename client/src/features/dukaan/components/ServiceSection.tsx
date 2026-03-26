@@ -156,46 +156,56 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
   );
 
   const handleConfirmBooking = useCallback(() => {
-    if (!selectedService) return;
+    void (async () => {
+      if (!selectedService) return;
 
-    const existingBooking = getBookingByServiceId(selectedService.id);
+      const existingBooking = getBookingByServiceId(selectedService.id);
 
-    if (isEditing && existingBooking) {
-      // Update existing booking
-      updateBooking(existingBooking.id, {
-        bookingDate: selectedDate,
-        bookingTime: selectedTime,
-      });
-    } else {
-      // Create new booking
-      const newBooking: BookedService = {
-        id: `booking-${Date.now()}`,
-        serviceId: selectedService.id,
-        serviceName: selectedService.name,
-        storeName: storeName,
-        storeId: storeId,
-        price: selectedService.price,
-        bookingDate: selectedDate,
-        bookingTime: selectedTime,
-        duration: selectedService.duration,
-        image: selectedService.image,
-        status: "confirmed",
-      };
-      bookService(newBooking);
-    }
+      try {
+        if (isEditing && existingBooking) {
+          await updateBooking(existingBooking.id, {
+            bookingDate: selectedDate,
+            bookingTime: selectedTime,
+          });
+        } else {
+          const newBooking: BookedService = {
+            id: `booking-${Date.now()}`,
+            serviceId: selectedService.id,
+            serviceName: selectedService.name,
+            storeName: storeName,
+            storeId: storeId,
+            price: selectedService.price,
+            bookingDate: selectedDate,
+            bookingTime: selectedTime,
+            duration: selectedService.duration,
+            image: selectedService.image,
+            status: "confirmed",
+          };
+          await bookService(newBooking);
+        }
 
-    setBookingModalVisible(false);
-    Toast.show({
-      type: "success",
-      text1: isEditing
-        ? t("svcSection.bookingUpdated")
-        : t("svcSection.serviceBooked"),
-      text2: `${selectedService.name} ${isEditing ? t("svcSection.updated") : t("svcSection.booked")} successfully!`,
-      visibilityTime: 3000,
-      position: "top",
-    });
+        setBookingModalVisible(false);
+        Toast.show({
+          type: "success",
+          text1: isEditing
+            ? t("svcSection.bookingUpdated")
+            : t("svcSection.serviceBooked"),
+          text2: `${selectedService.name} ${isEditing ? t("svcSection.updated") : t("svcSection.booked")} successfully!`,
+          visibilityTime: 3000,
+          position: "top",
+        });
 
-    onBookService?.(selectedService);
+        onBookService?.(selectedService);
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Booking failed",
+          text2: "Please try another slot.",
+          visibilityTime: 2500,
+          position: "top",
+        });
+      }
+    })();
   }, [
     selectedService,
     selectedDate,
@@ -213,7 +223,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     (service: Service) => {
       const booking = getBookingByServiceId(service.id);
       if (booking) {
-        cancelBooking(booking.id);
+        void cancelBooking(booking.id);
       }
     },
     [getBookingByServiceId, cancelBooking],

@@ -1,33 +1,33 @@
 // app/checkout.tsx
+import * as orderApi from "@/src/api/orders";
 import { useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
-import * as orderApi from "@/src/api/orders";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertCircle,
-    ArrowLeft,
-    Calendar,
-    CheckCircle2,
-    Clock,
-    CreditCard,
-    MapPin,
-    Package,
-    Wallet,
-    Wrench,
+  AlertCircle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  MapPin,
+  Package,
+  Wallet,
+  Wrench,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
-import RazorpayCheckout from "react-native-razorpay";
 import {
-    Alert,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import RazorpayCheckout from "react-native-razorpay";
 import Toast from "react-native-toast-message";
 
 type CheckoutMode = "cart" | "product" | "service";
@@ -45,6 +45,7 @@ export default function CheckoutScreen() {
     clearCart,
     removeFromCart,
     bookedServices,
+    catalogProducts,
     confirmBooking,
     placeOrder,
     refreshOrders,
@@ -104,6 +105,16 @@ export default function CheckoutScreen() {
     orderProducts.length > 0 ? (productsSubtotal > 500 ? 0 : 40) : 0;
   const totalAmount = itemSubtotal + deliveryFee;
 
+  const productStoreIdByProductId = useMemo(() => {
+    const map = new Map<string, string>();
+    catalogProducts.forEach((item) => {
+      if (item?.id && item?.storeId) {
+        map.set(String(item.id), String(item.storeId));
+      }
+    });
+    return map;
+  }, [catalogProducts]);
+
   const addresses = savedAddresses.map((a) => ({
     id: a.id,
     name: a.label,
@@ -130,7 +141,6 @@ export default function CheckoutScreen() {
   ];
 
   const finalizePostOrderState = () => {
-
     // Show success toast based on mode
     if (
       mode === "service" ||
@@ -167,14 +177,18 @@ export default function CheckoutScreen() {
     if (mode === "cart") {
       if (includeProducts) clearCart();
       if (includeServices) {
-        orderServices.forEach((s) => confirmBooking(s.id));
+        orderServices.forEach((s) => {
+          void confirmBooking(s.id);
+        });
       }
     } else if (mode === "product") {
       // Remove only the ordered product from cart
       if (params.productId) removeFromCart(params.productId);
     } else if (mode === "service") {
       // Confirm the booking only after payment is complete
-      if (params.serviceId) confirmBooking(params.serviceId);
+      if (params.serviceId) {
+        void confirmBooking(params.serviceId);
+      }
     }
 
     // Navigate to appropriate page based on what was checked out
@@ -212,7 +226,11 @@ export default function CheckoutScreen() {
       (mode === "cart" && includeProducts && orderProducts.length > 0);
 
     const uniqueStoreIds = Array.from(
-      new Set(orderProducts.map((item) => item.storeId).filter(Boolean)),
+      new Set(
+        orderProducts
+          .map((item) => item.storeId || productStoreIdByProductId.get(item.id))
+          .filter(Boolean),
+      ),
     );
 
     if (hasProducts && uniqueStoreIds.length !== 1) {
@@ -234,8 +252,14 @@ export default function CheckoutScreen() {
       deliveryPhone: selectedAddr?.phone || user?.phone || "",
     };
 
-    if (hasProducts && (!orderPayload.deliveryAddress || !orderPayload.deliveryPhone)) {
-      Alert.alert("Address Incomplete", "Please provide a valid delivery address and phone number.");
+    if (
+      hasProducts &&
+      (!orderPayload.deliveryAddress || !orderPayload.deliveryPhone)
+    ) {
+      Alert.alert(
+        "Address Incomplete",
+        "Please provide a valid delivery address and phone number.",
+      );
       return;
     }
 
@@ -244,10 +268,10 @@ export default function CheckoutScreen() {
     );
     const hasUuidStore = isUuid(orderPayload.storeId);
 
-    if (hasProducts && selectedPayment === "online" && (!hasOnlyUuidItems || !hasUuidStore)) {
+    if (hasProducts && (!hasOnlyUuidItems || !hasUuidStore)) {
       Alert.alert(
-        "Online Payment Unavailable",
-        "This order contains local/mock items not synced with backend yet. Please use COD for this order.",
+        "Sync Required",
+        "Some cart items are local/mock and not saved in backend yet. Please re-add products from live stores before checkout.",
       );
       return;
     }
@@ -269,7 +293,7 @@ export default function CheckoutScreen() {
             quantity: p.quantity,
             image: p.image,
             storeName: p.storeName,
-            storeId: p.storeId,
+            storeId: p.storeId || productStoreIdByProductId.get(p.id),
           })),
           subtotal: productsSubtotal,
           deliveryFee,
@@ -288,7 +312,10 @@ export default function CheckoutScreen() {
           throw new Error("Please log in again to continue payment.");
         }
 
-        const onlineOrder = await orderApi.createOnlineOrder(authToken, orderPayload);
+        const onlineOrder = await orderApi.createOnlineOrder(
+          authToken,
+          orderPayload,
+        );
 
         const checkoutOptions = {
           key: onlineOrder.checkout.keyId,

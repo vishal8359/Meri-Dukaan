@@ -1,8 +1,10 @@
 /**
- * Express middleware factory – validates req.body against a Joi schema.
+ * Express middleware factory – validates a selected request source against a Joi schema.
  */
-const validate = (schema) => (req, _res, next) => {
-  const { error, value } = schema.validate(req.body, {
+const validate = (schema, source = "body") => (req, _res, next) => {
+  const target = req[source] ?? {};
+
+  const { error, value } = schema.validate(target, {
     abortEarly: false,
     stripUnknown: true,
   });
@@ -15,7 +17,7 @@ const validate = (schema) => (req, _res, next) => {
     return next(err);
   }
 
-  req.body = value;
+  req[source] = value;
   next();
 };
 

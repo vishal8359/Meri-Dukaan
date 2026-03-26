@@ -28,7 +28,9 @@ async function getItems(userId) {
 
   const { data, error } = await supabase
     .from("cart_items")
-    .select("*, product:products(id, name, real_price, offer_price, stock, available, images:product_images(image_url))")
+    .select(
+      "*, product:products(id, store_id, name, real_price, offer_price, stock, available, store:stores(store_name), images:product_images(image_url))",
+    )
     .eq("cart_id", cart.id)
     .order("created_at", { ascending: true });
 

@@ -15,6 +15,7 @@ import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
 import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
+import * as serviceBookingApi from "../api/serviceBookings";
 import * as storeApi from "../api/stores";
 import { EnhancedReel, Store } from "../types/catalog";
 import { useAuth } from "./AuthContext";
@@ -103,6 +104,8 @@ export interface BookedService {
   image?: string;
   status: "confirmed" | "pending" | "completed" | "cancelled";
   expiresAt?: number; // timestamp for pending booking expiry
+  slotStartAt?: string;
+  slotEndAt?: string;
 }
 
 // Re-export EnhancedReel as Reel for backward compatibility
@@ -237,10 +240,17 @@ interface AppContextType {
 
   // Booked Services Management
   bookedServices: BookedService[];
-  bookService: (service: BookedService) => void;
-  confirmBooking: (bookingId: string) => void;
-  cancelBooking: (bookingId: string) => void;
-  updateBooking: (bookingId: string, updates: Partial<BookedService>) => void;
+  bookService: (service: BookedService) => Promise<BookedService>;
+  confirmBooking: (bookingId: string) => Promise<void>;
+  cancelBooking: (bookingId: string) => Promise<void>;
+  updateBooking: (
+    bookingId: string,
+    updates: Partial<BookedService>,
+  ) => Promise<void>;
+  getLockedServiceSlots: (
+    serviceId: string,
+    bookingDate: string,
+  ) => Promise<string[]>;
   isServiceBooked: (serviceId: string) => boolean;
   getBookingByServiceId: (serviceId: string) => BookedService | undefined;
 
@@ -366,6 +376,61 @@ function runAfterInteractions(task: () => void, delayMs = 0) {
   });
 
   return () => interactionHandle.cancel();
+}
+
+function parseBookingTimeTo24hParts(label: string): { hours: number; minutes: number } {
+  const normalized = String(label || "").trim();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) {
+    throw new Error("Invalid time slot format");
+  }
+
+  const rawHour = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  let hours = rawHour % 12;
+  if (meridiem === "PM") hours += 12;
+
+  return { hours, minutes };
+}
+
+function deriveSlotWindow(bookingDate: string, bookingTime: string, duration?: string) {
+  const date = String(bookingDate || "").slice(0, 10);
+  const [year, month, day] = date.split("-").map(Number);
+  if (!year || !month || !day) {
+    throw new Error("Invalid booking date");
+  }
+
+  const { hours, minutes } = parseBookingTimeTo24hParts(bookingTime);
+  const start = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+  let durationMinutes = 60;
+  const durationText = String(duration || "").toLowerCase();
+  const valueMatch = durationText.match(/(\d+(?:\.\d+)?)/);
+  const numericValue = valueMatch ? Number(valueMatch[1]) : NaN;
+  if (Number.isFinite(numericValue) && numericValue > 0) {
+    if (durationText.includes("hr") || durationText.includes("hour")) {
+      durationMinutes = Math.round(numericValue * 60);
+    } else {
+      durationMinutes = Math.round(numericValue);
+    }
+  }
+
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+  return { start, end };
+}
+
+function formatBookingTimeLabel(iso: string, fallbackLabel?: string) {
+  if (!iso) return fallbackLabel || "";
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return fallbackLabel || "";
+
+  return parsed.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 type CatalogCachePayload = {
@@ -521,8 +586,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       price: Number(product?.offer_price ?? product?.real_price ?? 0),
       quantity: Number(raw?.quantity ?? 1),
       image: firstImage,
-      storeName: undefined,
-      storeId: undefined,
+      storeName: String(product?.store?.store_name ?? raw?.store_name ?? ""),
+      storeId: String(product?.store_id ?? raw?.store_id ?? ""),
     };
   }, []);
 
@@ -593,6 +658,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deliveryPhone: String(raw?.delivery_phone ?? ""),
     };
   }, []);
+
+  const mapBookedServiceFromApi = useCallback((raw: any): BookedService => {
+    const catalogMatch = catalogServices.find(
+      (item) => String(item.id) === String(raw?.service_id ?? raw?.service?.id ?? ""),
+    );
+
+    const apiStatus = String(raw?.status ?? "booked");
+    const mappedStatus: BookedService["status"] =
+      apiStatus === "cancelled"
+        ? "cancelled"
+        : apiStatus === "completed"
+          ? "completed"
+          : "confirmed";
+
+    return {
+      id: String(raw?.id ?? ""),
+      serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
+      serviceName: String(raw?.service?.name ?? catalogMatch?.name ?? "Service"),
+      storeName: String(raw?.store?.store_name ?? "Store"),
+      storeId: String(raw?.store_id ?? raw?.store?.id ?? ""),
+      price: Number(catalogMatch?.price ?? 0),
+      bookingDate: String(raw?.booking_date ?? ""),
+      bookingTime: formatBookingTimeLabel(raw?.slot_start_at, raw?.slot_label),
+      duration: catalogMatch?.duration,
+      image: catalogMatch?.image,
+      status: mappedStatus,
+      slotStartAt: raw?.slot_start_at ? String(raw.slot_start_at) : undefined,
+      slotEndAt: raw?.slot_end_at ? String(raw.slot_end_at) : undefined,
+    };
+  }, [catalogServices]);
 
   const refreshOrders = useCallback(async () => {
     if (!authToken) {
@@ -836,12 +931,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       if (!authToken) {
         setCart([]);
         setOrders([]);
+        setBookedServices([]);
         return;
       }
 
-      const [cartRes, orderRes] = await Promise.allSettled([
+      const [cartRes, orderRes, bookingRes] = await Promise.allSettled([
         cartApi.getCart(authToken),
         orderApi.getOrders(authToken),
+        serviceBookingApi.getMyServiceBookings(authToken),
       ]);
 
       if (cartRes.status === "fulfilled") {
@@ -861,8 +958,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setOrders([]);
       }
+
+      if (bookingRes.status === "fulfilled") {
+        const mappedBookings = Array.isArray(bookingRes.value.bookings)
+          ? bookingRes.value.bookings.map(mapBookedServiceFromApi)
+          : [];
+        setBookedServices(mappedBookings);
+      } else {
+        setBookedServices([]);
+      }
     })();
-  }, [authToken, mapCartItemFromApi, mapOrderFromApi]);
+  }, [authToken, mapBookedServiceFromApi, mapCartItemFromApi, mapOrderFromApi]);
 
   // Load user's store when authenticated
   useEffect(() => {
@@ -1091,74 +1197,91 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- Booked Services Functions ---
-  const bookService = (service: BookedService) => {
-    setBookedServices((prev) => {
-      // Check if service is already booked
-      const exists = prev.find((s) => s.serviceId === service.serviceId);
-      if (exists) {
-        // Update existing booking
-        return prev.map((s) =>
-          s.serviceId === service.serviceId ? { ...s, ...service } : s,
-        );
+  const getLockedServiceSlots = useCallback(
+    async (serviceId: string, bookingDate: string): Promise<string[]> => {
+      const response = await serviceBookingApi.getLockedSlots(serviceId, bookingDate);
+      const slots = Array.isArray((response as any)?.slots)
+        ? (response as any).slots
+        : [];
+      return slots
+        .map((slot: any) => String(slot?.slot_label || "").trim())
+        .filter(Boolean);
+    },
+    [],
+  );
+
+  const bookService = useCallback(
+    async (service: BookedService): Promise<BookedService> => {
+      if (!authToken) {
+        setBookedServices((prev) => [...prev, service]);
+        return service;
       }
-      return [...prev, service];
-    });
-  };
 
-  const confirmBooking = (bookingId: string) => {
-    setBookedServices((prev) =>
-      prev.map((service) =>
-        service.id === bookingId
-          ? { ...service, status: "confirmed" as const, expiresAt: undefined }
-          : service,
-      ),
-    );
-  };
+      const { start, end } = deriveSlotWindow(
+        service.bookingDate,
+        service.bookingTime,
+        service.duration,
+      );
 
-  const cancelBooking = (bookingId: string) => {
-    setBookedServices((prev) =>
-      prev.filter((service) => service.id !== bookingId),
-    );
-  };
-
-  // --- Auto-expire pending bookings after their expiresAt time ---
-  const expiryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    // Check every 10 seconds for expired pending bookings
-    expiryTimerRef.current = setInterval(() => {
-      const now = Date.now();
-      setBookedServices((prev) => {
-        const hasExpired = prev.some(
-          (s) => s.status === "pending" && s.expiresAt && s.expiresAt <= now,
-        );
-        if (!hasExpired) return prev;
-        return prev.filter(
-          (s) => !(s.status === "pending" && s.expiresAt && s.expiresAt <= now),
-        );
+      const response = await serviceBookingApi.createServiceBooking(authToken, {
+        serviceId: service.serviceId,
+        bookingDate: String(service.bookingDate).slice(0, 10),
+        slotStartAt: start.toISOString(),
+        slotEndAt: end.toISOString(),
+        slotLabel: service.bookingTime,
       });
-    }, 10000);
 
-    return () => {
-      if (expiryTimerRef.current) clearInterval(expiryTimerRef.current);
-    };
-  }, []);
+      const mapped = mapBookedServiceFromApi((response as any)?.booking);
+      setBookedServices((prev) => {
+        const rest = prev.filter((item) => item.serviceId !== mapped.serviceId);
+        return [mapped, ...rest];
+      });
+      return mapped;
+    },
+    [authToken, mapBookedServiceFromApi],
+  );
 
-  const updateBooking = (
-    bookingId: string,
-    updates: Partial<BookedService>,
-  ) => {
-    setBookedServices((prev) =>
-      prev.map((service) =>
-        service.id === bookingId ? { ...service, ...updates } : service,
-      ),
-    );
-  };
+  const confirmBooking = useCallback(
+    async (_bookingId: string) => {
+      if (!authToken) return;
+      const response = await serviceBookingApi.getMyServiceBookings(authToken);
+      const mappedBookings = Array.isArray(response.bookings)
+        ? response.bookings.map(mapBookedServiceFromApi)
+        : [];
+      setBookedServices(mappedBookings);
+    },
+    [authToken, mapBookedServiceFromApi],
+  );
+
+  const cancelBooking = useCallback(
+    async (bookingId: string) => {
+      if (!authToken) {
+        setBookedServices((prev) => prev.filter((service) => service.id !== bookingId));
+        return;
+      }
+
+      await serviceBookingApi.cancelServiceBooking(authToken, bookingId);
+      setBookedServices((prev) => prev.filter((service) => service.id !== bookingId));
+    },
+    [authToken],
+  );
+
+  const updateBooking = useCallback(
+    async (bookingId: string, updates: Partial<BookedService>) => {
+      const existing = bookedServices.find((service) => service.id === bookingId);
+      if (!existing) return;
+
+      const merged: BookedService = { ...existing, ...updates };
+      await cancelBooking(bookingId);
+      await bookService(merged);
+    },
+    [bookService, bookedServices, cancelBooking],
+  );
 
   const isServiceBooked = (serviceId: string): boolean => {
     return bookedServices.some(
       (service) =>
-        service.serviceId === serviceId && service.status !== "cancelled",
+        service.serviceId === serviceId && service.status === "confirmed",
     );
   };
 
@@ -1167,7 +1290,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   ): BookedService | undefined => {
     return bookedServices.find(
       (service) =>
-        service.serviceId === serviceId && service.status !== "cancelled",
+        service.serviceId === serviceId && service.status === "confirmed",
     );
   };
 
@@ -1292,10 +1415,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       const hasOnlyUuidItems = order.items.every((item) => isUuid(item.id));
       const hasUuidStore = isUuid(firstStoreId);
 
-      // Fallback for local/mock catalog ids that are not UUID-backed records.
       if (!hasOnlyUuidItems || !hasUuidStore) {
-        setOrders((prev) => [order, ...prev]);
-        return;
+        throw new Error(
+          "Some cart items are not synced with backend yet. Please add products from live stores and try again.",
+        );
       }
 
       const response = await orderApi.placeOrder(authToken, {
@@ -1724,6 +1847,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       confirmBooking,
       cancelBooking,
       updateBooking,
+      getLockedServiceSlots,
       isServiceBooked,
       getBookingByServiceId,
 

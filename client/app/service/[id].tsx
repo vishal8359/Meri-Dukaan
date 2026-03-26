@@ -3,6 +3,7 @@ import {
     CatalogService,
     useApp,
 } from "@/src/context/AppContext";
+import { ApiError } from "@/src/api/client";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -315,6 +316,7 @@ export default function ServiceDetailScreen() {
     getBookingByServiceId,
     updateBooking,
     cancelBooking,
+    getLockedServiceSlots,
     catalogServices,
     allStores,
   } = useApp();
@@ -336,6 +338,8 @@ export default function ServiceDetailScreen() {
   const [selectedDate, setSelectedDate] = useState(getNextDays()[0].date);
   const [selectedTime, setSelectedTime] = useState("10:00 AM");
   const [isEditing, setIsEditing] = useState(false);
+  const [lockedSlots, setLockedSlots] = useState<string[]>([]);
+  const [bookingActionLoading, setBookingActionLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const availableDays = getNextDays();
 
@@ -452,53 +456,121 @@ export default function ServiceDetailScreen() {
   );
 
   const handleConfirmBooking = useCallback(() => {
-    if (!service) return;
-    if (isEditing && currentBooking) {
-      updateBooking(currentBooking.id, {
-        bookingDate: selectedDate,
-        bookingTime: selectedTime,
-      });
-      setBookingModalVisible(false);
-      Toast.show({
-        type: "success",
-        text1: t("service.bookingUpdated"),
-        text2: t("service.bookingRescheduled"),
-        visibilityTime: 2000,
-        position: "top",
-      });
-    } else {
-      const LOCK_DURATION = 3 * 60 * 1000; // 3 minutes
-      const newBooking: BookedService = {
-        id: "booking-" + Date.now(),
-        serviceId: service.id,
-        serviceName: service.name,
-        storeName: service.storeName || "Store",
-        storeId: service.storeId || "1",
-        price: service.price,
-        bookingDate: selectedDate,
-        bookingTime: selectedTime,
-        duration: service.duration,
-        image: service.image,
-        status: "pending",
-        expiresAt: Date.now() + LOCK_DURATION,
-      };
-      bookService(newBooking);
-      setBookingModalVisible(false);
-      Toast.show({
-        type: "info",
-        text1: t("service.slotLockedToast"),
-        text2: t("service.completePayment"),
-        visibilityTime: 3000,
-        position: "top",
-      });
-      // Navigate to cart services tab
-      router.push("/cart/cart" as any);
-    }
-  }, [service, isEditing, currentBooking, selectedDate, selectedTime, router]);
+    (async () => {
+      if (!service) return;
+
+      try {
+        setBookingActionLoading(true);
+        if (isEditing && currentBooking) {
+          await updateBooking(currentBooking.id, {
+            bookingDate: selectedDate,
+            bookingTime: selectedTime,
+          });
+          setBookingModalVisible(false);
+          Toast.show({
+            type: "success",
+            text1: t("service.bookingUpdated"),
+            text2: t("service.bookingRescheduled"),
+            visibilityTime: 2000,
+            position: "top",
+          });
+        } else {
+          const newBooking: BookedService = {
+            id: "booking-" + Date.now(),
+            serviceId: service.id,
+            serviceName: service.name,
+            storeName: service.storeName || "Store",
+            storeId: service.storeId || "1",
+            price: service.price,
+            bookingDate: selectedDate,
+            bookingTime: selectedTime,
+            duration: service.duration,
+            image: service.image,
+            status: "pending",
+          };
+          await bookService(newBooking);
+          setBookingModalVisible(false);
+          Toast.show({
+            type: "info",
+            text1: t("service.slotLockedToast"),
+            text2: t("service.completePayment"),
+            visibilityTime: 3000,
+            position: "top",
+          });
+          router.push("/cart/cart" as any);
+        }
+      } catch (error) {
+        const isConflict =
+          error instanceof ApiError && (error.status === 409 || error.status === 400);
+        Toast.show({
+          type: "error",
+          text1: isConflict ? "Slot unavailable" : "Booking failed",
+          text2: isConflict
+            ? "Please choose another time slot"
+            : "Unable to book right now. Please try again.",
+          visibilityTime: 2500,
+          position: "top",
+        });
+      } finally {
+        setBookingActionLoading(false);
+      }
+    })();
+  }, [
+    service,
+    isEditing,
+    currentBooking,
+    selectedDate,
+    selectedTime,
+    updateBooking,
+    bookService,
+    t,
+    router,
+  ]);
 
   const handleCancelBooking = useCallback(() => {
-    if (currentBooking) cancelBooking(currentBooking.id);
-  }, [currentBooking]);
+    (async () => {
+      if (!currentBooking) return;
+      try {
+        await cancelBooking(currentBooking.id);
+        Toast.show({
+          type: "info",
+          text1: "Booking cancelled",
+          text2: "Slot is now available for others",
+          visibilityTime: 2000,
+          position: "top",
+        });
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Unable to cancel",
+          text2: "Please try again.",
+          visibilityTime: 2000,
+          position: "top",
+        });
+      }
+    })();
+  }, [currentBooking, cancelBooking]);
+
+  useEffect(() => {
+    if (!service?.id || !selectedDate) {
+      setLockedSlots([]);
+      return;
+    }
+
+    let active = true;
+    void (async () => {
+      try {
+        const slots = await getLockedServiceSlots(service.id, selectedDate);
+        if (active) setLockedSlots(slots);
+      } catch {
+        if (active) setLockedSlots([]);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [service?.id, selectedDate, getLockedServiceSlots]);
 
   // ─── Wishlist handler ─────────────────────────────────────────────────────
   const toggleWishlist = useCallback(() => {
@@ -1244,37 +1316,49 @@ export default function ServiceDetailScreen() {
                 {t("service.selectTime")}
               </Text>
               <View style={styles.timeGrid}>
-                {TIME_SLOTS.map((time) => (
-                  <TouchableOpacity
-                    key={time}
-                    style={[
-                      styles.timeSlot,
-                      selectedTime === time && styles.timeSlotSelected,
-                    ]}
-                    onPress={() => setSelectedTime(time)}
-                  >
-                    <Text
+                {TIME_SLOTS.map((time) => {
+                  const isLocked = lockedSlots.includes(time);
+                  return (
+                    <TouchableOpacity
+                      key={time}
+                      disabled={isLocked}
                       style={[
-                        styles.timeSlotText,
-                        selectedTime === time && styles.timeSlotTextSelected,
+                        styles.timeSlot,
+                        selectedTime === time && styles.timeSlotSelected,
+                        isLocked && styles.timeSlotLocked,
                       ]}
+                      onPress={() => setSelectedTime(time)}
                     >
-                      {time}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.timeSlotText,
+                          selectedTime === time && styles.timeSlotTextSelected,
+                          isLocked && styles.timeSlotTextLocked,
+                        ]}
+                      >
+                        {isLocked ? `${time} (Locked)` : time}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </ScrollView>
 
             <TouchableOpacity
-              style={styles.confirmBookingBtn}
+              style={[
+                styles.confirmBookingBtn,
+                bookingActionLoading && styles.confirmBookingBtnDisabled,
+              ]}
               onPress={handleConfirmBooking}
+              disabled={bookingActionLoading || lockedSlots.includes(selectedTime)}
             >
               <Check size={20} color={colors.text.inverse} />
               <Text style={styles.confirmBookingText}>
-                {isEditing
-                  ? t("service.updateBooking")
-                  : t("service.confirmBooking")}
+                {bookingActionLoading
+                  ? "Please wait..."
+                  : isEditing
+                    ? t("service.updateBooking")
+                    : t("service.confirmBooking")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -2065,8 +2149,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary,
     borderColor: colors.brand.primary,
   },
+  timeSlotLocked: {
+    backgroundColor: colors.ui.disabled,
+    borderColor: colors.ui.disabled,
+  },
   timeSlotText: { fontSize: 13, fontWeight: "600", color: colors.text.primary },
   timeSlotTextSelected: { color: colors.text.inverse },
+  timeSlotTextLocked: { color: colors.text.secondary },
   confirmBookingBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -2077,6 +2166,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingVertical: 14,
     borderRadius: 12,
+  },
+  confirmBookingBtnDisabled: {
+    opacity: 0.7,
   },
   confirmBookingText: {
     fontSize: 16,

@@ -10,6 +10,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import storeRoutes from "./modules/store/store.routes.js";
 import cartRoutes from "./modules/cart/cart.routes.js";
 import orderRoutes from "./modules/order/order.routes.js";
+import serviceBookingRoutes from "./modules/service-booking/service-booking.routes.js";
 import * as reelService from "./modules/reel/reel.service.js";
 import asyncHandler from "./lib/asyncHandler.js";
 
@@ -32,6 +33,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/stores", storeRoutes);   // nests: products, services, inventory, reels → comments
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/service-bookings", serviceBookingRoutes);
 
 // A convenience reel-feed endpoint (not store-scoped)
 app.get("/api/reels/feed", asyncHandler(async (req, res) => {

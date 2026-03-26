@@ -240,7 +240,9 @@ export default function BookedServicesScreen() {
           {
             text: "Yes, Cancel",
             style: "destructive",
-            onPress: () => cancelBooking(bookingId),
+            onPress: () => {
+              void cancelBooking(bookingId);
+            },
           },
         ],
       );

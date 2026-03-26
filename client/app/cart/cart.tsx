@@ -66,14 +66,26 @@ export default function CartScreen() {
   };
 
   const removeService = (serviceId: string) => {
-    cancelBooking(serviceId);
-    Toast.show({
-      type: "info",
-      text1: t("cart.serviceRemoved"),
-      text2: t("cart.bookingCancelled"),
-      visibilityTime: 1500,
-      position: "top",
-    });
+    void (async () => {
+      try {
+        await cancelBooking(serviceId);
+        Toast.show({
+          type: "info",
+          text1: t("cart.serviceRemoved"),
+          text2: t("cart.bookingCancelled"),
+          visibilityTime: 1500,
+          position: "top",
+        });
+      } catch {
+        Toast.show({
+          type: "error",
+          text1: "Unable to cancel booking",
+          text2: "Please try again.",
+          visibilityTime: 1500,
+          position: "top",
+        });
+      }
+    })();
   };
 
   const deliveryFee = cartTotal > 500 || cartTotal === 0 ? 0 : 40;

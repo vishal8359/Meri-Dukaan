@@ -116,27 +116,16 @@ async function insertOrderWithItems(userId, payload) {
 
 async function decrementStockForOrderItems(orderItems) {
   for (const item of orderItems) {
-    const { data: product, error: fetchErr } = await supabase
-      .from("products")
-      .select("id, stock")
-      .eq("id", item.product_id)
-      .single();
+    const quantity = Number(item.quantity || 0);
+    const { data, error } = await supabase.rpc("decrement_product_stock", {
+      p_product_id: item.product_id,
+      p_quantity: quantity,
+    });
 
-    if (fetchErr || !product) {
-      throw AppError.badRequest(`Product ${item.product_id} no longer exists`);
-    }
-
-    const currentStock = Number(product.stock || 0);
-    if (currentStock < Number(item.quantity)) {
+    if (error) throw error;
+    if (data === null) {
       throw AppError.badRequest(`Insufficient stock for ${item.name}`);
     }
-
-    const { error: updateErr } = await supabase
-      .from("products")
-      .update({ stock: currentStock - Number(item.quantity) })
-      .eq("id", item.product_id);
-
-    if (updateErr) throw updateErr;
   }
 }
 
@@ -146,19 +135,32 @@ async function place(
 ) {
   const draft = await resolveOrderDraft(storeId, items, deliveryFee);
 
-  const order = await insertOrderWithItems(userId, {
-    subtotal: draft.subtotal,
-    delivery_fee: draft.deliveryFee,
-    total_amount: draft.totalAmount,
-    status: "processing",
-    payment_method: "cod",
-    payment_status: "pending",
-    delivery_address: deliveryAddress,
-    delivery_phone: deliveryPhone,
-    orderItems: draft.orderItems,
-  });
+  let order;
+  try {
+    order = await insertOrderWithItems(userId, {
+      subtotal: draft.subtotal,
+      delivery_fee: draft.deliveryFee,
+      total_amount: draft.totalAmount,
+      status: "processing",
+      payment_method: "cod",
+      payment_status: "pending",
+      delivery_address: deliveryAddress,
+      delivery_phone: deliveryPhone,
+      orderItems: draft.orderItems,
+    });
 
-  await decrementStockForOrderItems(order.items);
+    await decrementStockForOrderItems(order.items);
+  } catch (error) {
+    if (order?.id) {
+      await supabase
+        .from("orders")
+        .delete()
+        .eq("id", order.id)
+        .eq("user_id", userId);
+    }
+    throw error;
+  }
+
   await cartService.clear(userId);
 
   return order;
