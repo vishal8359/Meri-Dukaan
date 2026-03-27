@@ -1,9 +1,9 @@
+import crypto from "crypto";
+import Razorpay from "razorpay";
+import env from "../../config/env.js";
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
 import * as cartService from "../cart/cart.service.js";
-import Razorpay from "razorpay";
-import crypto from "crypto";
-import env from "../../config/env.js";
 
 function getRazorpayClient() {
   const keyId = env.razorpay.keyId;
@@ -36,7 +36,9 @@ async function resolveOrderDraft(storeId, items, deliveryFee = 0) {
 
   const { data: products, error: pErr } = await supabase
     .from("products")
-    .select("id, name, offer_price, real_price, stock, available, shown, images:product_images(image_url)")
+    .select(
+      "id, name, offer_price, real_price, stock, available, shown, images:product_images(image_url)",
+    )
     .in("id", productIds)
     .eq("store_id", storeId);
 
@@ -50,18 +52,26 @@ async function resolveOrderDraft(storeId, items, deliveryFee = 0) {
   for (const item of items) {
     const product = priceMap.get(item.productId);
     if (!product) {
-      throw AppError.badRequest(`Product ${item.productId} not found in this store`);
+      throw AppError.badRequest(
+        `Product ${item.productId} not found in this store`,
+      );
     }
 
     if (!product.shown || !product.available) {
-      throw AppError.badRequest(`Product ${product.name || item.productId} is not available`);
+      throw AppError.badRequest(
+        `Product ${product.name || item.productId} is not available`,
+      );
     }
 
     if (Number(product.stock) < item.quantity) {
-      throw AppError.badRequest(`Insufficient stock for product ${product.name || item.productId}`);
+      throw AppError.badRequest(
+        `Insufficient stock for product ${product.name || item.productId}`,
+      );
     }
 
-    const price = normalizeAmount(product.offer_price ?? product.real_price ?? 0);
+    const price = normalizeAmount(
+      product.offer_price ?? product.real_price ?? 0,
+    );
     const quantity = Number(item.quantity);
     subtotal += price * quantity;
 
@@ -78,7 +88,9 @@ async function resolveOrderDraft(storeId, items, deliveryFee = 0) {
 
   const normalizedSubtotal = normalizeAmount(subtotal);
   const normalizedDeliveryFee = normalizeAmount(deliveryFee);
-  const totalAmount = normalizeAmount(normalizedSubtotal + normalizedDeliveryFee);
+  const totalAmount = normalizeAmount(
+    normalizedSubtotal + normalizedDeliveryFee,
+  );
 
   return {
     store,
@@ -101,7 +113,8 @@ async function insertOrderWithItems(userId, payload) {
     .select()
     .single();
 
-  if (orderErr || !order) throw orderErr || AppError.badRequest("Order create failed");
+  if (orderErr || !order)
+    throw orderErr || AppError.badRequest("Order create failed");
 
   const rows = orderItems.map((item) => ({
     ...item,
@@ -215,7 +228,9 @@ async function verifyOnlinePayment(
 ) {
   const keySecret = env.razorpay.keySecret;
   if (!keySecret) {
-    throw AppError.serviceUnavailable("Online payment verification is unavailable.");
+    throw AppError.serviceUnavailable(
+      "Online payment verification is unavailable.",
+    );
   }
 
   const { data: order, error } = await supabase
@@ -262,7 +277,8 @@ async function verifyOnlinePayment(
     .select("*, items:order_items(*)")
     .single();
 
-  if (updateErr || !updated) throw updateErr || AppError.badRequest("Payment update failed");
+  if (updateErr || !updated)
+    throw updateErr || AppError.badRequest("Payment update failed");
 
   return updated;
 }
@@ -304,10 +320,6 @@ async function updateStatus(orderId, userId, status) {
 }
 
 export {
-  place,
-  createOnline,
-  verifyOnlinePayment,
-  listByUser,
-  findById,
-  updateStatus,
+  createOnline, findById, listByUser, place, updateStatus, verifyOnlinePayment
 };
+

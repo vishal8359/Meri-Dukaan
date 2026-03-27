@@ -108,4 +108,5 @@ async function clear(userId) {
   if (error) throw error;
 }
 
-export { getOrCreateCart, getItems, addItem, updateItem, removeItem, clear };
+export { addItem, clear, getItems, getOrCreateCart, removeItem, updateItem };
+
