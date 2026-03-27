@@ -2,14 +2,13 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
 } from "react";
 import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
@@ -85,6 +84,7 @@ export interface CatalogService {
   reviewsCount: number;
   distance: string;
   description?: string;
+  delivery?: string;
   duration?: string;
   active?: boolean;
   features?: string[];
@@ -378,7 +378,10 @@ function runAfterInteractions(task: () => void, delayMs = 0) {
   return () => interactionHandle.cancel();
 }
 
-function parseBookingTimeTo24hParts(label: string): { hours: number; minutes: number } {
+function parseBookingTimeTo24hParts(label: string): {
+  hours: number;
+  minutes: number;
+} {
   const normalized = String(label || "").trim();
   const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
   if (!match) {
@@ -395,7 +398,11 @@ function parseBookingTimeTo24hParts(label: string): { hours: number; minutes: nu
   return { hours, minutes };
 }
 
-function deriveSlotWindow(bookingDate: string, bookingTime: string, duration?: string) {
+function deriveSlotWindow(
+  bookingDate: string,
+  bookingTime: string,
+  duration?: string,
+) {
   const date = String(bookingDate || "").slice(0, 10);
   const [year, month, day] = date.split("-").map(Number);
   if (!year || !month || !day) {
@@ -650,8 +657,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       deliveryFee: Number(raw?.delivery_fee ?? 0),
       totalAmount: Number(raw?.total_amount ?? raw?.total_price ?? 0),
       status: (raw?.status as Order["status"]) ?? "processing",
-      paymentMethod:
-        raw?.payment_method === "cod" ? "cod" : "online",
+      paymentMethod: raw?.payment_method === "cod" ? "cod" : "online",
       orderDate: String(raw?.created_at ?? new Date().toISOString()),
       deliveryDate: undefined,
       deliveryAddress: String(raw?.delivery_address ?? ""),
@@ -659,35 +665,44 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const mapBookedServiceFromApi = useCallback((raw: any): BookedService => {
-    const catalogMatch = catalogServices.find(
-      (item) => String(item.id) === String(raw?.service_id ?? raw?.service?.id ?? ""),
-    );
+  const mapBookedServiceFromApi = useCallback(
+    (raw: any): BookedService => {
+      const catalogMatch = catalogServices.find(
+        (item) =>
+          String(item.id) === String(raw?.service_id ?? raw?.service?.id ?? ""),
+      );
 
-    const apiStatus = String(raw?.status ?? "booked");
-    const mappedStatus: BookedService["status"] =
-      apiStatus === "cancelled"
-        ? "cancelled"
-        : apiStatus === "completed"
-          ? "completed"
-          : "confirmed";
+      const apiStatus = String(raw?.status ?? "booked");
+      const mappedStatus: BookedService["status"] =
+        apiStatus === "cancelled"
+          ? "cancelled"
+          : apiStatus === "completed"
+            ? "completed"
+            : "confirmed";
 
-    return {
-      id: String(raw?.id ?? ""),
-      serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
-      serviceName: String(raw?.service?.name ?? catalogMatch?.name ?? "Service"),
-      storeName: String(raw?.store?.store_name ?? "Store"),
-      storeId: String(raw?.store_id ?? raw?.store?.id ?? ""),
-      price: Number(catalogMatch?.price ?? 0),
-      bookingDate: String(raw?.booking_date ?? ""),
-      bookingTime: formatBookingTimeLabel(raw?.slot_start_at, raw?.slot_label),
-      duration: catalogMatch?.duration,
-      image: catalogMatch?.image,
-      status: mappedStatus,
-      slotStartAt: raw?.slot_start_at ? String(raw.slot_start_at) : undefined,
-      slotEndAt: raw?.slot_end_at ? String(raw.slot_end_at) : undefined,
-    };
-  }, [catalogServices]);
+      return {
+        id: String(raw?.id ?? ""),
+        serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
+        serviceName: String(
+          raw?.service?.name ?? catalogMatch?.name ?? "Service",
+        ),
+        storeName: String(raw?.store?.store_name ?? "Store"),
+        storeId: String(raw?.store_id ?? raw?.store?.id ?? ""),
+        price: Number(catalogMatch?.price ?? 0),
+        bookingDate: String(raw?.booking_date ?? ""),
+        bookingTime: formatBookingTimeLabel(
+          raw?.slot_start_at,
+          raw?.slot_label,
+        ),
+        duration: catalogMatch?.duration,
+        image: catalogMatch?.image,
+        status: mappedStatus,
+        slotStartAt: raw?.slot_start_at ? String(raw.slot_start_at) : undefined,
+        slotEndAt: raw?.slot_end_at ? String(raw.slot_end_at) : undefined,
+      };
+    },
+    [catalogServices],
+  );
 
   const refreshOrders = useCallback(async () => {
     if (!authToken) {
@@ -1199,7 +1214,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // --- Booked Services Functions ---
   const getLockedServiceSlots = useCallback(
     async (serviceId: string, bookingDate: string): Promise<string[]> => {
-      const response = await serviceBookingApi.getLockedSlots(serviceId, bookingDate);
+      const response = await serviceBookingApi.getLockedSlots(
+        serviceId,
+        bookingDate,
+      );
       const slots = Array.isArray((response as any)?.slots)
         ? (response as any).slots
         : [];
@@ -1256,19 +1274,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const cancelBooking = useCallback(
     async (bookingId: string) => {
       if (!authToken) {
-        setBookedServices((prev) => prev.filter((service) => service.id !== bookingId));
+        setBookedServices((prev) =>
+          prev.filter((service) => service.id !== bookingId),
+        );
         return;
       }
 
       await serviceBookingApi.cancelServiceBooking(authToken, bookingId);
-      setBookedServices((prev) => prev.filter((service) => service.id !== bookingId));
+      setBookedServices((prev) =>
+        prev.filter((service) => service.id !== bookingId),
+      );
     },
     [authToken],
   );
 
   const updateBooking = useCallback(
     async (bookingId: string, updates: Partial<BookedService>) => {
-      const existing = bookedServices.find((service) => service.id === bookingId);
+      const existing = bookedServices.find(
+        (service) => service.id === bookingId,
+      );
       if (!existing) return;
 
       const merged: BookedService = { ...existing, ...updates };
@@ -1434,7 +1458,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       const created = mapOrderFromApi((response as any)?.order);
-      setOrders((prev) => [created, ...prev.filter((o) => o.id !== created.id)]);
+      setOrders((prev) => [
+        created,
+        ...prev.filter((o) => o.id !== created.id),
+      ]);
 
       await refreshOrders();
     },

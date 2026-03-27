@@ -1,48 +1,48 @@
-import {
-    BookedService,
-    CatalogService,
-    useApp,
-} from "@/src/context/AppContext";
 import { ApiError } from "@/src/api/client";
+import {
+  BookedService,
+  CatalogService,
+  useApp,
+} from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Check,
-    ChevronLeft,
-    Clock,
-    Edit2,
-    Heart,
-    MapPin,
-    Package,
-    Star,
-    Users,
-    X,
+  Calendar,
+  Check,
+  ChevronLeft,
+  Clock,
+  Edit2,
+  Heart,
+  MapPin,
+  Package,
+  Star,
+  Users,
+  X,
 } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    InteractionManager,
-    Modal,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  InteractionManager,
+  Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -501,7 +501,8 @@ export default function ServiceDetailScreen() {
         }
       } catch (error) {
         const isConflict =
-          error instanceof ApiError && (error.status === 409 || error.status === 400);
+          error instanceof ApiError &&
+          (error.status === 409 || error.status === 400);
         Toast.show({
           type: "error",
           text1: isConflict ? "Slot unavailable" : "Booking failed",
@@ -632,7 +633,7 @@ export default function ServiceDetailScreen() {
     : [];
 
   // ─── Related Service Card renderer ────────────────────────────────────────
-  const renderRelatedCard = ({ item }: { item: ServiceItem }) => (
+  const renderRelatedCard = ({ item }: { item: CatalogService }) => (
     <TouchableOpacity
       style={styles.relatedCard}
       onPress={() => handleNavigateToService(item.id)}
@@ -1350,7 +1351,9 @@ export default function ServiceDetailScreen() {
                 bookingActionLoading && styles.confirmBookingBtnDisabled,
               ]}
               onPress={handleConfirmBooking}
-              disabled={bookingActionLoading || lockedSlots.includes(selectedTime)}
+              disabled={
+                bookingActionLoading || lockedSlots.includes(selectedTime)
+              }
             >
               <Check size={20} color={colors.text.inverse} />
               <Text style={styles.confirmBookingText}>
