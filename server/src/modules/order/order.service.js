@@ -22,6 +22,15 @@ function normalizeAmount(value) {
   return Number(Number(value).toFixed(2));
 }
 
+function getMissingColumnName(error) {
+  if (error?.code !== "PGRST204" || typeof error?.message !== "string") {
+    return null;
+  }
+
+  const match = error.message.match(/Could not find the '([^']+)' column/);
+  return match?.[1] || null;
+}
+
 async function resolveOrderDraft(storeId, items, deliveryFee = 0) {
   const productIds = items.map((item) => item.productId);
 
@@ -116,15 +125,30 @@ async function insertOrderWithItems(userId, payload) {
   if (orderErr || !order)
     throw orderErr || AppError.badRequest("Order create failed");
 
-  const rows = orderItems.map((item) => ({
+  let rows = orderItems.map((item) => ({
     ...item,
     order_id: order.id,
   }));
 
-  const { error: itemsErr } = await supabase.from("order_items").insert(rows);
-  if (itemsErr) throw itemsErr;
+  // Legacy databases may miss optional columns (for example: image/store_name).
+  // Retry by stripping unknown columns reported by PostgREST schema cache.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const { error: itemsErr } = await supabase.from("order_items").insert(rows);
+    if (!itemsErr) {
+      return { ...order, items: rows };
+    }
 
-  return { ...order, items: rows };
+    const missingColumn = getMissingColumnName(itemsErr);
+    if (!missingColumn) throw itemsErr;
+
+    rows = rows.map((row) => {
+      const next = { ...row };
+      delete next[missingColumn];
+      return next;
+    });
+  }
+
+  throw AppError.badRequest("Unable to persist order items with current schema");
 }
 
 async function decrementStockForOrderItems(orderItems) {
@@ -151,8 +175,10 @@ async function place(
   let order;
   try {
     order = await insertOrderWithItems(userId, {
+      store_id: draft.store.id,
       subtotal: draft.subtotal,
       delivery_fee: draft.deliveryFee,
+      total_price: draft.totalAmount,
       total_amount: draft.totalAmount,
       status: "processing",
       payment_method: "cod",
@@ -197,8 +223,10 @@ async function createOnline(
   });
 
   const order = await insertOrderWithItems(userId, {
+    store_id: draft.store.id,
     subtotal: draft.subtotal,
     delivery_fee: draft.deliveryFee,
+    total_price: draft.totalAmount,
     total_amount: draft.totalAmount,
     status: "processing",
     payment_method: "online",

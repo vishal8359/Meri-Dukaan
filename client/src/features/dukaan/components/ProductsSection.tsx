@@ -64,14 +64,28 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const [localSearchQuery, setLocalSearchQuery] = React.useState("");
   const searchQuery = externalSearchQuery || localSearchQuery;
 
+  const getCartItemId = useCallback(
+    (productId: string) => {
+      const direct = cart.find((item: any) => String(item.id) === productId);
+      if (direct) return String(direct.id);
+
+      const legacyId = `${storeId}-${productId}`;
+      const legacy = cart.find((item: any) => String(item.id) === legacyId);
+      if (legacy) return String(legacy.id);
+
+      return productId;
+    },
+    [cart, storeId],
+  );
+
   // Get cart quantity for a product
   const getCartQuantity = useCallback(
     (productId: string) => {
-      const cartItemId = `${storeId}-${productId}`;
+      const cartItemId = getCartItemId(productId);
       const cartItem = cart.find((item: any) => item.id === cartItemId);
       return cartItem?.quantity || 0;
     },
-    [cart, storeId],
+    [cart, getCartItemId],
   );
 
   const handleSearchChange = useCallback(
@@ -96,7 +110,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
   const handleAddToCart = useCallback(
     (product: Product) => {
       addToCart({
-        id: `${storeId}-${product.id}`,
+        id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
@@ -152,16 +166,16 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
 
   const handleIncreaseQuantity = useCallback(
     (product: Product) => {
-      const cartItemId = `${storeId}-${product.id}`;
+      const cartItemId = getCartItemId(product.id);
       const currentQty = getCartQuantity(product.id);
       updateCartQuantity(cartItemId, currentQty + 1);
     },
-    [storeId, getCartQuantity, updateCartQuantity],
+    [getCartItemId, getCartQuantity, updateCartQuantity],
   );
 
   const handleDecreaseQuantity = useCallback(
     (product: Product) => {
-      const cartItemId = `${storeId}-${product.id}`;
+      const cartItemId = getCartItemId(product.id);
       const currentQty = getCartQuantity(product.id);
       if (currentQty > 1) {
         updateCartQuantity(cartItemId, currentQty - 1);
@@ -176,7 +190,7 @@ export const ProductsSection: React.FC<ProductsSectionProps> = ({
         });
       }
     },
-    [storeId, getCartQuantity, updateCartQuantity, removeFromCart],
+    [getCartItemId, getCartQuantity, updateCartQuantity, removeFromCart],
   );
 
   const handleProductPress = useCallback(

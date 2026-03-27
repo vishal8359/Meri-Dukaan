@@ -115,6 +115,55 @@ export default function CheckoutScreen() {
     return map;
   }, [catalogProducts]);
 
+  const productIdByLegacyCartId = useMemo(() => {
+    const map = new Map<string, string>();
+    catalogProducts.forEach((item) => {
+      if (item?.id && item?.storeId) {
+        map.set(`${String(item.storeId)}-${String(item.id)}`, String(item.id));
+      }
+    });
+    return map;
+  }, [catalogProducts]);
+
+  const normalizedOrderProducts = useMemo(
+    () =>
+      orderProducts.map((item) => {
+        const rawProductId = String(item.id || "");
+        const rawStoreId = item.storeId ? String(item.storeId) : "";
+
+        const directProductId = isUuid(rawProductId) ? rawProductId : null;
+        const mappedLegacyProductId = productIdByLegacyCartId.get(rawProductId);
+
+        const inferredFromPrefix =
+          !directProductId &&
+          !mappedLegacyProductId &&
+          rawStoreId &&
+          rawProductId.startsWith(`${rawStoreId}-`)
+            ? rawProductId.slice(rawStoreId.length + 1)
+            : "";
+
+        const resolvedProductId =
+          directProductId ||
+          (mappedLegacyProductId && isUuid(mappedLegacyProductId)
+            ? mappedLegacyProductId
+            : null) ||
+          (isUuid(inferredFromPrefix) ? inferredFromPrefix : null);
+
+        const resolvedStoreId =
+          rawStoreId ||
+          (resolvedProductId
+            ? (productStoreIdByProductId.get(resolvedProductId) ?? "")
+            : "");
+
+        return {
+          ...item,
+          resolvedProductId,
+          resolvedStoreId,
+        };
+      }),
+    [orderProducts, productIdByLegacyCartId, productStoreIdByProductId],
+  );
+
   const addresses = savedAddresses.map((a) => ({
     id: a.id,
     name: a.label,
@@ -227,8 +276,8 @@ export default function CheckoutScreen() {
 
     const uniqueStoreIds = Array.from(
       new Set(
-        orderProducts
-          .map((item) => item.storeId || productStoreIdByProductId.get(item.id))
+        normalizedOrderProducts
+          .map((item) => item.resolvedStoreId)
           .filter(Boolean),
       ),
     );
@@ -243,8 +292,8 @@ export default function CheckoutScreen() {
 
     const orderPayload = {
       storeId: String(uniqueStoreIds[0] || ""),
-      items: orderProducts.map((item) => ({
-        productId: item.id,
+      items: normalizedOrderProducts.map((item) => ({
+        productId: item.resolvedProductId || "",
         quantity: item.quantity,
       })),
       deliveryFee,
@@ -286,14 +335,14 @@ export default function CheckoutScreen() {
 
         await placeOrder({
           id: `ORD${Date.now()}`,
-          items: orderProducts.map((p) => ({
-            id: p.id,
+          items: normalizedOrderProducts.map((p) => ({
+            id: p.resolvedProductId || p.id,
             name: p.name,
             price: p.price,
             quantity: p.quantity,
             image: p.image,
             storeName: p.storeName,
-            storeId: p.storeId || productStoreIdByProductId.get(p.id),
+            storeId: p.resolvedStoreId,
           })),
           subtotal: productsSubtotal,
           deliveryFee,
