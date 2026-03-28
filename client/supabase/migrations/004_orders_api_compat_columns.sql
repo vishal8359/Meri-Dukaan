@@ -40,6 +40,11 @@ ALTER TABLE order_items
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
+-- Keep service create payload compatible with legacy services tables.
+ALTER TABLE services
+  ADD COLUMN IF NOT EXISTS price NUMERIC(10,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+
 CREATE OR REPLACE FUNCTION decrement_product_stock(p_product_id UUID, p_quantity INTEGER)
 RETURNS INTEGER
 LANGUAGE plpgsql

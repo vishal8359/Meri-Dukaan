@@ -394,19 +394,29 @@ export default function StoreDetailScreen() {
     storeServicesFromApi.length > 0
       ? storeServicesFromApi
       : catalogStoreServices;
-  const services = servicesSource.map((service: any) => ({
-    id: String(service.id),
-    name: String(service.name ?? "Service"),
-    description: String(service.description ?? ""),
-    active: Boolean(service.active ?? service.availability ?? true),
-    price: Number(service.price ?? 0),
-    image:
-      typeof service.image === "string"
-        ? service.image
-        : "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
-    duration: String(service.duration ?? service.timings ?? ""),
-    rating: Number(service.rating ?? 0),
-  }));
+  const services = servicesSource.map((service: any) => {
+    const serviceImages: string[] = Array.isArray(service?.images)
+      ? service.images
+          .map((img: any) =>
+            typeof img === "string" ? img : img?.image_url,
+          )
+          .filter((url: unknown): url is string => typeof url === "string")
+      : [];
+
+    return {
+      id: String(service.id),
+      name: String(service.name ?? "Service"),
+      description: String(service.description ?? ""),
+      active: Boolean(service.active ?? service.availability ?? true),
+      price: Number(service.price ?? 0),
+      image:
+        (typeof service.image === "string" && service.image) ||
+        serviceImages[0] ||
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+      duration: String(service.duration ?? service.timings ?? ""),
+      rating: Number(service.rating ?? 0),
+    };
+  });
   const effectiveOpeningTime =
     hoursFromSchedule.openingTime ?? store?.openingTime;
   const effectiveClosingTime =

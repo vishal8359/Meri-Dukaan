@@ -2,6 +2,7 @@
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -16,14 +17,6 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
-
-const PLACEHOLDER_SERVICE_IMAGES = [
-  "https://images.unsplash.com/photo-1521590832167-7bcb6b906fca?w=400",
-  "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400",
-  "https://images.unsplash.com/photo-1519340241574-2cec6aef0c01?w=400",
-  "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400",
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=400",
-];
 
 const DURATION_PRESETS = [
   { label: "15 min", value: "15 min" },
@@ -54,13 +47,34 @@ export default function AddServiceScreen() {
     if (val !== "") setCustomDuration("");
   };
 
-  const handleAddImage = () => {
+  const handleAddImage = async () => {
     if (images.length >= 5) {
       Alert.alert("Limit", "Maximum 5 images");
       return;
     }
-    const idx = images.length % PLACEHOLDER_SERVICE_IMAGES.length;
-    setImages((prev) => [...prev, PLACEHOLDER_SERVICE_IMAGES[idx]]);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access to upload service images.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const pickedUri = result.assets[0]?.uri;
+    if (!pickedUri) return;
+
+    setImages((prev) => [...prev, pickedUri]);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -138,7 +152,7 @@ export default function AddServiceScreen() {
             {images.length < 5 && (
               <TouchableOpacity
                 style={styles.addImgBtn}
-                onPress={handleAddImage}
+                onPress={() => void handleAddImage()}
               >
                 <Camera size={22} color={colors.brand.primary} />
                 <Text style={styles.addImgText}>Add</Text>

@@ -1,7 +1,6 @@
 import asyncHandler from "../../lib/asyncHandler.js";
 import * as serviceService from "./service.service.js";
 import * as storeService from "../store/store.service.js";
-import * as authService from "../auth/auth.service.js";
 
 export const getStoreServices = asyncHandler(async (req, res) => {
   const services = await serviceService.listByStore(req.params.id);
@@ -27,7 +26,6 @@ export const updateService = asyncHandler(async (req, res) => {
 
 export const removeService = asyncHandler(async (req, res) => {
   await storeService.verifyOwnership(req.params.id, req.user.id);
-  await authService.verifyPinFromHeaders(req.user.id, req.headers);
   await serviceService.remove(req.params.serviceId, req.params.id);
   res.json({ message: "Service hidden" });
 });

@@ -195,19 +195,33 @@ export default function HomeScreen() {
                 ? (res.services as any[])
                 : [];
 
-              return services.map((s) => ({
-                id: String(s?.id ?? ""),
-                name: String(s?.name ?? "Service"),
-                image:
-                  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
-                price: 0,
-                discount: undefined,
-                rating: Number(s?.rating ?? 0),
-                storeId: String(store?.id ?? ""),
-                storeName: String(store?.store_name ?? "Store"),
-                distance: String(store?.distance ?? "0 km"),
-                duration: String(s?.timings ?? ""),
-              })) as DashboardService[];
+              return services.map((s) => {
+                const serviceImages: string[] = Array.isArray(s?.images)
+                  ? s.images
+                      .map((img: any) =>
+                        typeof img === "string" ? img : img?.image_url,
+                      )
+                      .filter(
+                        (url: unknown): url is string => typeof url === "string",
+                      )
+                  : [];
+
+                return {
+                  id: String(s?.id ?? ""),
+                  name: String(s?.name ?? "Service"),
+                  image:
+                    (typeof s?.image === "string" && s.image) ||
+                    serviceImages[0] ||
+                    "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+                  price: Number(s?.price ?? 0),
+                  discount: undefined,
+                  rating: Number(s?.rating ?? 0),
+                  storeId: String(store?.id ?? ""),
+                  storeName: String(store?.store_name ?? "Store"),
+                  distance: String(store?.distance ?? "0 km"),
+                  duration: String(s?.timings ?? ""),
+                } as DashboardService;
+              });
             }),
           ),
         ]);

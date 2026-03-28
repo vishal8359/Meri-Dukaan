@@ -300,10 +300,10 @@ interface AppContextType {
   updateMyStore: (updates: Partial<MyStore>) => Promise<void>;
   addMyProduct: (product: MyStoreProduct) => Promise<MyStoreProduct>;
   updateMyProduct: (id: string, updates: Partial<MyStoreProduct>) => void;
-  removeMyProduct: (id: string, ownerPin: string) => Promise<void>;
+  removeMyProduct: (id: string) => Promise<void>;
   addMyService: (service: MyStoreService) => Promise<MyStoreService>;
   updateMyService: (id: string, updates: Partial<MyStoreService>) => void;
-  removeMyService: (id: string, ownerPin: string) => Promise<void>;
+  removeMyService: (id: string) => Promise<void>;
   removeMyStore: (ownerPin: string) => Promise<void>;
   addMyReel: (reel: MyStoreReel) => Promise<MyStoreReel>;
   removeMyReel: (id: string) => void;
@@ -320,7 +320,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const CATALOG_CACHE_KEY = "app:catalog:v1";
+const CATALOG_CACHE_KEY = "app:catalog:v2";
 const CATALOG_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MY_STORE_BUSINESS_TYPE_KEY = "app:myStoreBusinessType:v1";
 const UUID_REGEX =
@@ -741,11 +741,22 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const mapMyStoreService = useCallback((raw: any): MyStoreService => {
+    const imageUrls: string[] = Array.isArray(raw?.images)
+      ? raw.images
+          .map((img: any) =>
+            typeof img === "string" ? img : img?.image_url,
+          )
+          .filter((url: unknown): url is string => typeof url === "string")
+      : [];
+
+    const fallbackImage =
+      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
+
     return {
       id: String(raw?.id ?? ""),
       name: String(raw?.name ?? "Service"),
-      price: 0,
-      images: [],
+      price: Number(raw?.price ?? 0),
+      images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
       duration: String(raw?.timings ?? ""),
       description: String(raw?.description ?? ""),
       available: Boolean(raw?.availability ?? true),
@@ -812,6 +823,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const mapCatalogService = useCallback(
     (store: any, raw: any): CatalogService => {
+      const imageUrls: string[] = Array.isArray(raw?.images)
+        ? raw.images
+            .map((img: any) =>
+              typeof img === "string" ? img : img?.image_url,
+            )
+            .filter((url: unknown): url is string => typeof url === "string")
+        : [];
+
       const fallbackImage =
         "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
 
@@ -821,9 +840,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         storeName: String(store?.store_name ?? "Store"),
         name: String(raw?.name ?? "Service"),
         category: String(raw?.type ?? "service").toLowerCase(),
-        image: fallbackImage,
-        images: [fallbackImage],
-        price: 0,
+        image: imageUrls[0] || fallbackImage,
+        images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+        price: Number(raw?.price ?? 0),
         rating: Number(raw?.rating ?? 0),
         reviewsCount: 0,
         distance: String(store?.distance ?? "0 km"),
@@ -1679,12 +1698,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const removeMyProduct = useCallback(
-    async (id: string, ownerPin: string) => {
+    async (id: string) => {
       if (!authToken || !myStore?.id) {
         throw new Error("Create your store first, then manage products.");
       }
 
-      await storeApi.removeStoreProduct(authToken, myStore.id, id, ownerPin);
+      await storeApi.removeStoreProduct(authToken, myStore.id, id);
 
       setMyStore((prev) =>
         prev
@@ -1703,6 +1722,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await storeApi.addStoreService(authToken, myStore.id, {
         name: service.name,
+        price: Number(service.price) || 0,
+        images: Array.isArray(service.images) ? service.images : [],
         type: "General",
         availability: service.available,
         timings: service.duration,
@@ -1741,12 +1762,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const removeMyService = useCallback(
-    async (id: string, ownerPin: string) => {
+    async (id: string) => {
       if (!authToken || !myStore?.id) {
         throw new Error("Create your store first, then manage services.");
       }
 
-      await storeApi.removeStoreService(authToken, myStore.id, id, ownerPin);
+      await storeApi.removeStoreService(authToken, myStore.id, id);
 
       setMyStore((prev) =>
         prev

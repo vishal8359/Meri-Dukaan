@@ -57,6 +57,8 @@ export interface UpdateProductPayload {
 
 export interface AddServicePayload {
   name: string;
+  price: number;
+  images?: string[];
   type: string;
   availability?: boolean;
   timings: string;
@@ -65,6 +67,8 @@ export interface AddServicePayload {
 
 export interface UpdateServicePayload {
   name?: string;
+  price?: number;
+  images?: string[];
   type?: string;
   availability?: boolean;
   timings?: string;
@@ -206,16 +210,12 @@ export function removeStoreProduct(
   token: string,
   storeId: string,
   productId: string,
-  ownerPin: string,
 ) {
   return apiRequest<{ message: string }>(
     `/stores/${storeId}/products/${productId}`,
     {
       method: "DELETE",
       token,
-      headers: {
-        "x-owner-pin": ownerPin,
-      },
     },
   );
 }
@@ -294,16 +294,12 @@ export function removeStoreService(
   token: string,
   storeId: string,
   serviceId: string,
-  ownerPin: string,
 ) {
   return apiRequest<{ message: string }>(
     `/stores/${storeId}/services/${serviceId}`,
     {
       method: "DELETE",
       token,
-      headers: {
-        "x-owner-pin": ownerPin,
-      },
     },
   );
 }

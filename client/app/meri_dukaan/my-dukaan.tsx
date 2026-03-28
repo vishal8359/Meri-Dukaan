@@ -40,7 +40,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - spacing.md * 2;
 
 type DashboardTab = "products" | "services";
-type PinAction = "remove-product" | "remove-service" | "remove-store";
+type PinAction = "remove-store";
 
 // ========== NO STORE STATE ==========
 function NoStoreView({ onCreateStore }: { onCreateStore: () => void }) {
@@ -724,19 +724,15 @@ export default function MyDukaanScreen() {
   const [showPinModal, setShowPinModal] = useState(false);
   const [ownerPin, setOwnerPin] = useState("");
   const [pinAction, setPinAction] = useState<PinAction | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPinSubmitting, setIsPinSubmitting] = useState(false);
 
-  const openPinFlow = (action: PinAction, id?: string) => {
+  const openPinFlow = (action: PinAction) => {
     setPinAction(action);
-    setPendingId(id || null);
     setOwnerPin("");
     setShowPinModal(true);
   };
 
   const getPinTitle = () => {
-    if (pinAction === "remove-product") return "Delete Product";
-    if (pinAction === "remove-service") return "Delete Service";
     if (pinAction === "remove-store") return "Delete Store";
     return "Verify PIN";
   };
@@ -759,20 +755,13 @@ export default function MyDukaanScreen() {
     try {
       setIsPinSubmitting(true);
 
-      if (pinAction === "remove-product" && pendingId) {
-        await removeMyProduct(pendingId, ownerPin);
-        Alert.alert("Success", "Product deleted successfully.");
-      } else if (pinAction === "remove-service" && pendingId) {
-        await removeMyService(pendingId, ownerPin);
-        Alert.alert("Success", "Service deleted successfully.");
-      } else if (pinAction === "remove-store") {
+      if (pinAction === "remove-store") {
         await removeMyStore(ownerPin);
         Alert.alert("Success", "Store deleted successfully.");
       }
 
       setShowPinModal(false);
       setOwnerPin("");
-      setPendingId(null);
       setPinAction(null);
     } catch (error) {
       const err = error as { message?: string };
@@ -832,7 +821,17 @@ export default function MyDukaanScreen() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => openPinFlow("remove-product", id),
+        onPress: () => {
+          void (async () => {
+            try {
+              await removeMyProduct(id);
+              Alert.alert("Success", "Product deleted successfully.");
+            } catch (error) {
+              const err = error as { message?: string };
+              Alert.alert("Delete failed", err?.message || "Please try again.");
+            }
+          })();
+        },
       },
     ]);
   };
@@ -850,7 +849,17 @@ export default function MyDukaanScreen() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => openPinFlow("remove-service", id),
+        onPress: () => {
+          void (async () => {
+            try {
+              await removeMyService(id);
+              Alert.alert("Success", "Service deleted successfully.");
+            } catch (error) {
+              const err = error as { message?: string };
+              Alert.alert("Delete failed", err?.message || "Please try again.");
+            }
+          })();
+        },
       },
     ]);
   };
