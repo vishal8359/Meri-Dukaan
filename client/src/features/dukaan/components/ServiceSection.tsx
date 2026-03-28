@@ -91,7 +91,6 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
-    bookService,
     isServiceBooked,
     getBookingByServiceId,
     updateBooking,
@@ -168,20 +167,33 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
             bookingTime: selectedTime,
           });
         } else {
-          const newBooking: BookedService = {
-            id: `booking-${Date.now()}`,
-            serviceId: selectedService.id,
-            serviceName: selectedService.name,
-            storeName: storeName,
-            storeId: storeId,
-            price: selectedService.price,
-            bookingDate: selectedDate,
-            bookingTime: selectedTime,
-            duration: selectedService.duration,
-            image: selectedService.image,
-            status: "confirmed",
-          };
-          await bookService(newBooking);
+          setBookingModalVisible(false);
+          router.push({
+            pathname: "/payments/checkout",
+            params: {
+              mode: "service",
+              serviceId: selectedService.id,
+              serviceName: selectedService.name,
+              servicePrice: String(selectedService.price ?? 0),
+              serviceImage: selectedService.image || "",
+              serviceDuration: selectedService.duration || "",
+              bookingDate: selectedDate,
+              bookingTime: selectedTime,
+              storeId: storeId,
+              storeName: storeName,
+            },
+          } as any);
+
+          Toast.show({
+            type: "info",
+            text1: "Proceed to checkout",
+            text2: "Complete payment to confirm your booking.",
+            visibilityTime: 2000,
+            position: "top",
+          });
+
+          onBookService?.(selectedService);
+          return;
         }
 
         setBookingModalVisible(false);
@@ -213,7 +225,7 @@ export const ServicesSection: React.FC<ServicesSectionProps> = ({
     isEditing,
     getBookingByServiceId,
     updateBooking,
-    bookService,
+    router,
     storeName,
     storeId,
     onBookService,

@@ -1,5 +1,6 @@
 // app/checkout.tsx
 import * as orderApi from "@/src/api/orders";
+import { BookedService } from "@/src/context/AppContext";
 import { useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
@@ -46,6 +47,7 @@ export default function CheckoutScreen() {
     removeFromCart,
     bookedServices,
     catalogProducts,
+    bookService,
     confirmBooking,
     placeOrder,
     refreshOrders,
@@ -59,6 +61,13 @@ export default function CheckoutScreen() {
     productId?: string;
     serviceId?: string;
     serviceName?: string;
+    servicePrice?: string;
+    serviceImage?: string;
+    serviceDuration?: string;
+    bookingDate?: string;
+    bookingTime?: string;
+    storeId?: string;
+    storeName?: string;
     includeProducts?: string;
     includeServices?: string;
   }>();
@@ -89,11 +98,48 @@ export default function CheckoutScreen() {
 
   const orderServices = useMemo(() => {
     if (mode === "service" && params.serviceId) {
-      return bookedServices.filter((s) => s.id === params.serviceId);
+      const existing = bookedServices.find(
+        (s) => s.serviceId === params.serviceId || s.id === params.serviceId,
+      );
+      if (existing) return [existing];
+
+      return [
+        {
+          id: String(params.serviceId),
+          serviceId: String(params.serviceId),
+          serviceName: String(params.serviceName ?? "Service"),
+          storeId: String(params.storeId ?? ""),
+          storeName: String(params.storeName ?? "Store"),
+          price: Number(params.servicePrice ?? 0),
+          bookingDate: String(
+            params.bookingDate ?? new Date().toISOString().slice(0, 10),
+          ),
+          bookingTime: String(params.bookingTime ?? "10:00 AM"),
+          duration: String(params.serviceDuration ?? ""),
+          image:
+            typeof params.serviceImage === "string"
+              ? params.serviceImage
+              : undefined,
+          status: "confirmed" as const,
+        },
+      ];
     }
     if (mode === "product") return [];
     return includeServices ? bookedServices : [];
-  }, [mode, params.serviceId, bookedServices, includeServices]);
+  }, [
+    mode,
+    params.serviceId,
+    params.serviceName,
+    params.servicePrice,
+    params.serviceImage,
+    params.serviceDuration,
+    params.bookingDate,
+    params.bookingTime,
+    params.storeId,
+    params.storeName,
+    bookedServices,
+    includeServices,
+  ]);
 
   const productsSubtotal = orderProducts.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -327,6 +373,25 @@ export default function CheckoutScreen() {
 
     try {
       setIsSubmitting(true);
+
+      if (mode === "service" && orderServices.length > 0) {
+        const selectedService = orderServices[0];
+        const bookingPayload: BookedService = {
+          id: `booking-${Date.now()}`,
+          serviceId: String(selectedService.serviceId),
+          serviceName: String(selectedService.serviceName),
+          storeId: String(selectedService.storeId),
+          storeName: String(selectedService.storeName),
+          price: Number(selectedService.price ?? 0),
+          bookingDate: String(selectedService.bookingDate),
+          bookingTime: String(selectedService.bookingTime),
+          duration: selectedService.duration,
+          image: selectedService.image,
+          status: "confirmed",
+        };
+
+        await bookService(bookingPayload);
+      }
 
       if (hasProducts && selectedPayment === "cod") {
         const now = new Date();
