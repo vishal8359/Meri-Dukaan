@@ -1,8 +1,8 @@
 // app/meri_dukaan/inventory/add-service.tsx
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
-import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import {

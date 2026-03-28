@@ -1,6 +1,6 @@
 import asyncHandler from "../../lib/asyncHandler.js";
-import * as productService from "./product.service.js";
 import * as storeService from "../store/store.service.js";
+import * as productService from "./product.service.js";
 
 export const getStoreProducts = asyncHandler(async (req, res) => {
   const products = await productService.listByStore(req.params.id);
@@ -20,7 +20,11 @@ export const addProduct = asyncHandler(async (req, res) => {
 
 export const updateProduct = asyncHandler(async (req, res) => {
   await storeService.verifyOwnership(req.params.id, req.user.id);
-  const product = await productService.update(req.params.productId, req.params.id, req.body);
+  const product = await productService.update(
+    req.params.productId,
+    req.params.id,
+    req.body,
+  );
   res.json({ product });
 });
 
@@ -32,7 +36,10 @@ export const removeProduct = asyncHandler(async (req, res) => {
 
 export const addProductImage = asyncHandler(async (req, res) => {
   await storeService.verifyOwnership(req.params.id, req.user.id);
-  const image = await productService.addImage(req.params.productId, req.body.imageUrl);
+  const image = await productService.addImage(
+    req.params.productId,
+    req.body.imageUrl,
+  );
   res.status(201).json({ image });
 });
 

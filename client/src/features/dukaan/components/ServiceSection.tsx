@@ -1,4 +1,4 @@
-import { BookedService, useApp } from "@/src/context/AppContext";
+import { useApp } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows } from "@/src/theme/colors";
 import { useRouter } from "expo-router";

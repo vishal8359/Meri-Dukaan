@@ -1,6 +1,6 @@
 import asyncHandler from "../../lib/asyncHandler.js";
-import * as serviceService from "./service.service.js";
 import * as storeService from "../store/store.service.js";
+import * as serviceService from "./service.service.js";
 
 export const getStoreServices = asyncHandler(async (req, res) => {
   const services = await serviceService.listByStore(req.params.id);
@@ -20,7 +20,11 @@ export const addService = asyncHandler(async (req, res) => {
 
 export const updateService = asyncHandler(async (req, res) => {
   await storeService.verifyOwnership(req.params.id, req.user.id);
-  const service = await serviceService.update(req.params.serviceId, req.params.id, req.body);
+  const service = await serviceService.update(
+    req.params.serviceId,
+    req.params.id,
+    req.body,
+  );
   res.json({ service });
 });
 

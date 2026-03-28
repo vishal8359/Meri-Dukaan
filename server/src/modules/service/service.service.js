@@ -119,4 +119,5 @@ async function remove(serviceId, storeId) {
   if (error) throw error;
 }
 
-export { listByStore, findById, create, update, remove };
+export { create, findById, listByStore, remove, update };
+

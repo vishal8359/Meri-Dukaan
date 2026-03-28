@@ -397,9 +397,7 @@ export default function StoreDetailScreen() {
   const services = servicesSource.map((service: any) => {
     const serviceImages: string[] = Array.isArray(service?.images)
       ? service.images
-          .map((img: any) =>
-            typeof img === "string" ? img : img?.image_url,
-          )
+          .map((img: any) => (typeof img === "string" ? img : img?.image_url))
           .filter((url: unknown): url is string => typeof url === "string")
       : [];
 

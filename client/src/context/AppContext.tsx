@@ -2,13 +2,13 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
 import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
@@ -743,9 +743,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const mapMyStoreService = useCallback((raw: any): MyStoreService => {
     const imageUrls: string[] = Array.isArray(raw?.images)
       ? raw.images
-          .map((img: any) =>
-            typeof img === "string" ? img : img?.image_url,
-          )
+          .map((img: any) => (typeof img === "string" ? img : img?.image_url))
           .filter((url: unknown): url is string => typeof url === "string")
       : [];
 
@@ -825,9 +823,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     (store: any, raw: any): CatalogService => {
       const imageUrls: string[] = Array.isArray(raw?.images)
         ? raw.images
-            .map((img: any) =>
-              typeof img === "string" ? img : img?.image_url,
-            )
+            .map((img: any) => (typeof img === "string" ? img : img?.image_url))
             .filter((url: unknown): url is string => typeof url === "string")
         : [];
 

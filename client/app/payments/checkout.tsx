@@ -1,32 +1,31 @@
 // app/checkout.tsx
 import * as orderApi from "@/src/api/orders";
-import { BookedService } from "@/src/context/AppContext";
-import { useApp } from "@/src/context/AppContext";
+import { BookedService, useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  AlertCircle,
-  ArrowLeft,
-  Calendar,
-  CheckCircle2,
-  Clock,
-  CreditCard,
-  MapPin,
-  Package,
-  Wallet,
-  Wrench,
+    AlertCircle,
+    ArrowLeft,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    CreditCard,
+    MapPin,
+    Package,
+    Wallet,
+    Wrench,
 } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-  Alert,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import RazorpayCheckout from "react-native-razorpay";
 import Toast from "react-native-toast-message";

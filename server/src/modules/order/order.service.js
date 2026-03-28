@@ -149,7 +149,9 @@ async function insertOrderWithItems(userId, payload) {
     });
   }
 
-  throw AppError.badRequest("Unable to persist order items with current schema");
+  throw AppError.badRequest(
+    "Unable to persist order items with current schema",
+  );
 }
 
 async function decrementStockForOrderItems(orderItems) {
@@ -349,6 +351,11 @@ async function updateStatus(orderId, userId, status) {
 }
 
 export {
-  createOnline, findById, listByUser, place, updateStatus, verifyOnlinePayment
+  createOnline,
+  findById,
+  listByUser,
+  place,
+  updateStatus,
+  verifyOnlinePayment
 };
 

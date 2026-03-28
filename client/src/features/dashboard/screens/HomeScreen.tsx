@@ -202,7 +202,8 @@ export default function HomeScreen() {
                         typeof img === "string" ? img : img?.image_url,
                       )
                       .filter(
-                        (url: unknown): url is string => typeof url === "string",
+                        (url: unknown): url is string =>
+                          typeof url === "string",
                       )
                   : [];
 
