@@ -30,7 +30,35 @@ ON orders(razorpay_order_id)
 WHERE razorpay_order_id IS NOT NULL;
 
 ALTER TABLE order_items
+  ADD COLUMN IF NOT EXISTS price_at_purchase NUMERIC(10,2),
   ADD COLUMN IF NOT EXISTS image TEXT,
   ADD COLUMN IF NOT EXISTS store_name VARCHAR(200),
   ADD COLUMN IF NOT EXISTS store_id UUID,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Keep stock decrement function compatible with older products tables.
+ALTER TABLE products
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE OR REPLACE FUNCTION decrement_product_stock(p_product_id UUID, p_quantity INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_remaining_stock INTEGER;
+BEGIN
+  IF p_quantity IS NULL OR p_quantity <= 0 THEN
+    RAISE EXCEPTION 'Quantity must be greater than zero';
+  END IF;
+
+  UPDATE products
+  SET stock = stock - p_quantity
+  WHERE id = p_product_id
+    AND shown = TRUE
+    AND available = TRUE
+    AND stock >= p_quantity
+  RETURNING stock INTO v_remaining_stock;
+
+  RETURN v_remaining_stock;
+END;
+$$;

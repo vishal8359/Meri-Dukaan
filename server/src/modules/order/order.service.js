@@ -88,6 +88,7 @@ async function resolveOrderDraft(storeId, items, deliveryFee = 0) {
       product_id: item.productId,
       name: product.name,
       price,
+      price_at_purchase: price,
       quantity,
       image: product.images?.[0]?.image_url || null,
       store_name: store.store_name,
