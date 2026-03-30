@@ -57,7 +57,8 @@ BEGIN
   END IF;
 
   UPDATE products
-  SET stock = stock - p_quantity
+  SET stock = stock - p_quantity,
+      updated_at = NOW()
   WHERE id = p_product_id
     AND shown = TRUE
     AND available = TRUE

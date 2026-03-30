@@ -155,17 +155,38 @@ async function insertOrderWithItems(userId, payload) {
 }
 
 async function decrementStockForOrderItems(orderItems) {
-  for (const item of orderItems) {
-    const quantity = Number(item.quantity || 0);
-    const { data, error } = await supabase.rpc("decrement_product_stock", {
-      p_product_id: item.product_id,
-      p_quantity: quantity,
-    });
+  // Prefer atomic batch decrement (single transaction, all-or-nothing).
+  // Falls back to sequential per-item calls for older schemas.
+  const batchPayload = orderItems.map((item) => ({
+    product_id: item.product_id,
+    quantity: Number(item.quantity || 0),
+  }));
 
-    if (error) throw error;
-    if (data === null) {
-      throw AppError.badRequest(`Insufficient stock for ${item.name}`);
+  const { data, error } = await supabase.rpc("decrement_stock_batch", {
+    p_items: batchPayload,
+  });
+
+  if (error) {
+    // Fallback: batch function not yet deployed – use sequential calls.
+    if (error.code === "PGRST202" || error.message?.includes("decrement_stock_batch")) {
+      for (const item of orderItems) {
+        const qty = Number(item.quantity || 0);
+        const { data: d, error: e } = await supabase.rpc("decrement_product_stock", {
+          p_product_id: item.product_id,
+          p_quantity: qty,
+        });
+        if (e) throw e;
+        if (d === null) {
+          throw AppError.badRequest(`Insufficient stock for ${item.name}`);
+        }
+      }
+      return;
     }
+    throw error;
+  }
+
+  if (data === null) {
+    throw AppError.badRequest("Insufficient stock for one or more products");
   }
 }
 
@@ -276,25 +297,34 @@ async function verifyOnlinePayment(
     throw AppError.badRequest("Razorpay order id mismatch");
   }
 
+  // Idempotent: if already paid, return the existing order.
+  if (order.payment_status === "paid") {
+    return order;
+  }
+
+  // Reject verification for orders that are no longer pending.
+  if (order.payment_status !== "pending") {
+    throw AppError.badRequest("Order is no longer awaiting payment");
+  }
+
   const expected = crypto
     .createHmac("sha256", keySecret)
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest("hex");
 
   if (expected !== razorpaySignature) {
+    // Guard: only mark as failed if still pending (prevents overwriting 'paid').
     await supabase
       .from("orders")
       .update({ payment_status: "failed" })
       .eq("id", localOrderId)
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .eq("payment_status", "pending");
     throw AppError.badRequest("Invalid Razorpay payment signature");
   }
 
-  if (order.payment_status !== "paid") {
-    await decrementStockForOrderItems(order.items || []);
-    await cartService.clear(userId);
-  }
-
+  // Optimistic lock: transition pending -> paid atomically.
+  // If a concurrent request already moved the row, this update returns 0 rows.
   const { data: updated, error: updateErr } = await supabase
     .from("orders")
     .update({
@@ -305,11 +335,25 @@ async function verifyOnlinePayment(
     })
     .eq("id", localOrderId)
     .eq("user_id", userId)
+    .eq("payment_status", "pending")
     .select("*, items:order_items(*)")
     .single();
 
-  if (updateErr || !updated)
+  if (updateErr || !updated) {
+    // Another concurrent call already processed this payment – return idempotent.
+    const { data: existing } = await supabase
+      .from("orders")
+      .select("*, items:order_items(*)")
+      .eq("id", localOrderId)
+      .eq("user_id", userId)
+      .single();
+    if (existing?.payment_status === "paid") return existing;
     throw updateErr || AppError.badRequest("Payment update failed");
+  }
+
+  // Stock decrement happens only once – after the exclusive pending -> paid transition.
+  await decrementStockForOrderItems(updated.items || []);
+  await cartService.clear(userId);
 
   return updated;
 }

@@ -20,29 +20,26 @@ function getRazorpayClient() {
 }
 
 async function markExpiredBookingsAsCompleted() {
+  // Fire-and-forget housekeeping.  Both queries use partial indexes
+  // (idx_service_bookings_pending_lock, idx_service_bookings_booked_end)
+  // so they touch only the relevant rows, not the whole table.
   const nowIso = new Date().toISOString();
 
-  const { error: pendingError } = await supabase
-    .from("service_bookings")
-    .update({
-      status: "cancelled",
-      cancelled_at: nowIso,
-    })
-    .eq("status", "pending")
-    .lte("lock_expires_at", nowIso);
+  const [{ error: pendingError }, { error: bookedError }] = await Promise.all([
+    supabase
+      .from("service_bookings")
+      .update({ status: "cancelled", cancelled_at: nowIso })
+      .eq("status", "pending")
+      .lte("lock_expires_at", nowIso),
+    supabase
+      .from("service_bookings")
+      .update({ status: "completed", completed_at: nowIso })
+      .eq("status", "booked")
+      .lte("slot_end_at", nowIso),
+  ]);
 
   if (pendingError) throw pendingError;
-
-  const { error } = await supabase
-    .from("service_bookings")
-    .update({
-      status: "completed",
-      completed_at: nowIso,
-    })
-    .eq("status", "booked")
-    .lte("slot_end_at", nowIso);
-
-  if (error) throw error;
+  if (bookedError) throw bookedError;
 }
 
 function normalizeIso(value) {

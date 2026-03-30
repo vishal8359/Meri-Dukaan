@@ -5,14 +5,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-    FlatList,
-    Image,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 type FilterKey =
@@ -320,7 +320,7 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 32,
+    paddingTop: 7,
     backgroundColor: colors.ui.background,
   },
 
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.md,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.sm - 15,
     backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
@@ -373,7 +373,6 @@ const styles = StyleSheet.create({
 
   // Filter Bar
   filterBar: {
-    maxHeight: 42,
     backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
@@ -390,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     paddingHorizontal: 12,
-    paddingVertical: 5,
+    paddingVertical: 8,
     borderRadius: radius.sm,
     backgroundColor: colors.ui.backgroundAlt,
   },
