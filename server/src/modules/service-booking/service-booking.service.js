@@ -1,8 +1,37 @@
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
+import env from "../../config/env.js";
+import Razorpay from "razorpay";
+import crypto from "crypto";
+
+const SERVICE_LOCK_DURATION_MS = 3 * 60 * 1000;
+
+function getRazorpayClient() {
+  const keyId = env.razorpay.keyId;
+  const keySecret = env.razorpay.keySecret;
+
+  if (!keyId || !keySecret) {
+    throw AppError.serviceUnavailable(
+      "Online payment is unavailable. Configure RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+    );
+  }
+
+  return new Razorpay({ key_id: keyId, key_secret: keySecret });
+}
 
 async function markExpiredBookingsAsCompleted() {
   const nowIso = new Date().toISOString();
+
+  const { error: pendingError } = await supabase
+    .from("service_bookings")
+    .update({
+      status: "cancelled",
+      cancelled_at: nowIso,
+    })
+    .eq("status", "pending")
+    .lte("lock_expires_at", nowIso);
+
+  if (pendingError) throw pendingError;
 
   const { error } = await supabase
     .from("service_bookings")
@@ -18,6 +47,22 @@ async function markExpiredBookingsAsCompleted() {
 
 function normalizeIso(value) {
   return new Date(value).toISOString();
+}
+
+function normalizeBookingDate(value) {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      return trimmed;
+    }
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw AppError.badRequest("Invalid booking date");
+  }
+
+  return parsed.toISOString().slice(0, 10);
 }
 
 function assertValidSlotWindow(slotStartAt, slotEndAt) {
@@ -40,7 +85,7 @@ function assertValidSlotWindow(slotStartAt, slotEndAt) {
 async function assertServiceBookable(serviceId) {
   const { data: service, error } = await supabase
     .from("services")
-    .select("id, store_id, name, shown, availability")
+    .select("id, store_id, name, price, shown, availability")
     .eq("id", serviceId)
     .single();
 
@@ -51,12 +96,175 @@ async function assertServiceBookable(serviceId) {
   return service;
 }
 
+async function createLock(
+  userId,
+  { serviceId, bookingDate, slotStartAt, slotEndAt, slotLabel },
+) {
+  await markExpiredBookingsAsCompleted();
+  assertValidSlotWindow(slotStartAt, slotEndAt);
+  const bookingDateValue = normalizeBookingDate(bookingDate);
+
+  const service = await assertServiceBookable(serviceId);
+  const amountPaise = Math.round(Number(service.price || 0) * 100);
+
+  if (!Number.isFinite(amountPaise) || amountPaise <= 0) {
+    throw AppError.badRequest("Service price must be greater than zero");
+  }
+
+  const razorpay = getRazorpayClient();
+  const razorpayOrder = await razorpay.orders.create({
+    amount: amountPaise,
+    currency: "INR",
+    receipt: `svc_${Date.now()}`,
+    notes: {
+      serviceId: String(service.id),
+      userId: String(userId),
+      bookingDate: bookingDateValue,
+      slotLabel: String(slotLabel || ""),
+    },
+  });
+
+  const lockExpiresAt = new Date(Date.now() + SERVICE_LOCK_DURATION_MS).toISOString();
+
+  const payload = {
+    user_id: userId,
+    store_id: service.store_id,
+    service_id: service.id,
+    booking_date: bookingDateValue,
+    slot_start_at: normalizeIso(slotStartAt),
+    slot_end_at: normalizeIso(slotEndAt),
+    slot_label: slotLabel,
+    status: "pending",
+    lock_expires_at: lockExpiresAt,
+    payment_method: "online",
+    payment_status: "pending",
+    razorpay_order_id: razorpayOrder.id,
+  };
+
+  const { data, error } = await supabase
+    .from("service_bookings")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error) {
+    if (error.code === "23505") {
+      throw AppError.conflict("This time slot is already locked or booked");
+    }
+    throw error;
+  }
+
+  return {
+    localBookingId: data.id,
+    lockExpiresAt,
+    checkout: {
+      keyId: env.razorpay.keyId,
+      orderId: razorpayOrder.id,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      name: "Sangam App",
+      description: `${service.name} booking`,
+    },
+  };
+}
+
+async function verifyLockedPayment(
+  userId,
+  { localBookingId, razorpayOrderId, razorpayPaymentId, razorpaySignature },
+) {
+  await markExpiredBookingsAsCompleted();
+
+  const keySecret = env.razorpay.keySecret;
+  if (!keySecret) {
+    throw AppError.serviceUnavailable(
+      "Online payment verification is unavailable.",
+    );
+  }
+
+  const { data: booking, error } = await supabase
+    .from("service_bookings")
+    .select("*")
+    .eq("id", localBookingId)
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !booking) throw AppError.notFound("Booking lock not found");
+  if (booking.razorpay_order_id !== razorpayOrderId) {
+    throw AppError.badRequest("Razorpay order id mismatch");
+  }
+  if (booking.status !== "pending") {
+    throw AppError.badRequest("Booking is no longer awaiting payment");
+  }
+
+  const nowMs = Date.now();
+  if (
+    booking.lock_expires_at &&
+    Number.isFinite(new Date(booking.lock_expires_at).getTime()) &&
+    new Date(booking.lock_expires_at).getTime() <= nowMs
+  ) {
+    await supabase
+      .from("service_bookings")
+      .update({
+        status: "cancelled",
+        payment_status: "failed",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("id", localBookingId)
+      .eq("user_id", userId)
+      .eq("status", "pending");
+
+    throw AppError.conflict("Slot lock expired. Please book again.");
+  }
+
+  const expected = crypto
+    .createHmac("sha256", keySecret)
+    .update(`${razorpayOrderId}|${razorpayPaymentId}`)
+    .digest("hex");
+
+  if (expected !== razorpaySignature) {
+    await supabase
+      .from("service_bookings")
+      .update({
+        payment_status: "failed",
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("id", localBookingId)
+      .eq("user_id", userId)
+      .eq("status", "pending");
+    throw AppError.badRequest("Invalid Razorpay payment signature");
+  }
+
+  const { data: updated, error: updateErr } = await supabase
+    .from("service_bookings")
+    .update({
+      status: "booked",
+      payment_status: "paid",
+      payment_method: "online",
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_signature: razorpaySignature,
+      lock_expires_at: null,
+    })
+    .eq("id", localBookingId)
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .select("*, service:services(id, name), store:stores(id, store_name)")
+    .single();
+
+  if (updateErr || !updated) {
+    throw updateErr || AppError.badRequest("Payment verification failed");
+  }
+
+  return updated;
+}
+
 async function createBooking(
   userId,
   { serviceId, bookingDate, slotStartAt, slotEndAt, slotLabel },
 ) {
   await markExpiredBookingsAsCompleted();
   assertValidSlotWindow(slotStartAt, slotEndAt);
+  const bookingDateValue = normalizeBookingDate(bookingDate);
 
   const service = await assertServiceBookable(serviceId);
 
@@ -64,7 +272,7 @@ async function createBooking(
     user_id: userId,
     store_id: service.store_id,
     service_id: service.id,
-    booking_date: bookingDate,
+    booking_date: bookingDateValue,
     slot_start_at: normalizeIso(slotStartAt),
     slot_end_at: normalizeIso(slotEndAt),
     slot_label: slotLabel,
@@ -111,7 +319,7 @@ async function cancelBooking(userId, bookingId) {
     })
     .eq("id", bookingId)
     .eq("user_id", userId)
-    .eq("status", "booked")
+    .in("status", ["booked", "pending"])
     .select("*, service:services(id, name), store:stores(id, store_name)")
     .single();
 
@@ -124,17 +332,26 @@ async function cancelBooking(userId, bookingId) {
 
 async function getLockedSlots({ serviceId, bookingDate }) {
   await markExpiredBookingsAsCompleted();
+  const bookingDateValue = normalizeBookingDate(bookingDate);
+  const nowIso = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("service_bookings")
     .select("id, slot_start_at, slot_end_at, slot_label")
     .eq("service_id", serviceId)
-    .eq("booking_date", bookingDate)
-    .eq("status", "booked")
+    .eq("booking_date", bookingDateValue)
+    .or(`status.eq.booked,and(status.eq.pending,lock_expires_at.gt.${nowIso})`)
     .order("slot_start_at", { ascending: true });
 
   if (error) throw error;
   return data || [];
 }
 
-export { createBooking, listMyBookings, cancelBooking, getLockedSlots };
+export {
+  createBooking,
+  createLock,
+  verifyLockedPayment,
+  listMyBookings,
+  cancelBooking,
+  getLockedSlots,
+};

@@ -8,6 +8,12 @@ const router = Router();
 
 router.get("/locked-slots", validate(schema.lockedSlotsQuerySchema, "query"), ctrl.getLockedServiceSlots);
 router.use(protect);
+router.post("/lock", validate(schema.lockServiceBookingSchema), ctrl.lockServiceBooking);
+router.post(
+	"/verify-payment",
+	validate(schema.verifyServiceBookingPaymentSchema),
+	ctrl.verifyServiceBookingPayment,
+);
 router.post("/", validate(schema.createServiceBookingSchema), ctrl.createServiceBooking);
 router.get("/me", ctrl.getMyServiceBookings);
 router.put("/:id/cancel", validate(schema.cancelServiceBookingSchema, "params"), ctrl.cancelServiceBooking);

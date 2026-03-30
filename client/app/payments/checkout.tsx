@@ -1,6 +1,7 @@
 // app/checkout.tsx
 import * as orderApi from "@/src/api/orders";
-import { BookedService, useApp } from "@/src/context/AppContext";
+import * as serviceBookingApi from "@/src/api/serviceBookings";
+import { useApp } from "@/src/context/AppContext";
 import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -38,6 +39,56 @@ function isUuid(value: unknown): value is string {
   return typeof value === "string" && UUID_REGEX.test(value);
 }
 
+function parseBookingTimeTo24hParts(label: string): {
+  hours: number;
+  minutes: number;
+} {
+  const normalized = String(label || "").trim();
+  const match = normalized.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) {
+    throw new Error("Invalid time slot format");
+  }
+
+  const rawHour = Number(match[1]);
+  const minutes = Number(match[2]);
+  const meridiem = match[3].toUpperCase();
+
+  let hours = rawHour % 12;
+  if (meridiem === "PM") hours += 12;
+
+  return { hours, minutes };
+}
+
+function deriveSlotWindow(
+  bookingDate: string,
+  bookingTime: string,
+  duration?: string,
+) {
+  const date = String(bookingDate || "").slice(0, 10);
+  const [year, month, day] = date.split("-").map(Number);
+  if (!year || !month || !day) {
+    throw new Error("Invalid booking date");
+  }
+
+  const { hours, minutes } = parseBookingTimeTo24hParts(bookingTime);
+  const start = new Date(year, month - 1, day, hours, minutes, 0, 0);
+
+  let durationMinutes = 60;
+  const durationText = String(duration || "").toLowerCase();
+  const valueMatch = durationText.match(/(\d+(?:\.\d+)?)/);
+  const numericValue = valueMatch ? Number(valueMatch[1]) : NaN;
+  if (Number.isFinite(numericValue) && numericValue > 0) {
+    if (durationText.includes("hr") || durationText.includes("hour")) {
+      durationMinutes = Math.round(numericValue * 60);
+    } else {
+      durationMinutes = Math.round(numericValue);
+    }
+  }
+
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
+  return { start, end };
+}
+
 export default function CheckoutScreen() {
   const router = useRouter();
   const {
@@ -46,7 +97,6 @@ export default function CheckoutScreen() {
     removeFromCart,
     bookedServices,
     catalogProducts,
-    bookService,
     confirmBooking,
     placeOrder,
     refreshOrders,
@@ -95,9 +145,14 @@ export default function CheckoutScreen() {
     return includeProducts ? cart : [];
   }, [mode, params.productId, cart, includeProducts]);
 
+  const pendingServices = useMemo(
+    () => bookedServices.filter((service) => service.status === "pending"),
+    [bookedServices],
+  );
+
   const orderServices = useMemo(() => {
     if (mode === "service" && params.serviceId) {
-      const existing = bookedServices.find(
+      const existing = pendingServices.find(
         (s) => s.serviceId === params.serviceId || s.id === params.serviceId,
       );
       if (existing) return [existing];
@@ -119,12 +174,12 @@ export default function CheckoutScreen() {
             typeof params.serviceImage === "string"
               ? params.serviceImage
               : undefined,
-          status: "confirmed" as const,
+          status: "pending" as const,
         },
       ];
     }
     if (mode === "product") return [];
-    return includeServices ? bookedServices : [];
+    return includeServices ? pendingServices : [];
   }, [
     mode,
     params.serviceId,
@@ -136,7 +191,7 @@ export default function CheckoutScreen() {
     params.bookingTime,
     params.storeId,
     params.storeName,
-    bookedServices,
+    pendingServices,
     includeServices,
   ]);
 
@@ -223,7 +278,7 @@ export default function CheckoutScreen() {
       name: "Cash on Delivery",
       description: "Pay with cash when order arrives",
       icon: Wallet,
-      available: true,
+      available: mode !== "service",
     },
     {
       id: "online",
@@ -270,19 +325,11 @@ export default function CheckoutScreen() {
     // Clear items based on checkout mode
     if (mode === "cart") {
       if (includeProducts) clearCart();
-      if (includeServices) {
-        orderServices.forEach((s) => {
-          void confirmBooking(s.id);
-        });
-      }
     } else if (mode === "product") {
       // Remove only the ordered product from cart
       if (params.productId) removeFromCart(params.productId);
     } else if (mode === "service") {
-      // Confirm the booking only after payment is complete
-      if (params.serviceId) {
-        void confirmBooking(params.serviceId);
-      }
+      // Service bookings are refreshed right after payment verification.
     }
 
     // Navigate to appropriate page based on what was checked out
@@ -311,6 +358,14 @@ export default function CheckoutScreen() {
 
     if (!selectedAddress) {
       Alert.alert("Address Required", "Please select a delivery address");
+      return;
+    }
+
+    if (mode === "service" && selectedPayment !== "online") {
+      Alert.alert(
+        "Online Payment Required",
+        "Service booking is confirmed only after online payment.",
+      );
       return;
     }
 
@@ -374,22 +429,66 @@ export default function CheckoutScreen() {
       setIsSubmitting(true);
 
       if (mode === "service" && orderServices.length > 0) {
+        if (!authToken) {
+          throw new Error("Please log in again to continue payment.");
+        }
+
         const selectedService = orderServices[0];
-        const bookingPayload: BookedService = {
-          id: `booking-${Date.now()}`,
+        const { start, end } = deriveSlotWindow(
+          selectedService.bookingDate,
+          selectedService.bookingTime,
+          selectedService.duration,
+        );
+
+        const lock = await serviceBookingApi.lockServiceBooking(authToken, {
           serviceId: String(selectedService.serviceId),
-          serviceName: String(selectedService.serviceName),
-          storeId: String(selectedService.storeId),
-          storeName: String(selectedService.storeName),
-          price: Number(selectedService.price ?? 0),
-          bookingDate: String(selectedService.bookingDate),
-          bookingTime: String(selectedService.bookingTime),
-          duration: selectedService.duration,
-          image: selectedService.image,
-          status: "confirmed",
+          bookingDate: String(selectedService.bookingDate).slice(0, 10),
+          slotStartAt: start.toISOString(),
+          slotEndAt: end.toISOString(),
+          slotLabel: String(selectedService.bookingTime),
+        });
+
+        const checkoutOptions = {
+          key: lock.checkout.keyId,
+          amount: String(lock.checkout.amount),
+          currency: lock.checkout.currency,
+          name: lock.checkout.name,
+          description: lock.checkout.description,
+          order_id: lock.checkout.orderId,
+          prefill: {
+            name: user?.name || "Sangam User",
+            contact: selectedAddr?.phone || user?.phone || "",
+          },
+          theme: {
+            color: colors.brand.primary,
+          },
         };
 
-        await bookService(bookingPayload);
+        let verified = false;
+        try {
+          const razorpayResult = await RazorpayCheckout.open(checkoutOptions);
+
+          await serviceBookingApi.verifyServiceBookingPayment(authToken, {
+            localBookingId: lock.localBookingId,
+            razorpayOrderId: String(razorpayResult.razorpay_order_id),
+            razorpayPaymentId: String(razorpayResult.razorpay_payment_id),
+            razorpaySignature: String(razorpayResult.razorpay_signature),
+          });
+          verified = true;
+        } finally {
+          if (!verified) {
+            try {
+              await serviceBookingApi.cancelServiceBooking(
+                authToken,
+                lock.localBookingId,
+              );
+            } catch {
+              // Lock auto-expires, so cancellation failure should not block UX.
+            }
+          }
+        }
+
+        await confirmBooking(lock.localBookingId);
       }
 
       if (hasProducts && selectedPayment === "cod") {

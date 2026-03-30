@@ -678,6 +678,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           ? "cancelled"
           : apiStatus === "completed"
             ? "completed"
+            : apiStatus === "pending"
+              ? "pending"
             : "confirmed";
 
       return {
@@ -1245,33 +1247,20 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const bookService = useCallback(
     async (service: BookedService): Promise<BookedService> => {
-      if (!authToken) {
-        setBookedServices((prev) => [...prev, service]);
-        return service;
-      }
+      const pendingBooking: BookedService = {
+        ...service,
+        status: "pending",
+      };
 
-      const { start, end } = deriveSlotWindow(
-        service.bookingDate,
-        service.bookingTime,
-        service.duration,
-      );
-
-      const response = await serviceBookingApi.createServiceBooking(authToken, {
-        serviceId: service.serviceId,
-        bookingDate: String(service.bookingDate).slice(0, 10),
-        slotStartAt: start.toISOString(),
-        slotEndAt: end.toISOString(),
-        slotLabel: service.bookingTime,
-      });
-
-      const mapped = mapBookedServiceFromApi((response as any)?.booking);
       setBookedServices((prev) => {
-        const rest = prev.filter((item) => item.serviceId !== mapped.serviceId);
-        return [mapped, ...rest];
+        const rest = prev.filter(
+          (item) => item.serviceId !== pendingBooking.serviceId,
+        );
+        return [pendingBooking, ...rest];
       });
-      return mapped;
+      return pendingBooking;
     },
-    [authToken, mapBookedServiceFromApi],
+    [],
   );
 
   const confirmBooking = useCallback(
@@ -1288,7 +1277,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const cancelBooking = useCallback(
     async (bookingId: string) => {
-      if (!authToken) {
+      const existing = bookedServices.find((service) => service.id === bookingId);
+
+      if (!authToken || !isUuid(existing?.id)) {
         setBookedServices((prev) =>
           prev.filter((service) => service.id !== bookingId),
         );
@@ -1300,7 +1291,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         prev.filter((service) => service.id !== bookingId),
       );
     },
-    [authToken],
+    [authToken, bookedServices],
   );
 
   const updateBooking = useCallback(

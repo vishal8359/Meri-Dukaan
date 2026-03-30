@@ -39,8 +39,11 @@ export default function CartScreen() {
     cartTotal,
     bookedServices,
     cancelBooking,
-    confirmBooking,
   } = useApp();
+
+  const pendingServices = bookedServices.filter(
+    (service) => service.status === "pending",
+  );
 
   const [activeTab, setActiveTab] = useState<"products" | "services">(
     tab === "services" ? "services" : "products",
@@ -296,7 +299,7 @@ export default function CartScreen() {
     );
   };
 
-  const isEmpty = cart.length === 0 && bookedServices.length === 0;
+  const isEmpty = cart.length === 0 && pendingServices.length === 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -375,13 +378,13 @@ export default function CartScreen() {
                   activeTab === "services" && styles.activeTabText,
                 ]}
               >
-                {t("cart.services")} ({bookedServices.length})
+                {t("cart.services")} ({pendingServices.length})
               </Text>
             </TouchableOpacity>
           </View>
 
           <FlatList
-            data={(activeTab === "products" ? cart : bookedServices) as any[]}
+            data={(activeTab === "products" ? cart : pendingServices) as any[]}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) =>
               activeTab === "products" ? (
@@ -397,7 +400,7 @@ export default function CartScreen() {
                 <Text style={styles.itemCountText}>
                   {activeTab === "products"
                     ? `${cart.length} ${cart.length === 1 ? t("cart.item") : t("cart.items")}`
-                    : `${bookedServices.length} ${bookedServices.length === 1 ? t("cart.booking") : t("cart.bookings")}`}
+                    : `${pendingServices.length} ${pendingServices.length === 1 ? t("cart.booking") : t("cart.bookings")}`}
                 </Text>
               </View>
             }

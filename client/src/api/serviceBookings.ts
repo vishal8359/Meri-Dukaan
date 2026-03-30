@@ -15,6 +15,26 @@ type BookingPayload = {
   slotLabel: string;
 };
 
+type ServiceLockResponse = {
+  localBookingId: string;
+  lockExpiresAt: string;
+  checkout: {
+    keyId: string;
+    orderId: string;
+    amount: number;
+    currency: string;
+    name: string;
+    description: string;
+  };
+};
+
+type VerifyServicePaymentPayload = {
+  localBookingId: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
+};
+
 export function getLockedSlots(serviceId: string, bookingDate: string) {
   const query = `serviceId=${encodeURIComponent(serviceId)}&bookingDate=${encodeURIComponent(bookingDate)}`;
   return apiRequest<{ slots: LockedSlot[] }>(`/service-bookings/locked-slots?${query}`);
@@ -22,6 +42,25 @@ export function getLockedSlots(serviceId: string, bookingDate: string) {
 
 export function createServiceBooking(token: string, body: BookingPayload) {
   return apiRequest<{ booking: any }>("/service-bookings", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function lockServiceBooking(token: string, body: BookingPayload) {
+  return apiRequest<ServiceLockResponse>("/service-bookings/lock", {
+    method: "POST",
+    token,
+    body,
+  });
+}
+
+export function verifyServiceBookingPayment(
+  token: string,
+  body: VerifyServicePaymentPayload,
+) {
+  return apiRequest<{ booking: any }>("/service-bookings/verify-payment", {
     method: "POST",
     token,
     body,
