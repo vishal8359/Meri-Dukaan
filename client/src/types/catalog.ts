@@ -23,13 +23,13 @@ export interface EnhancedReel {
   user: {
     id: string;
     name: string;
-    avatar: string;
+    avatar?: string;
     isVerified?: boolean;
   };
   store: {
     id: string;
     name: string;
-    logo: string;
+    logo?: string;
     type: string;
     isVerified?: boolean;
   };
@@ -37,12 +37,12 @@ export interface EnhancedReel {
     id: string;
     name: string;
     price: number;
-    image: string;
+    image?: string;
     type: "product" | "service";
   };
   comments: Array<{
     id: string;
-    user: { id: string; name: string; avatar: string; isVerified?: boolean };
+    user: { id: string; name: string; avatar?: string; isVerified?: boolean };
     text: string;
     likesCount: number;
     liked: boolean;
@@ -50,7 +50,7 @@ export interface EnhancedReel {
     isReview?: boolean;
     replies: Array<{
       id: string;
-      user: { id: string; name: string; avatar: string };
+      user: { id: string; name: string; avatar?: string };
       text: string;
       likesCount: number;
       liked: boolean;

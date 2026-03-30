@@ -373,6 +373,7 @@ const styles = StyleSheet.create({
 
   // Filter Bar
   filterBar: {
+    maxHeight: 42,
     backgroundColor: colors.ui.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.ui.borderLight,
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 3,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 5,
     borderRadius: radius.sm,
     backgroundColor: colors.ui.backgroundAlt,
   },

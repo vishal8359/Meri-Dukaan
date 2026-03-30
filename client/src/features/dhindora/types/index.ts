@@ -4,14 +4,14 @@
 export interface ReelUser {
   id: string;
   name: string;
-  avatar: string;
+  avatar?: string;
   isVerified?: boolean;
 }
 
 export interface ReelStore {
   id: string;
   name: string;
-  logo: string;
+  logo?: string;
   type: string;
   isVerified?: boolean;
 }
@@ -20,7 +20,7 @@ export interface ReelProduct {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image?: string;
   type: "product";
 }
 
@@ -28,7 +28,7 @@ export interface ReelService {
   id: string;
   name: string;
   price: number;
-  image: string;
+  image?: string;
   type: "service";
 }
 

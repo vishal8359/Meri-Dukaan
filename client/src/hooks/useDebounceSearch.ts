@@ -60,7 +60,9 @@ export function useDebounceSearch(delay: number = 300) {
         ? (storeRes.stores as any[])
         : [];
 
-      const storeResults: SearchResult[] = stores.slice(0, 5).map(mapStoreResult);
+      const storeResults: SearchResult[] = stores
+        .slice(0, 5)
+        .map(mapStoreResult);
 
       const detailFetches = stores.slice(0, 4).map(async (store) => {
         const storeId = String(store?.id ?? "");
@@ -82,7 +84,11 @@ export function useDebounceSearch(delay: number = 300) {
             : [];
 
         const mappedProducts: SearchResult[] = products
-          .filter((p) => String(p?.name ?? "").toLowerCase().includes(lowerQuery))
+          .filter((p) =>
+            String(p?.name ?? "")
+              .toLowerCase()
+              .includes(lowerQuery),
+          )
           .slice(0, 2)
           .map((p) => ({
             type: "product" as const,
@@ -98,8 +104,12 @@ export function useDebounceSearch(delay: number = 300) {
         const mappedServices: SearchResult[] = services
           .filter(
             (s) =>
-              String(s?.name ?? "").toLowerCase().includes(lowerQuery) ||
-              String(s?.description ?? "").toLowerCase().includes(lowerQuery),
+              String(s?.name ?? "")
+                .toLowerCase()
+                .includes(lowerQuery) ||
+              String(s?.description ?? "")
+                .toLowerCase()
+                .includes(lowerQuery),
           )
           .slice(0, 2)
           .map((s) => ({

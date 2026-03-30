@@ -5,35 +5,33 @@ import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    ArrowUpRight,
-    CheckCircle2,
-    ChevronRight,
-    Clock,
-    CreditCard,
-    Download,
-    Filter,
-    IndianRupee,
-    ReceiptText,
-    RefreshCw,
-    Search,
-    Store,
-    Wallet,
-    XCircle,
+  ArrowLeft,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  Download,
+  Filter,
+  IndianRupee,
+  ReceiptText,
+  Search,
+  Store,
+  Wallet,
+  XCircle
 } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  ActivityIndicator,
+  FlatList,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
 // --- Types ---
@@ -114,10 +112,7 @@ export default function PaymentHistoryScreen() {
     refreshOrders().finally(() => setIsLoading(false));
   }, [refreshOrders]);
 
-  const payments = useMemo(
-    () => orders.map(mapOrderToPayment),
-    [orders],
-  );
+  const payments = useMemo(() => orders.map(mapOrderToPayment), [orders]);
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: t("payments.all") },

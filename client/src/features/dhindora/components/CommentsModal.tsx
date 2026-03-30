@@ -4,18 +4,18 @@ import { colors } from "@/src/theme/colors";
 import { ChevronDown, ChevronUp, Heart, Send, X } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
 import {
-    Animated,
-    FlatList,
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  FlatList,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { CommentReply, ReelComment } from "../types";
 
@@ -284,8 +284,19 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
                 style={styles.inputAvatar}
               />
             ) : (
-              <View style={[styles.inputAvatar, { backgroundColor: colors.ui.muted, justifyContent: "center", alignItems: "center" }]}>
-                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+              <View
+                style={[
+                  styles.inputAvatar,
+                  {
+                    backgroundColor: colors.ui.muted,
+                    justifyContent: "center",
+                    alignItems: "center",
+                  },
+                ]}
+              >
+                <Text
+                  style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}
+                >
                   {(user?.name ?? "U").charAt(0).toUpperCase()}
                 </Text>
               </View>

@@ -2,13 +2,13 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
 } from "react";
 import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
@@ -658,7 +658,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             ? "completed"
             : apiStatus === "pending"
               ? "pending"
-            : "confirmed";
+              : "confirmed";
 
       return {
         id: String(raw?.id ?? ""),
@@ -1246,7 +1246,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const cancelBooking = useCallback(
     async (bookingId: string) => {
-      const existing = bookedServices.find((service) => service.id === bookingId);
+      const existing = bookedServices.find(
+        (service) => service.id === bookingId,
+      );
 
       if (!authToken || !isUuid(existing?.id)) {
         setBookedServices((prev) =>

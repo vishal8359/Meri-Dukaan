@@ -6,25 +6,25 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Camera,
-  MapPin,
-  Store,
-  Tag,
-  Trash2,
+    ArrowLeft,
+    Camera,
+    MapPin,
+    Store,
+    Tag,
+    Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 export default function CreateStoreScreen() {
