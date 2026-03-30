@@ -1,6 +1,7 @@
 // app/meri_dukaan/inventory/add-product.tsx
 import { QuantityUnit, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
 import React, { useRef, useState } from "react";
@@ -21,14 +22,6 @@ interface QuantityVariant {
   amount: string;
   unit: QuantityUnit;
 }
-
-const PLACEHOLDER_PRODUCT_IMAGES = [
-  "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400",
-  "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?w=400",
-  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
-  "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?w=400",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
-];
 
 const UNIT_OPTIONS: { value: QuantityUnit; label: string; group: string }[] = [
   { value: "kg", label: "Kilogram (kg)", group: "Weight" },
@@ -76,13 +69,34 @@ export default function AddProductScreen() {
     setVariants((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddImage = () => {
+  const handleAddImage = async () => {
     if (images.length >= 5) {
       Alert.alert("Limit", "Maximum 5 images");
       return;
     }
-    const idx = images.length % PLACEHOLDER_PRODUCT_IMAGES.length;
-    setImages((prev) => [...prev, PLACEHOLDER_PRODUCT_IMAGES[idx]]);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access to upload product images.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const pickedUri = result.assets[0]?.uri;
+    if (!pickedUri) return;
+
+    setImages((prev) => [...prev, pickedUri]);
   };
 
   const handleRemoveImage = (index: number) => {

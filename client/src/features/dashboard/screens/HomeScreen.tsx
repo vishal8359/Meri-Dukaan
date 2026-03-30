@@ -67,8 +67,6 @@ const TOP_OFFERS = [
     id: "1",
     title: "Weekend Special",
     subtitle: "Up to 50% OFF",
-    image:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600",
     gradient: [colors.status.warningLight, colors.tint.goldLight] as [
       string,
       string,
@@ -80,8 +78,6 @@ const TOP_OFFERS = [
     id: "2",
     title: "Fresh Arrivals",
     subtitle: "New in stock today",
-    image:
-      "https://images.unsplash.com/photo-1488459716781-31db52582fe9?q=80&w=600",
     gradient: [colors.status.infoLight, colors.status.infoBorder] as [
       string,
       string,
@@ -93,8 +89,6 @@ const TOP_OFFERS = [
     id: "3",
     title: "Mega Sale",
     subtitle: "Flat 200 OFF",
-    image:
-      "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=600",
     gradient: [colors.tint.pinkLight, colors.tint.pinkLight] as [
       string,
       string,
@@ -172,9 +166,8 @@ export default function HomeScreen() {
                   id: String(p?.id ?? ""),
                   name: String(p?.name ?? "Product"),
                   image: Array.isArray(p?.images)
-                    ? p.images[0]?.image_url ||
-                      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400"
-                    : "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400",
+                    ? p.images[0]?.image_url
+                    : undefined,
                   price: offer || real,
                   originalPrice: real > offer ? real : undefined,
                   discount: discount > 0 ? discount : undefined,
@@ -212,8 +205,7 @@ export default function HomeScreen() {
                   name: String(s?.name ?? "Service"),
                   image:
                     (typeof s?.image === "string" && s.image) ||
-                    serviceImages[0] ||
-                    "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+                    serviceImages[0],
                   price: Number(s?.price ?? 0),
                   discount: undefined,
                   rating: Number(s?.rating ?? 0),

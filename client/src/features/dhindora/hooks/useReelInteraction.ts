@@ -92,7 +92,7 @@ export const useCommentsManager = ({
   initialComments,
   currentUserId = "current-user",
   currentUserName = "You",
-  currentUserAvatar = "https://i.pravatar.cc/150?u=currentuser",
+  currentUserAvatar,
 }: UseCommentsManagerProps): UseCommentsManagerReturn => {
   const [comments, setComments] = useState<ReelComment[]>(initialComments);
 

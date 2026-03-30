@@ -527,30 +527,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   // --- Address State ---
-  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([
-    {
-      id: "addr_1",
-      label: "Home",
-      address: "Rajendra Nagar",
-      city: "Patna",
-      state: "Bihar",
-      pincode: "800016",
-      phone: "+91 98765 43210",
-      isDefault: true,
-    },
-    {
-      id: "addr_2",
-      label: "Office",
-      address: "Boring Road",
-      city: "Patna",
-      state: "Bihar",
-      pincode: "800001",
-      phone: "+91 98765 43210",
-      isDefault: false,
-    },
-  ]);
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
-    "addr_1",
+    null,
   );
 
   const mapStoreFromApi = useCallback((raw: any): Store => {
@@ -560,9 +539,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           .filter((url: unknown): url is string => typeof url === "string")
       : [];
 
-    const primaryImage =
-      imageUrls[0] ||
-      "https://images.unsplash.com/photo-1563013544-824ae1b704d3?q=80&w=400";
+    const primaryImage = imageUrls[0];
 
     return {
       id: String(raw?.id ?? ""),
@@ -572,7 +549,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       rating: Number(raw?.rating ?? 0),
       distance: String(raw?.distance ?? "0 km"),
       image: primaryImage,
-      images: imageUrls.length > 0 ? imageUrls : [primaryImage],
+      images: imageUrls,
       location: String(raw?.location ?? ""),
       openingTime: raw?.opening_time ? String(raw.opening_time) : undefined,
       closingTime: raw?.closing_time ? String(raw.closing_time) : undefined,
@@ -582,9 +559,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const mapCartItemFromApi = useCallback((raw: any): CartItem => {
     const product = raw?.product ?? {};
     const productImages = Array.isArray(product?.images) ? product.images : [];
-    const firstImage =
-      productImages[0]?.image_url ||
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400";
+    const firstImage = productImages[0]?.image_url;
 
     return {
       id: String(product?.id ?? raw?.product_id ?? raw?.id ?? ""),
@@ -602,6 +577,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const engagement = raw?.engagement || {};
     const storeName = raw?.store?.store_name || raw?.store_name || "Store";
     const storeId = raw?.store?.id || raw?.store_id || "";
+    const storeImages: string[] = Array.isArray(raw?.store?.images)
+      ? raw.store.images
+          .map((img: any) => img?.image_url)
+          .filter((url: unknown): url is string => typeof url === "string")
+      : [];
 
     return {
       _id: String(raw?.id ?? ""),
@@ -614,23 +594,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       user: {
         id: String(storeId),
         name: String(storeName),
-        avatar:
-          "https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200",
+        avatar: storeImages[0],
         isVerified: false,
       },
       store: {
         id: String(storeId),
         name: String(storeName),
-        logo: "https://images.unsplash.com/photo-1556740749-887f6717d7e4?q=80&w=200",
+        logo: storeImages[0],
         type: String(raw?.store?.category ?? "General"),
         isVerified: false,
       },
       item: {
         id: String(raw?.id ?? ""),
-        name: "Featured Item",
+        name: String(raw?.description ?? "Featured Item"),
         price: 0,
-        image:
-          "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=300",
+        image: undefined,
         type: "product",
       },
       comments: [],
@@ -749,14 +727,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
           .filter((url: unknown): url is string => typeof url === "string")
       : [];
 
-    const fallbackImage =
-      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
-
     return {
       id: String(raw?.id ?? ""),
       name: String(raw?.name ?? "Service"),
       price: Number(raw?.price ?? 0),
-      images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+      images: imageUrls,
       duration: String(raw?.timings ?? ""),
       description: String(raw?.description ?? ""),
       available: Boolean(raw?.availability ?? true),
@@ -793,17 +768,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             .filter((url: unknown): url is string => typeof url === "string")
         : [];
 
-      const fallbackImage =
-        "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=400";
-
       return {
         id: String(raw?.id ?? ""),
         storeId: String(store?.id ?? raw?.store_id ?? ""),
         storeName: String(store?.store_name ?? "Store"),
         name: String(raw?.name ?? "Product"),
         category: String(raw?.type ?? "general").toLowerCase(),
-        image: imageUrls[0] || fallbackImage,
-        images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+        image: imageUrls[0],
+        images: imageUrls,
         price,
         originalPrice: realPrice > price ? realPrice : undefined,
         discount: discount > 0 ? discount : undefined,
@@ -829,17 +801,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             .filter((url: unknown): url is string => typeof url === "string")
         : [];
 
-      const fallbackImage =
-        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400";
-
       return {
         id: String(raw?.id ?? ""),
         storeId: String(store?.id ?? raw?.store_id ?? ""),
         storeName: String(store?.store_name ?? "Store"),
         name: String(raw?.name ?? "Service"),
         category: String(raw?.type ?? "service").toLowerCase(),
-        image: imageUrls[0] || fallbackImage,
-        images: imageUrls.length > 0 ? imageUrls : [fallbackImage],
+        image: imageUrls[0],
+        images: imageUrls,
         price: Number(raw?.price ?? 0),
         rating: Number(raw?.rating ?? 0),
         reviewsCount: 0,

@@ -8,12 +8,9 @@ export interface SearchResult {
   id: string;
   name: string;
   subtitle: string;
-  image: string;
+  image?: string;
   category?: string;
 }
-
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=300";
 
 export function useDebounceSearch(delay: number = 300) {
   const [query, setQuery] = useState("");
@@ -35,7 +32,7 @@ export function useDebounceSearch(delay: number = 300) {
       id: String(store?.id ?? ""),
       name: String(store?.store_name ?? "Store"),
       subtitle: `${store?.category ?? "General"} • ⭐ ${Number(store?.rating ?? 0).toFixed(1)}`,
-      image: firstImage || FALLBACK_IMAGE,
+      image: firstImage,
       category: String(store?.category ?? "General"),
     };
   };
@@ -93,8 +90,8 @@ export function useDebounceSearch(delay: number = 300) {
             name: String(p?.name ?? "Product"),
             subtitle: `₹${Number(p?.offer_price ?? p?.real_price ?? 0)} • ${store?.store_name ?? "Store"}`,
             image: Array.isArray(p?.images)
-              ? p.images[0]?.image_url || FALLBACK_IMAGE
-              : FALLBACK_IMAGE,
+              ? p.images[0]?.image_url
+              : undefined,
             category: String(p?.type ?? "General"),
           }));
 
@@ -110,7 +107,7 @@ export function useDebounceSearch(delay: number = 300) {
             id: String(s?.id ?? ""),
             name: String(s?.name ?? "Service"),
             subtitle: `${store?.store_name ?? "Store"} • ${s?.timings ?? ""}`,
-            image: FALLBACK_IMAGE,
+            image: undefined,
             category: String(s?.type ?? "Service"),
           }));
 

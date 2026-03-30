@@ -3,6 +3,7 @@ import { BUSINESS_TYPES, STORE_CATEGORIES } from "@/src/assets/storeCategories";
 import { useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -26,14 +27,6 @@ import {
   View,
 } from "react-native";
 
-const PLACEHOLDER_IMAGES = [
-  "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=400",
-  "https://images.unsplash.com/photo-1556740758-90de940a013d?w=400",
-  "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400",
-  "https://images.unsplash.com/photo-1556767576-5ec41e3239ea?w=400",
-  "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400",
-];
-
 export default function CreateStoreScreen() {
   const router = useRouter();
   const { createMyStore } = useApp();
@@ -48,14 +41,34 @@ export default function CreateStoreScreen() {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAddImage = () => {
+  const handleAddImage = async () => {
     if (images.length >= 5) {
       Alert.alert("Limit Reached", "Maximum 5 images allowed");
       return;
     }
-    // Simulated image pick — in production use expo-image-picker
-    const idx = images.length % PLACEHOLDER_IMAGES.length;
-    setImages((prev) => [...prev, PLACEHOLDER_IMAGES[idx]]);
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(
+        "Permission needed",
+        "Please allow photo access to upload store images.",
+      );
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.85,
+    });
+
+    if (result.canceled || !result.assets?.length) return;
+
+    const pickedUri = result.assets[0]?.uri;
+    if (!pickedUri) return;
+
+    setImages((prev) => [...prev, pickedUri]);
   };
 
   const handleRemoveImage = (index: number) => {

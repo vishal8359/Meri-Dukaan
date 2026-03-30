@@ -1,4 +1,5 @@
 // app/payments/history.tsx
+import { useApp, type Order } from "@/src/context/AppContext";
 import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,10 +21,10 @@ import {
     Wallet,
     XCircle,
 } from "lucide-react-native";
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+    ActivityIndicator,
     FlatList,
-    Image,
     SafeAreaView,
     ScrollView,
     StyleSheet,
@@ -41,7 +42,6 @@ interface PaymentItem {
   name: string;
   qty: number;
   price: number;
-  image?: string;
 }
 
 interface PaymentRecord {
@@ -51,171 +51,83 @@ interface PaymentRecord {
   date: string;
   time: string;
   storeName: string;
-  storeImage: string;
   storeId: string;
   items: PaymentItem[];
   subtotal: number;
   deliveryFee: number;
   discount: number;
   totalAmount: number;
-  paymentMethod: "UPI" | "Card" | "COD" | "Wallet" | "Net Banking";
-  status: "success" | "failed" | "refunded" | "pending";
-  refundAmount?: number;
-  refundDate?: string;
+  paymentMethod: "UPI" | "Card" | "COD" | "Online";
+  status: "success" | "failed" | "pending";
 }
 
-// --- Mock Data ---
-const MOCK_PAYMENTS: PaymentRecord[] = [
-  {
-    id: "PAY001",
-    orderId: "ORD001",
-    transactionId: "TXN78234901",
-    date: "2024-01-17",
-    time: "10:34 AM",
-    storeName: "Sharma Kirana",
-    storeImage:
-      "https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=300",
-    storeId: "1",
-    items: [
-      { id: "p1", name: "Fresh Tomatoes", qty: 2, price: 80 },
-      { id: "p2", name: "Organic Onions", qty: 3, price: 120 },
-      { id: "p3", name: "Potatoes (1kg)", qty: 1, price: 40 },
-    ],
-    subtotal: 450,
-    deliveryFee: 0,
-    discount: 50,
-    totalAmount: 400,
-    paymentMethod: "UPI",
-    status: "success",
-  },
-  {
-    id: "PAY002",
-    orderId: "ORD002",
-    transactionId: "TXN78234902",
-    date: "2024-01-18",
-    time: "2:15 PM",
-    storeName: "Organic Farms",
-    storeImage:
-      "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=300",
-    storeId: "2",
-    items: [
-      { id: "p4", name: "Green Chilies (250g)", qty: 1, price: 30 },
-      { id: "p5", name: "Fresh Coriander", qty: 2, price: 40 },
-    ],
-    subtotal: 280,
-    deliveryFee: 40,
-    discount: 0,
-    totalAmount: 320,
-    paymentMethod: "Card",
-    status: "success",
-  },
-  {
-    id: "PAY003",
-    orderId: "ORD003",
-    transactionId: "TXN78234903",
-    date: "2024-01-19",
-    time: "5:48 PM",
-    storeName: "Modern Furniture",
-    storeImage:
-      "https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=300",
-    storeId: "3",
-    items: [
-      { id: "p6", name: "Wooden Chair", qty: 1, price: 2500 },
-      { id: "p7", name: "Table Lamp", qty: 1, price: 1000 },
-    ],
-    subtotal: 3500,
-    deliveryFee: 0,
-    discount: 200,
-    totalAmount: 3300,
-    paymentMethod: "Net Banking",
-    status: "pending",
-  },
-  {
-    id: "PAY004",
-    orderId: "ORD004",
-    transactionId: "TXN78234904",
-    date: "2024-01-10",
-    time: "9:20 AM",
-    storeName: "Sharma Kirana",
-    storeImage:
-      "https://images.unsplash.com/photo-1534723452862-4c874018d66d?q=80&w=300",
-    storeId: "1",
-    items: [
-      { id: "p8", name: "Basmati Rice (5kg)", qty: 1, price: 450 },
-      { id: "p9", name: "Toor Dal (1kg)", qty: 2, price: 240 },
-      { id: "p10", name: "Sunflower Oil (1L)", qty: 1, price: 200 },
-    ],
-    subtotal: 890,
-    deliveryFee: 0,
-    discount: 0,
-    totalAmount: 890,
-    paymentMethod: "COD",
-    status: "refunded",
-    refundAmount: 890,
-    refundDate: "2024-01-12",
-  },
-  {
-    id: "PAY005",
-    orderId: "ORD005",
-    transactionId: "TXN78234905",
-    date: "2024-01-22",
-    time: "11:05 AM",
-    storeName: "Glow Up Studio",
-    storeImage:
-      "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300",
-    storeId: "6",
-    items: [{ id: "p11", name: "Hair Spa Treatment", qty: 1, price: 1200 }],
-    subtotal: 1200,
-    deliveryFee: 0,
-    discount: 100,
-    totalAmount: 1100,
-    paymentMethod: "Wallet",
-    status: "success",
-  },
-  {
-    id: "PAY006",
-    orderId: "ORD006",
-    transactionId: "TXN78234906",
-    date: "2024-01-25",
-    time: "3:30 PM",
-    storeName: "Pizza Palace",
-    storeImage:
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=300",
-    storeId: "4",
-    items: [
-      { id: "p12", name: "Margherita Pizza", qty: 2, price: 500 },
-      { id: "p13", name: "Garlic Bread", qty: 1, price: 150 },
-      { id: "p14", name: "Cold Drink (750ml)", qty: 2, price: 120 },
-    ],
-    subtotal: 770,
-    deliveryFee: 30,
-    discount: 0,
-    totalAmount: 800,
-    paymentMethod: "UPI",
-    status: "failed",
-  },
-];
+type FilterType = "all" | "success" | "failed" | "pending";
 
-type FilterType = "all" | "success" | "failed" | "refunded" | "pending";
+// --- Map Order → PaymentRecord ---
+function mapOrderToPayment(order: Order): PaymentRecord {
+  const createdAt = new Date(order.orderDate);
+  const paymentStatus: PaymentRecord["status"] =
+    order.status === "delivered"
+      ? "success"
+      : order.status === "cancelled"
+        ? "failed"
+        : "pending";
+
+  return {
+    id: order.id,
+    orderId: order.id,
+    transactionId: order.id,
+    date: createdAt.toISOString().split("T")[0],
+    time: createdAt.toLocaleTimeString("en-IN", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }),
+    storeName: order.items[0]?.storeName ?? "Store",
+    storeId: order.items[0]?.storeId ?? "",
+    items: order.items.map((i) => ({
+      id: i.id,
+      name: i.name,
+      qty: i.quantity,
+      price: i.price,
+    })),
+    subtotal: order.subtotal,
+    deliveryFee: order.deliveryFee,
+    discount: 0,
+    totalAmount: order.totalAmount,
+    paymentMethod: order.paymentMethod === "cod" ? "COD" : "Online",
+    status: paymentStatus,
+  };
+}
 
 // --- Main Component ---
 export default function PaymentHistoryScreen() {
   const router = useRouter();
   const { t } = useSettings();
+  const { orders, refreshOrders } = useApp();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    refreshOrders().finally(() => setIsLoading(false));
+  }, [refreshOrders]);
+
+  const payments = useMemo(
+    () => orders.map(mapOrderToPayment),
+    [orders],
+  );
 
   const filters: { key: FilterType; label: string }[] = [
     { key: "all", label: t("payments.all") },
     { key: "success", label: t("payments.success") },
     { key: "pending", label: t("payments.pending") },
     { key: "failed", label: t("payments.failed") },
-    { key: "refunded", label: t("payments.refundedFilter") },
   ];
 
   const filteredPayments = useMemo(() => {
-    let data = MOCK_PAYMENTS;
+    let data = payments;
     if (activeFilter !== "all") {
       data = data.filter((p) => p.status === activeFilter);
     }
@@ -225,27 +137,22 @@ export default function PaymentHistoryScreen() {
         (p) =>
           p.storeName.toLowerCase().includes(q) ||
           p.orderId.toLowerCase().includes(q) ||
-          p.transactionId.toLowerCase().includes(q) ||
           p.items.some((i) => i.name.toLowerCase().includes(q)),
       );
     }
     return data.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
-  }, [activeFilter, searchQuery]);
+  }, [activeFilter, searchQuery, payments]);
 
   const totals = useMemo(() => {
-    const successful = MOCK_PAYMENTS.filter((p) => p.status === "success");
+    const successful = payments.filter((p) => p.status === "success");
     const totalSpent = successful.reduce((s, p) => s + p.totalAmount, 0);
-    const totalRefunded = MOCK_PAYMENTS.filter(
-      (p) => p.status === "refunded",
-    ).reduce((s, p) => s + (p.refundAmount || 0), 0);
     return {
       totalSpent,
-      totalRefunded,
-      totalTransactions: MOCK_PAYMENTS.length,
+      totalTransactions: payments.length,
     };
-  }, []);
+  }, [payments]);
 
   // --- Status Config ---
   const getStatusConfig = (status: PaymentRecord["status"]) => {
@@ -263,13 +170,6 @@ export default function PaymentHistoryScreen() {
           color: colors.status.error,
           bg: colors.status.errorLight,
           text: "Failed",
-        };
-      case "refunded":
-        return {
-          icon: RefreshCw,
-          color: colors.tint.purple,
-          bg: colors.tint.purpleLight,
-          text: "Refunded",
         };
       case "pending":
         return {
@@ -289,10 +189,8 @@ export default function PaymentHistoryScreen() {
         return CreditCard;
       case "COD":
         return IndianRupee;
-      case "Wallet":
-        return Wallet;
-      case "Net Banking":
-        return ArrowUpRight;
+      case "Online":
+        return CreditCard;
     }
   };
 
@@ -326,10 +224,9 @@ export default function PaymentHistoryScreen() {
         {/* Card Header */}
         <View style={styles.cardHeader}>
           <View style={styles.storeRow}>
-            <Image
-              source={{ uri: item.storeImage }}
-              style={styles.storeThumb}
-            />
+            <View style={styles.storeThumbPlaceholder}>
+              <Store size={18} color={colors.text.tertiary} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.storeName}>{item.storeName}</Text>
               <View style={styles.orderMeta}>
@@ -431,17 +328,6 @@ export default function PaymentHistoryScreen() {
               </View>
             </View>
 
-            {/* Refund info */}
-            {item.status === "refunded" && item.refundAmount && (
-              <View style={styles.refundBanner}>
-                <RefreshCw size={14} color={colors.tint.purple} />
-                <Text style={styles.refundText}>
-                  ₹{item.refundAmount} refunded on{" "}
-                  {formatDate(item.refundDate!)}
-                </Text>
-              </View>
-            )}
-
             {/* Transaction ID */}
             <View style={styles.txnRow}>
               <Text style={styles.txnLabel}>{t("payments.transactionId")}</Text>
@@ -501,25 +387,6 @@ export default function PaymentHistoryScreen() {
           </Text>
           <Text style={styles.sumLabel}>Total Spent</Text>
         </LinearGradient>
-
-        <View
-          style={[styles.sumCard, { backgroundColor: colors.tint.purpleLight }]}
-        >
-          <View
-            style={[
-              styles.sumIconBg,
-              { backgroundColor: colors.tint.purple + "25" },
-            ]}
-          >
-            <RefreshCw size={18} color={colors.tint.purple} />
-          </View>
-          <Text style={[styles.sumValue, { color: colors.tint.purple }]}>
-            ₹{totals.totalRefunded.toLocaleString("en-IN")}
-          </Text>
-          <Text style={[styles.sumLabel, { color: colors.tint.purple + "99" }]}>
-            {t("payments.refunded")}
-          </Text>
-        </View>
 
         <View
           style={[styles.sumCard, { backgroundColor: colors.tint.blueLight }]}
@@ -585,7 +452,7 @@ export default function PaymentHistoryScreen() {
                 <View style={styles.filterCount}>
                   <Text style={styles.filterCountText}>
                     {
-                      MOCK_PAYMENTS.filter((p) =>
+                      payments.filter((p) =>
                         f.key === "all" ? true : p.status === f.key,
                       ).length
                     }
@@ -637,15 +504,21 @@ export default function PaymentHistoryScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={filteredPayments}
-        renderItem={renderPaymentCard}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.brand.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={filteredPayments}
+          renderItem={renderPaymentCard}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={renderHeader}
+          ListEmptyComponent={renderEmpty}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -825,13 +698,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.sm,
   } as ViewStyle,
-  storeThumb: {
+  storeThumbPlaceholder: {
     width: 42,
     height: 42,
     borderRadius: 12,
     marginRight: spacing.sm,
     backgroundColor: colors.ui.backgroundAlt,
-  },
+    justifyContent: "center",
+    alignItems: "center",
+  } as ViewStyle,
   storeName: {
     fontSize: 15,
     fontWeight: "700",
@@ -1103,4 +978,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   } as TextStyle,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  } as ViewStyle,
 });

@@ -1,4 +1,5 @@
 // src/features/dhindora/components/CommentsModal.tsx
+import { useAuth } from "@/src/context/AuthContext";
 import { colors } from "@/src/theme/colors";
 import { ChevronDown, ChevronUp, Heart, Send, X } from "lucide-react-native";
 import React, { useCallback, useRef, useState } from "react";
@@ -179,6 +180,7 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
   onAddReply,
   onLikeReply,
 }) => {
+  const { user } = useAuth();
   const [commentText, setCommentText] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -276,10 +278,18 @@ export const CommentsModal: React.FC<CommentsModalProps> = ({
 
           {/* Input Section */}
           <View style={styles.inputContainer}>
-            <Image
-              source={{ uri: "https://i.pravatar.cc/150?u=currentuser" }}
-              style={styles.inputAvatar}
-            />
+            {user?.imageUri ? (
+              <Image
+                source={{ uri: user.imageUri }}
+                style={styles.inputAvatar}
+              />
+            ) : (
+              <View style={[styles.inputAvatar, { backgroundColor: colors.ui.muted, justifyContent: "center", alignItems: "center" }]}>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 14 }}>
+                  {(user?.name ?? "U").charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <TextInput
               ref={inputRef}
               style={styles.input}

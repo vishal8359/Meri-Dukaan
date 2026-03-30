@@ -409,8 +409,7 @@ export default function StoreDetailScreen() {
       price: Number(service.price ?? 0),
       image:
         (typeof service.image === "string" && service.image) ||
-        serviceImages[0] ||
-        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?q=80&w=400",
+        serviceImages[0],
       duration: String(service.duration ?? service.timings ?? ""),
       rating: Number(service.rating ?? 0),
     };
@@ -467,7 +466,13 @@ export default function StoreDetailScreen() {
   const handleShare = async () => {};
 
   const handleCall = () => {
-    Linking.openURL(`tel:+919876543210`);
+    Toast.show({
+      type: "info",
+      text1: "Not Available",
+      text2: "Store phone number is not available yet.",
+      visibilityTime: 2000,
+      position: "top",
+    });
   };
 
   // ─── Not-found state ────────────────────────────────────────────────────────
