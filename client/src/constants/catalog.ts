@@ -81,3 +81,25 @@ export const PRODUCT_CATEGORIES: CategoryOption[] = [
 ];
 
 export const SERVICE_CATEGORY_IDS = ["salon", "carpenter", "architecture"] as const;
+
+export const SERVICE_CATEGORIES: CategoryOption[] = [
+  { id: "all", name: "All", icon: "🔧", color: "#6366f1" },
+  { id: "delivery", name: "Delivery", icon: "🚚", color: "#3b82f6" },
+  { id: "saloon & beauty", name: "Saloon & Beauty", icon: "💇", color: "#ec4899" },
+  { id: "hair cutting", name: "Hair Cutting", icon: "✂️", color: "#f97316" },
+  { id: "beauty services", name: "Beauty Services", icon: "💄", color: "#db2777" },
+  { id: "makeup", name: "Makeup", icon: "💅", color: "#f472b6" },
+  { id: "welding", name: "Welding", icon: "⚙️", color: "#78716c" },
+  { id: "tailoring", name: "Tailoring", icon: "🧵", color: "#8b5cf6" },
+  { id: "plumbing", name: "Plumbing", icon: "🔩", color: "#0ea5e9" },
+  { id: "electrical", name: "Electrical", icon: "⚡", color: "#eab308" },
+  { id: "carpentry", name: "Carpentry", icon: "🪵", color: "#a16207" },
+  { id: "painting", name: "Painting", icon: "🎨", color: "#14b8a6" },
+  { id: "cleaning", name: "Cleaning", icon: "🧹", color: "#22c55e" },
+  { id: "laundry", name: "Laundry", icon: "👔", color: "#6366f1" },
+  { id: "ac repair", name: "AC Repair", icon: "❄️", color: "#38bdf8" },
+  { id: "photography", name: "Photography", icon: "📷", color: "#a855f7" },
+  { id: "catering", name: "Catering", icon: "🍽️", color: "#f59e0b" },
+  { id: "transportation", name: "Transportation", icon: "🚗", color: "#64748b" },
+  { id: "home repairs", name: "Home Repairs", icon: "🏠", color: "#10b981" },
+];

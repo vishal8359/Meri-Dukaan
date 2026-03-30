@@ -1,11 +1,14 @@
 // src/features/mybusz/screens/MyBuszScreen.tsx
 import {
   PRODUCT_CATEGORIES,
+  SERVICE_CATEGORIES,
 } from "@/src/constants/catalog";
-import { CatalogProduct, useApp } from "@/src/context/AppContext";
+import { CatalogProduct, CatalogService, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
+    Calendar,
+    Clock,
     Grid2x2,
     Heart,
     List,
@@ -39,6 +42,8 @@ import {
     View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+
+type ActiveTab = "products" | "services";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = (width - 48) / 2;
@@ -283,6 +288,160 @@ const ProductListCardItem = memo(
   },
 );
 
+/* ── Service Card Components ── */
+
+const ServiceGridCardItem = memo(
+  ({
+    item,
+    wishlisted,
+    onPress,
+    onToggleWishlist,
+  }: {
+    item: CatalogService;
+    wishlisted: boolean;
+    onPress: (item: CatalogService) => void;
+    onToggleWishlist: (item: CatalogService) => void;
+  }) => (
+    <TouchableOpacity
+      style={styles.gridCard}
+      onPress={() => onPress(item)}
+      activeOpacity={0.8}
+    >
+      <View style={styles.gridImageContainer}>
+        <Image source={{ uri: item.image }} style={styles.gridImage} />
+        {item.discount ? (
+          <View style={styles.discountBadge}>
+            <Text style={styles.discountText}>{item.discount}% OFF</Text>
+          </View>
+        ) : null}
+        <TouchableOpacity
+          style={styles.heartBtn}
+          onPress={() => onToggleWishlist(item)}
+        >
+          <Heart
+            size={18}
+            color={wishlisted ? "#ef4444" : "#94a3b8"}
+            fill={wishlisted ? "#ef4444" : "none"}
+          />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.gridCardContent}>
+        <Text style={styles.productName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View style={styles.storeRow}>
+          <MapPin size={10} color={colors.text.secondary} />
+          <Text style={styles.storeText} numberOfLines={1}>
+            {item.storeName} • {item.distance}
+          </Text>
+        </View>
+        <View style={styles.ratingStoreRow}>
+          <Star size={12} color="#fbbf24" fill="#fbbf24" />
+          <Text style={styles.ratingText}>{item.rating}</Text>
+          <Text style={styles.reviewsText}>({item.reviewsCount})</Text>
+        </View>
+        {item.duration ? (
+          <View style={styles.serviceMeta}>
+            <Clock size={10} color={colors.text.secondary} />
+            <Text style={styles.serviceMetaText}>{item.duration}</Text>
+          </View>
+        ) : null}
+        <View style={styles.priceCartRow}>
+          <View>
+            <Text style={styles.price}>₹{item.price}</Text>
+            {item.originalPrice ? (
+              <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
+            ) : null}
+          </View>
+          <TouchableOpacity
+            style={styles.bookBtn}
+            onPress={() => onPress(item)}
+          >
+            <Calendar size={12} color="#fff" />
+            <Text style={styles.bookBtnText}>Book</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  ),
+);
+
+const ServiceListCardItem = memo(
+  ({
+    item,
+    wishlisted,
+    onPress,
+    onToggleWishlist,
+  }: {
+    item: CatalogService;
+    wishlisted: boolean;
+    onPress: (item: CatalogService) => void;
+    onToggleWishlist: (item: CatalogService) => void;
+  }) => (
+    <TouchableOpacity
+      style={styles.listCard}
+      onPress={() => onPress(item)}
+      activeOpacity={0.8}
+    >
+      <Image source={{ uri: item.image }} style={styles.listImage} />
+      {item.discount ? (
+        <View style={[styles.discountBadge, { top: 8, left: 8 }]}>
+          <Text style={styles.discountText}>{item.discount}% OFF</Text>
+        </View>
+      ) : null}
+      <View style={styles.listCardContent}>
+        <Text style={styles.productName} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View style={styles.storeRow}>
+          <MapPin size={10} color={colors.text.secondary} />
+          <Text style={styles.storeText} numberOfLines={1}>
+            {item.storeName} • {item.distance}
+          </Text>
+        </View>
+        <View style={styles.ratingStoreRow}>
+          <Star size={12} color="#fbbf24" fill="#fbbf24" />
+          <Text style={styles.ratingText}>{item.rating}</Text>
+          <Text style={styles.reviewsText}>({item.reviewsCount})</Text>
+        </View>
+        {item.duration ? (
+          <View style={styles.serviceMeta}>
+            <Clock size={10} color={colors.text.secondary} />
+            <Text style={styles.serviceMetaText}>{item.duration}</Text>
+          </View>
+        ) : null}
+        <View style={styles.priceCartRow}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={styles.price}>₹{item.price}</Text>
+            {item.originalPrice ? (
+              <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
+            ) : null}
+          </View>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <TouchableOpacity
+              style={styles.wishlistBtn}
+              onPress={() => onToggleWishlist(item)}
+            >
+              <Heart
+                size={16}
+                color={wishlisted ? "#ef4444" : "#94a3b8"}
+                fill={wishlisted ? "#ef4444" : "none"}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.bookBtn}
+              onPress={() => onPress(item)}
+            >
+              <Calendar size={12} color="#fff" />
+              <Text style={styles.bookBtnText}>Book</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  ),
+);
+
 export default function MyBuszScreen() {
   const router = useRouter();
   const { category } = useLocalSearchParams<{ category?: string }>();
@@ -295,13 +454,16 @@ export default function MyBuszScreen() {
     removeFromWishlist,
     isInWishlist,
     catalogProducts,
+    catalogServices,
   } = useApp();
 
+  const [activeTab, setActiveTab] = useState<ActiveTab>("products");
   const [selectedCategory, setSelectedCategory] = useState(
     category && PRODUCT_CATEGORIES.some((c) => c.id === category)
       ? category
       : "all",
   );
+  const [selectedServiceCategory, setSelectedServiceCategory] = useState("all");
 
   // Sync when navigating from HomeScreen with a new category param
   useEffect(() => {
@@ -334,9 +496,17 @@ export default function MyBuszScreen() {
     }, 50);
   }, []);
 
-  const currentCategoryInfo = PRODUCT_CATEGORIES.find(
-    (c) => c.id === selectedCategory,
-  );
+  const handleServiceCategoryChange = useCallback((catId: string) => {
+    setSelectedServiceCategory(catId);
+    setTimeout(() => {
+      productListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    }, 50);
+  }, []);
+
+  const currentCategoryInfo =
+    activeTab === "products"
+      ? PRODUCT_CATEGORIES.find((c) => c.id === selectedCategory)
+      : SERVICE_CATEGORIES.find((c) => c.id === selectedServiceCategory);
 
   const filteredProducts = useMemo(() => {
     let products = [...catalogProducts];
@@ -374,7 +544,45 @@ export default function MyBuszScreen() {
     }
 
     return products;
-  }, [selectedCategory, searchQuery, sortBy]);
+  }, [selectedCategory, searchQuery, sortBy, catalogProducts]);
+
+  const filteredServices = useMemo(() => {
+    let services = [...catalogServices];
+
+    if (selectedServiceCategory !== "all") {
+      services = services.filter((s) => s.category === selectedServiceCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      services = services.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          s.storeName.toLowerCase().includes(q),
+      );
+    }
+
+    switch (sortBy) {
+      case "price_low":
+        services.sort((a, b) => a.price - b.price);
+        break;
+      case "price_high":
+        services.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        services.sort((a, b) => b.rating - a.rating);
+        break;
+      case "distance":
+        services.sort(
+          (a, b) => parseFloat(a.distance) - parseFloat(b.distance),
+        );
+        break;
+      default:
+        break;
+    }
+
+    return services;
+  }, [selectedServiceCategory, searchQuery, sortBy, catalogServices]);
 
   // Build a map of product id → cart quantity for O(1) lookups
   const cartQtyMap = useMemo(() => {
@@ -482,6 +690,49 @@ export default function MyBuszScreen() {
     [router],
   );
 
+  const handleServicePress = useCallback(
+    (item: CatalogService) => {
+      router.push({
+        pathname: "/service/[id]",
+        params: { id: item.id },
+      } as any);
+    },
+    [router],
+  );
+
+  const toggleServiceWishlist = useCallback(
+    (service: CatalogService) => {
+      const wishlistId = `service-${service.id}`;
+      if (isInWishlist(wishlistId)) {
+        removeFromWishlist(wishlistId);
+        Toast.show({
+          type: "info",
+          text1: "Removed from wishlist",
+          text2: `${service.name} removed`,
+          visibilityTime: 1500,
+          position: "top",
+        });
+      } else {
+        addToWishlist({
+          id: wishlistId,
+          name: service.name,
+          price: service.price,
+          type: "service",
+          image: service.image,
+          rating: service.rating,
+        });
+        Toast.show({
+          type: "success",
+          text1: "Added to wishlist",
+          text2: `${service.name} saved!`,
+          visibilityTime: 1500,
+          position: "top",
+        });
+      }
+    },
+    [isInWishlist, addToWishlist, removeFromWishlist],
+  );
+
   const renderGridItem = useCallback(
     ({ item }: { item: CatalogProduct }) => (
       <ProductGridCardItem
@@ -534,22 +785,111 @@ export default function MyBuszScreen() {
     ({ item }: { item: (typeof PRODUCT_CATEGORIES)[0] }) => (
       <CategoryChipItem
         item={item}
-        isSelected={selectedCategory === item.id}
-        onPress={handleCategoryChange}
+        isSelected={
+          activeTab === "products"
+            ? selectedCategory === item.id
+            : selectedServiceCategory === item.id
+        }
+        onPress={
+          activeTab === "products"
+            ? handleCategoryChange
+            : handleServiceCategoryChange
+        }
       />
     ),
-    [selectedCategory, handleCategoryChange],
+    [
+      activeTab,
+      selectedCategory,
+      selectedServiceCategory,
+      handleCategoryChange,
+      handleServiceCategoryChange,
+    ],
   );
+
+  const renderServiceGridItem = useCallback(
+    ({ item }: { item: CatalogService }) => (
+      <ServiceGridCardItem
+        item={item}
+        wishlisted={isInWishlist(`service-${item.id}`)}
+        onPress={handleServicePress}
+        onToggleWishlist={toggleServiceWishlist}
+      />
+    ),
+    [isInWishlist, handleServicePress, toggleServiceWishlist],
+  );
+
+  const renderServiceListItem = useCallback(
+    ({ item }: { item: CatalogService }) => (
+      <ServiceListCardItem
+        item={item}
+        wishlisted={isInWishlist(`service-${item.id}`)}
+        onPress={handleServicePress}
+        onToggleWishlist={toggleServiceWishlist}
+      />
+    ),
+    [isInWishlist, handleServicePress, toggleServiceWishlist],
+  );
+
+  const categoryData =
+    activeTab === "products" ? PRODUCT_CATEGORIES : SERVICE_CATEGORIES;
+  const activeItems =
+    activeTab === "products" ? filteredProducts : filteredServices;
 
   return (
     <View style={styles.container}>
+      {/* Products / Services Tab Toggle */}
+      <View style={styles.tabRow}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "products" && styles.tabActive]}
+          onPress={() => setActiveTab("products")}
+        >
+          <ShoppingCart
+            size={14}
+            color={
+              activeTab === "products" ? colors.brand.primary : "#94a3b8"
+            }
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "products" && styles.tabTextActive,
+            ]}
+          >
+            Products
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "services" && styles.tabActive]}
+          onPress={() => setActiveTab("services")}
+        >
+          <Calendar
+            size={14}
+            color={
+              activeTab === "services" ? colors.brand.primary : "#94a3b8"
+            }
+          />
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === "services" && styles.tabTextActive,
+            ]}
+          >
+            Services
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Compact Search + Sort + View Row */}
       <View style={styles.toolbarRow}>
         <View style={styles.searchInputWrapper}>
           <Search size={16} color="#94a3b8" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder={
+              activeTab === "products"
+                ? "Search products..."
+                : "Search services..."
+            }
             placeholderTextColor="#94a3b8"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -605,7 +945,7 @@ export default function MyBuszScreen() {
       >
         <FlatList
           horizontal
-          data={PRODUCT_CATEGORIES}
+          data={categoryData}
           keyExtractor={(item) => item.id}
           renderItem={renderCategoryChip}
           showsHorizontalScrollIndicator={false}
@@ -647,23 +987,59 @@ export default function MyBuszScreen() {
         </>
       )}
 
-      {/* Product List */}
-      {filteredProducts.length === 0 ? (
+      {/* Content List */}
+      {activeItems.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🔍</Text>
-          <Text style={styles.emptyTitle}>No products found</Text>
+          <Text style={styles.emptyTitle}>
+            No {activeTab === "products" ? "products" : "services"} found
+          </Text>
           <Text style={styles.emptySubtitle}>
             Try a different category or search term
           </Text>
         </View>
+      ) : activeTab === "products" ? (
+        isGrid ? (
+          <FlatList
+            ref={productListRef}
+            key="product-grid"
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            renderItem={renderGridItem}
+            columnWrapperStyle={styles.gridRow}
+            contentContainerStyle={styles.productList}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={6}
+            windowSize={5}
+            removeClippedSubviews={true}
+            extraData={cartQtyMap}
+          />
+        ) : (
+          <FlatList
+            ref={productListRef}
+            key="product-list"
+            data={filteredProducts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderListItem}
+            contentContainerStyle={styles.productList}
+            showsVerticalScrollIndicator={false}
+            initialNumToRender={8}
+            maxToRenderPerBatch={6}
+            windowSize={5}
+            removeClippedSubviews={true}
+            extraData={cartQtyMap}
+          />
+        )
       ) : isGrid ? (
         <FlatList
           ref={productListRef}
-          key="grid"
-          data={filteredProducts}
+          key="service-grid"
+          data={filteredServices}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          renderItem={renderGridItem}
+          renderItem={renderServiceGridItem}
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
@@ -671,22 +1047,20 @@ export default function MyBuszScreen() {
           maxToRenderPerBatch={6}
           windowSize={5}
           removeClippedSubviews={true}
-          extraData={cartQtyMap}
         />
       ) : (
         <FlatList
           ref={productListRef}
-          key="list"
-          data={filteredProducts}
+          key="service-list"
+          data={filteredServices}
           keyExtractor={(item) => item.id}
-          renderItem={renderListItem}
+          renderItem={renderServiceListItem}
           contentContainerStyle={styles.productList}
           showsVerticalScrollIndicator={false}
           initialNumToRender={8}
           maxToRenderPerBatch={6}
           windowSize={5}
           removeClippedSubviews={true}
-          extraData={cartQtyMap}
         />
       )}
     </View>
@@ -697,6 +1071,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8fafc",
+  },
+  // Tab Toggle
+  tabRow: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    gap: 6,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabActive: {
+    borderBottomColor: colors.brand.primary,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#94a3b8",
+  },
+  tabTextActive: {
+    color: colors.brand.primary,
+    fontWeight: "700",
   },
   // Toolbar Row (search + sort + view)
   toolbarRow: {
@@ -1004,5 +1407,30 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     color: colors.text.secondary,
+  },
+  // Service-specific
+  serviceMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 4,
+  },
+  serviceMetaText: {
+    fontSize: 11,
+    color: colors.text.secondary,
+  },
+  bookBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.brand.primary,
+  },
+  bookBtnText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#fff",
   },
 });
