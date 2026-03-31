@@ -16,6 +16,7 @@ import * as orderApi from "../api/orders";
 import * as reelApi from "../api/reels";
 import * as serviceBookingApi from "../api/serviceBookings";
 import * as storeApi from "../api/stores";
+import * as wishlistApi from "../api/wishlist";
 import { EnhancedReel, Store } from "../types/catalog";
 import { useAuth } from "./AuthContext";
 
@@ -633,6 +634,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  const mapWishlistItemFromApi = (raw: any): WishlistItem => ({
+    id: String(raw?.item_id ?? raw?.id ?? ""),
+    name: String(raw?.name ?? ""),
+    price: Number(raw?.price ?? 0),
+    type: (raw?.type as WishlistItem["type"]) ?? "product",
+    description: raw?.description ?? undefined,
+    image: raw?.image ?? undefined,
+    rating: raw?.rating != null ? Number(raw.rating) : undefined,
+    storeName: raw?.store_name ?? undefined,
+    storeId: raw?.store_id ?? undefined,
+    category: raw?.category ?? undefined,
+  });
+
   const mapOrderFromApi = useCallback((raw: any): Order => {
     const items: OrderItem[] = Array.isArray(raw?.items)
       ? raw.items.map((i: any) => ({
@@ -991,13 +1005,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setCart([]);
         setOrders([]);
         setBookedServices([]);
+        setWishlist([]);
         return;
       }
 
-      const [cartRes, orderRes, bookingRes] = await Promise.allSettled([
+      const [cartRes, orderRes, bookingRes, wishlistRes] = await Promise.allSettled([
         cartApi.getCart(authToken),
         orderApi.getOrders(authToken),
         serviceBookingApi.getMyServiceBookings(authToken),
+        wishlistApi.getWishlist(authToken),
       ]);
 
       if (cartRes.status === "fulfilled") {
@@ -1025,6 +1041,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setBookedServices(mappedBookings);
       } else {
         setBookedServices([]);
+      }
+
+      if (wishlistRes.status === "fulfilled") {
+        const mappedWishlist: WishlistItem[] = Array.isArray(wishlistRes.value.items)
+          ? wishlistRes.value.items.map(mapWishlistItemFromApi)
+          : [];
+        setWishlist(mappedWishlist);
+      } else {
+        setWishlist([]);
       }
     })();
   }, [authToken, mapBookedServiceFromApi, mapCartItemFromApi, mapOrderFromApi]);
@@ -1214,21 +1239,52 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   );
 
   // --- Wishlist Functions ---
-  const addToWishlist = (item: WishlistItem) => {
-    setWishlist((prevWishlist) => {
-      const exists = prevWishlist.find((wishItem) => wishItem.id === item.id);
-      if (exists) {
-        return prevWishlist; // Item already in wishlist
-      }
-      return [...prevWishlist, item];
-    });
-  };
+  const addToWishlist = useCallback(
+    (item: WishlistItem) => {
+      setWishlist((prev) => {
+        if (prev.find((w) => w.id === item.id)) return prev;
+        return [...prev, item];
+      });
 
-  const removeFromWishlist = (itemId: string) => {
-    setWishlist((prevWishlist) =>
-      prevWishlist.filter((item) => item.id !== itemId),
-    );
-  };
+      if (authToken) {
+        wishlistApi
+          .addToWishlist(authToken, {
+            itemId: item.id,
+            name: item.name,
+            price: item.price,
+            type: item.type,
+            description: item.description,
+            image: item.image,
+            rating: item.rating,
+            storeName: item.storeName,
+            storeId: item.storeId,
+            category: item.category,
+          })
+          .catch(() => {
+            // Revert optimistic add on failure
+            setWishlist((prev) => prev.filter((w) => w.id !== item.id));
+          });
+      }
+    },
+    [authToken],
+  );
+
+  const removeFromWishlist = useCallback(
+    (itemId: string) => {
+      const removedItem = wishlist.find((w) => w.id === itemId);
+      setWishlist((prev) => prev.filter((item) => item.id !== itemId));
+
+      if (authToken) {
+        wishlistApi.removeFromWishlist(authToken, itemId).catch(() => {
+          // Revert optimistic remove on failure
+          if (removedItem) {
+            setWishlist((prev) => [...prev, removedItem]);
+          }
+        });
+      }
+    },
+    [authToken, wishlist],
+  );
 
   const isInWishlist = useCallback(
     (itemId: string): boolean => {
@@ -1237,17 +1293,23 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     [wishlist],
   );
 
-  const clearWishlist = () => {
+  const clearWishlist = useCallback(() => {
     setWishlist([]);
-  };
-
-  const toggleWishlistItem = (item: WishlistItem) => {
-    if (isInWishlist(item.id)) {
-      removeFromWishlist(item.id);
-    } else {
-      addToWishlist(item);
+    if (authToken) {
+      wishlistApi.clearWishlist(authToken).catch(() => {});
     }
-  };
+  }, [authToken]);
+
+  const toggleWishlistItem = useCallback(
+    (item: WishlistItem) => {
+      if (isInWishlist(item.id)) {
+        removeFromWishlist(item.id);
+      } else {
+        addToWishlist(item);
+      }
+    },
+    [addToWishlist, removeFromWishlist, isInWishlist],
+  );
 
   const getWishlistByType = (
     type: "product" | "service" | "store",
