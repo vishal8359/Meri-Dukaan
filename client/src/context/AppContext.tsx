@@ -634,18 +634,27 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const mapWishlistItemFromApi = (raw: any): WishlistItem => ({
-    id: String(raw?.item_id ?? raw?.id ?? ""),
-    name: String(raw?.name ?? ""),
-    price: Number(raw?.price ?? 0),
-    type: (raw?.type as WishlistItem["type"]) ?? "product",
-    description: raw?.description ?? undefined,
-    image: raw?.image ?? undefined,
-    rating: raw?.rating != null ? Number(raw.rating) : undefined,
-    storeName: raw?.store_name ?? undefined,
-    storeId: raw?.store_id ?? undefined,
-    category: raw?.category ?? undefined,
-  });
+  const mapWishlistItemFromApi = (raw: any): WishlistItem => {
+    const rawId = String(raw?.item_id ?? raw?.id ?? "");
+    const type: WishlistItem["type"] =
+      (raw?.type as WishlistItem["type"]) ?? "product";
+    // Reconstruct the prefixed ID used on the client side
+    const id = rawId.includes("-") && !rawId.startsWith(type)
+      ? `${type}-${rawId}`
+      : rawId;
+    return {
+      id,
+      name: String(raw?.name ?? ""),
+      price: Number(raw?.price ?? 0),
+      type,
+      description: raw?.description ?? undefined,
+      image: raw?.image ?? undefined,
+      rating: raw?.rating != null ? Number(raw.rating) : undefined,
+      storeName: raw?.store_name ?? undefined,
+      storeId: raw?.store_id ?? undefined,
+      category: raw?.category ?? undefined,
+    };
+  };
 
   const mapOrderFromApi = useCallback((raw: any): Order => {
     const items: OrderItem[] = Array.isArray(raw?.items)
@@ -1247,9 +1256,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (authToken) {
+        // Extract raw UUID from prefixed id like "product-<uuid>"
+        const rawId = item.id.replace(/^(product|service|store)-/, "");
         wishlistApi
           .addToWishlist(authToken, {
-            itemId: item.id,
+            itemId: rawId,
             name: item.name,
             price: item.price,
             type: item.type,
@@ -1275,7 +1286,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setWishlist((prev) => prev.filter((item) => item.id !== itemId));
 
       if (authToken) {
-        wishlistApi.removeFromWishlist(authToken, itemId).catch(() => {
+        // Extract raw UUID from prefixed id like "product-<uuid>"
+        const rawId = itemId.replace(/^(product|service|store)-/, "");
+        wishlistApi.removeFromWishlist(authToken, rawId).catch(() => {
           // Revert optimistic remove on failure
           if (removedItem) {
             setWishlist((prev) => [...prev, removedItem]);
