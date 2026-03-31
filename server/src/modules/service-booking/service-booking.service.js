@@ -1,5 +1,6 @@
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
+import eventBus from "../../lib/eventBus.js";
 import env from "../../config/env.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
@@ -252,6 +253,8 @@ async function verifyLockedPayment(
     throw updateErr || AppError.badRequest("Payment verification failed");
   }
 
+  eventBus.emit("booking.payment_verified", { userId, booking: updated });
+
   return updated;
 }
 
@@ -288,6 +291,8 @@ async function createBooking(
     }
     throw error;
   }
+
+  eventBus.emit("booking.created", { userId, booking: data });
 
   return data;
 }
@@ -348,6 +353,8 @@ async function cancelBooking(userId, bookingId) {
   if (error || !data) {
     throw AppError.notFound("Active booking not found or already closed");
   }
+
+  eventBus.emit("booking.cancelled", { userId, booking: data });
 
   return data;
 }

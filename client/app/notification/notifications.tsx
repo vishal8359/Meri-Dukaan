@@ -12,6 +12,9 @@ import {
     Bell,
     BellOff,
     CheckCheck,
+    CreditCard,
+    Calendar,
+    CalendarX,
     Gift,
     MapPin,
     Package,
@@ -29,6 +32,7 @@ import {
     FlatList,
     Platform,
     Pressable,
+    RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -107,6 +111,24 @@ const TYPE_META: Record<
     color: colors.text.secondary,
     bgTint: colors.ui.background,
     label: "General",
+  },
+  booking_confirmed: {
+    Icon: Calendar,
+    color: colors.status.success,
+    bgTint: colors.status.successLight,
+    label: "Booking",
+  },
+  booking_cancelled: {
+    Icon: CalendarX,
+    color: colors.status.error,
+    bgTint: colors.status.errorLight,
+    label: "Cancelled",
+  },
+  payment_received: {
+    Icon: CreditCard,
+    color: colors.tint.green,
+    bgTint: colors.tint.greenLight,
+    label: "Payment",
   },
 };
 
@@ -231,7 +253,7 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const { t } = useSettings();
 
-  const { notifications, unreadCount, markRead, markAllRead, remove } =
+  const { notifications, unreadCount, markRead, markAllRead, remove, loading, refresh } =
     useNotifications();
 
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -396,6 +418,14 @@ export default function NotificationsScreen() {
         maxToRenderPerBatch={12}
         windowSize={7}
         removeClippedSubviews={Platform.OS !== "web"}
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={refresh}
+            colors={[colors.brand.primary]}
+            tintColor={colors.brand.primary}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <View style={styles.emptyIconCircle}>

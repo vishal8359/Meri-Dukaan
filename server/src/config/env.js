@@ -30,6 +30,10 @@ const env = {
     keySecret: process.env.RAZORPAY_KEY_SECRET || "",
     webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || "",
   },
+
+  firebase: {
+    serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "",
+  },
 };
 
 // Fail fast on missing critical env vars

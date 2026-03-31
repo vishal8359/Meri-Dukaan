@@ -1,86 +1,105 @@
 // src/hooks/useNotificationBridge.ts
 //
-// Bridges AppContext events → NotificationContext.
-// Drop this hook into any top-level component that is inside both providers.
-// It watches orders array for status transitions and auto-pushes notifications.
+// Handles:
+// 1. Push notification permission + FCM device token registration
+// 2. Incoming push notification handling (foreground + tap response)
+// 3. Refreshes the notification list on incoming push events
 
 import { useEffect, useRef } from "react";
-import { Order, useApp } from "../context/AppContext";
+import { Platform } from "react-native";
+import Constants, { ExecutionEnvironment } from "expo-constants";
+import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
+import * as notificationApi from "../api/notifications";
 
-/** Friendly copy for each order status */
-const STATUS_COPY: Record<
-  Order["status"],
-  { title: string; body: (id: string) => string }
-> = {
-  processing: {
-    title: "Order Placed",
-    body: (id) =>
-      `Your order #${id.slice(-8)} has been placed and is being prepared.`,
-  },
-  "in-transit": {
-    title: "Order Shipped!",
-    body: (id) => `Your order #${id.slice(-8)} is on its way. Sit tight!`,
-  },
-  delivered: {
-    title: "Order Delivered",
-    body: (id) => `Your order #${id.slice(-8)} has been delivered. Enjoy!`,
-  },
-  cancelled: {
-    title: "Order Cancelled",
-    body: (id) => `Your order #${id.slice(-8)} has been cancelled.`,
-  },
-};
+/* expo-notifications + expo-device are optional peer deps.
+   If not installed or running in Expo Go (SDK 53+), push registration
+   is silently skipped and the client falls back to polling. */
+const isExpoGo =
+  Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let Notifications: typeof import("expo-notifications") | null = null;
+let Device: typeof import("expo-device") | null = null;
+
+if (!isExpoGo) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    Notifications = require("expo-notifications");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    Device = require("expo-device");
+  } catch {
+    // Push notifications unavailable — client falls back to polling
+  }
+}
+
+async function registerPushToken(authToken: string) {
+  if (!Notifications || !Device) return;
+  if (!Device.isDevice) return; // emulators can't receive push
+
+  const { status: existing } = await Notifications.getPermissionsAsync();
+  let finalStatus = existing;
+  if (existing !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  if (finalStatus !== "granted") return;
+
+  // Android notification channel
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Default",
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF6B35",
+    });
+  }
+
+  try {
+    const tokenData = await Notifications.getDevicePushTokenAsync();
+    const platform = Platform.OS === "ios" ? "ios" : "android";
+    await notificationApi.registerDevice(authToken, tokenData.data, platform);
+  } catch (err) {
+    console.warn("[push] Token registration failed:", err);
+  }
+}
 
 /**
- * Call this once near the root (e.g. inside _layout or a wrapper component).
- * It listens without rendering anything.
+ * Drop this hook into any top-level component that is inside both
+ * AuthProvider and NotificationProvider.
+ *
+ * It registers the device for push notifications and listens for
+ * incoming pushes to refresh the notification list.
  */
 export function useNotificationBridge() {
-  const { orders } = useApp();
-  const { push } = useNotifications();
+  const { authToken, isAuthenticated } = useAuth();
+  const { refresh } = useNotifications();
+  const registeredRef = useRef(false);
 
-  // Keep a snapshot of previously-seen order statuses so we only fire on *changes*
-  const prevSnapshotRef = useRef<Map<string, Order["status"]>>(new Map());
-
+  // Register FCM device token once after authentication
   useEffect(() => {
-    const prev = prevSnapshotRef.current;
+    if (!isAuthenticated || !authToken || registeredRef.current) return;
+    registeredRef.current = true;
+    registerPushToken(authToken);
+  }, [isAuthenticated, authToken]);
 
-    for (const order of orders) {
-      const oldStatus = prev.get(order.id);
+  // Listen for incoming push notifications → refresh notification list
+  useEffect(() => {
+    if (!Notifications || !isAuthenticated) return;
 
-      if (oldStatus === undefined) {
-        // Brand-new order — fire "processing" notification only for newly placed
-        if (order.status === "processing") {
-          push(
-            "order_placed",
-            STATUS_COPY.processing.title,
-            STATUS_COPY.processing.body(order.id),
-            {
-              route: `/myorders/${order.id}`,
-              meta: { orderId: order.id },
-            },
-          );
-        }
-      } else if (oldStatus !== order.status) {
-        // Status changed — map to notification type
-        const typeMap: Record<Order["status"], Parameters<typeof push>[0]> = {
-          processing: "order_confirmed",
-          "in-transit": "order_shipped",
-          delivered: "order_delivered",
-          cancelled: "order_cancelled",
-        };
-        const copy = STATUS_COPY[order.status];
-        push(typeMap[order.status], copy.title, copy.body(order.id), {
-          route: `/myorders/${order.id}`,
-          meta: { orderId: order.id },
-        });
-      }
-    }
+    // Foreground push received
+    const receivedSub = Notifications.addNotificationReceivedListener(() => {
+      refresh();
+    });
 
-    // Rebuild snapshot
-    const next = new Map<string, Order["status"]>();
-    for (const o of orders) next.set(o.id, o.status);
-    prevSnapshotRef.current = next;
-  }, [orders, push]);
+    // User tapped a push notification
+    const responseSub =
+      Notifications.addNotificationResponseReceivedListener(() => {
+        refresh();
+      });
+
+    return () => {
+      receivedSub.remove();
+      responseSub.remove();
+    };
+  }, [isAuthenticated, refresh]);
 }

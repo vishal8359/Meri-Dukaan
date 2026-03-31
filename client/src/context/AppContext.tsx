@@ -340,6 +340,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const CATALOG_CACHE_KEY = "app:catalog:v2";
 const CATALOG_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const MY_STORE_BUSINESS_TYPE_KEY = "app:myStoreBusinessType:v1";
+const ADDRESSES_STORAGE_KEY = "app:savedAddresses:v1";
+const SELECTED_ADDRESS_KEY = "app:selectedAddressId:v1";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -550,6 +552,48 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null,
   );
+  const addressesHydrated = React.useRef(false);
+
+  // Hydrate addresses from AsyncStorage on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const [rawAddresses, rawSelectedId] = await Promise.all([
+          AsyncStorage.getItem(ADDRESSES_STORAGE_KEY),
+          AsyncStorage.getItem(SELECTED_ADDRESS_KEY),
+        ]);
+        if (rawAddresses) {
+          const parsed = JSON.parse(rawAddresses);
+          if (Array.isArray(parsed)) setSavedAddresses(parsed);
+        }
+        if (rawSelectedId) setSelectedAddressId(rawSelectedId);
+      } catch {
+        // Best-effort hydration
+      } finally {
+        addressesHydrated.current = true;
+      }
+    })();
+  }, []);
+
+  // Persist addresses to AsyncStorage on every change
+  useEffect(() => {
+    if (!addressesHydrated.current) return;
+    AsyncStorage.setItem(
+      ADDRESSES_STORAGE_KEY,
+      JSON.stringify(savedAddresses),
+    ).catch(() => {});
+  }, [savedAddresses]);
+
+  useEffect(() => {
+    if (!addressesHydrated.current) return;
+    if (selectedAddressId) {
+      AsyncStorage.setItem(SELECTED_ADDRESS_KEY, selectedAddressId).catch(
+        () => {},
+      );
+    } else {
+      AsyncStorage.removeItem(SELECTED_ADDRESS_KEY).catch(() => {});
+    }
+  }, [selectedAddressId]);
 
   const mapStoreFromApi = useCallback((raw: any): Store => {
     const imageUrls: string[] = Array.isArray(raw?.images)

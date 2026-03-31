@@ -1,12 +1,16 @@
 // src/context/NotificationContext.tsx
 import React, {
-    createContext,
-    ReactNode,
-    useCallback,
-    useContext,
-    useMemo,
-    useState,
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
+import { useAuth } from "./AuthContext";
+import * as notificationApi from "../api/notifications";
 
 // ── Notification Types ─────────────────────────────
 
@@ -16,6 +20,9 @@ export type NotificationType =
   | "order_shipped"
   | "order_delivered"
   | "order_cancelled"
+  | "booking_confirmed"
+  | "booking_cancelled"
+  | "payment_received"
   | "offer"
   | "new_store"
   | "price_drop"
@@ -36,6 +43,9 @@ const TYPE_TO_CATEGORY: Record<NotificationType, NotificationCategory> = {
   order_shipped: "orders",
   order_delivered: "orders",
   order_cancelled: "orders",
+  booking_confirmed: "orders",
+  booking_cancelled: "orders",
+  payment_received: "orders",
   offer: "promotions",
   price_drop: "promotions",
   back_in_stock: "promotions",
@@ -51,10 +61,10 @@ export interface AppNotification {
   title: string;
   body: string;
   read: boolean;
-  createdAt: number; // timestamp
-  /** Optional deep-link route, e.g. "/myorders/ORD123" */
+  createdAt: number; // timestamp ms
+  /** Optional deep-link route */
   route?: string;
-  /** Extra metadata (orderId, storeId, discount%, etc.) */
+  /** Extra metadata */
   meta?: Record<string, string>;
 }
 
@@ -63,14 +73,10 @@ export interface AppNotification {
 interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
+  loading: boolean;
 
-  /** Push a new notification */
-  push: (
-    type: NotificationType,
-    title: string,
-    body: string,
-    opts?: { route?: string; meta?: Record<string, string> },
-  ) => void;
+  /** Fetch latest notifications from server */
+  refresh: () => Promise<void>;
 
   /** Mark one notification read */
   markRead: (id: string) => void;
@@ -92,157 +98,111 @@ const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined,
 );
 
-// ── Seed data (realistic demo notifications) ───────
+// ── Mapper ─────────────────────────────────────────
 
-const now = Date.now();
-const HOUR = 3_600_000;
-const DAY = 86_400_000;
-
-const SEED_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: "n1",
-    type: "order_shipped",
-    category: "orders",
-    title: "Order Shipped!",
-    body: "Your order #ORD-7F3A is on its way. Expected delivery by tomorrow.",
-    read: false,
-    createdAt: now - 2 * HOUR,
-    route: "/myorders/orders",
-    meta: { orderId: "ORD-7F3A" },
-  },
-  {
-    id: "n2",
-    type: "offer",
-    category: "promotions",
-    title: "Flash Sale — 30% Off!",
-    body: "All dairy products at Sharma Kirana are 30% off until midnight. Don't miss out!",
-    read: false,
-    createdAt: now - 5 * HOUR,
-    route: "/dukaan/store1",
-    meta: { storeId: "store1", discount: "30" },
-  },
-  {
-    id: "n3",
-    type: "order_delivered",
-    category: "orders",
-    title: "Order Delivered",
-    body: "Your order #ORD-2B9E has been delivered. Rate your experience!",
-    read: false,
-    createdAt: now - 1 * DAY,
-    route: "/myorders/orders",
-    meta: { orderId: "ORD-2B9E" },
-  },
-  {
-    id: "n4",
-    type: "new_store",
-    category: "stores",
-    title: "New Store Near You",
-    body: "Organic Farms just opened 500m from your location. Check out their fresh produce!",
-    read: true,
-    createdAt: now - 1 * DAY - 4 * HOUR,
-    route: "/dukaan/store3",
-    meta: { storeId: "store3", distance: "500m" },
-  },
-  {
-    id: "n5",
-    type: "price_drop",
-    category: "promotions",
-    title: "Price Drop Alert",
-    body: "Basmati Rice 5kg dropped from ₹480 to ₹360 at Gupta Traders.",
-    read: true,
-    createdAt: now - 2 * DAY,
-    route: "/product/p3",
-    meta: { productId: "p3", oldPrice: "480", newPrice: "360" },
-  },
-  {
-    id: "n6",
-    type: "order_confirmed",
-    category: "orders",
-    title: "Order Confirmed",
-    body: "Your order #ORD-9D1C has been confirmed and is being prepared.",
-    read: true,
-    createdAt: now - 3 * DAY,
-    route: "/myorders/orders",
-    meta: { orderId: "ORD-9D1C" },
-  },
-  {
-    id: "n7",
-    type: "back_in_stock",
-    category: "promotions",
-    title: "Back in Stock!",
-    body: "Amul Butter 500g is back in stock at Fresh Mart. Order now before it's gone!",
-    read: true,
-    createdAt: now - 3 * DAY - 6 * HOUR,
-    route: "/product/p12",
-    meta: { productId: "p12" },
-  },
-  {
-    id: "n8",
-    type: "store_update",
-    category: "stores",
-    title: "Store Update",
-    body: "Rajesh Electronics has added 15 new products this week. Take a look!",
-    read: true,
-    createdAt: now - 4 * DAY,
-    route: "/dukaan/store5",
-    meta: { storeId: "store5" },
-  },
-];
+function mapNotification(raw: notificationApi.RawNotification): AppNotification {
+  return {
+    id: raw.id,
+    type: raw.type as NotificationType,
+    category:
+      (raw.category as NotificationCategory) ||
+      TYPE_TO_CATEGORY[raw.type as NotificationType] ||
+      "general",
+    title: raw.title,
+    body: raw.body,
+    read: !!raw.read,
+    createdAt: new Date(raw.created_at).getTime(),
+    route: raw.route || undefined,
+    meta: raw.meta || undefined,
+  };
+}
 
 // ── Provider ───────────────────────────────────────
 
-let _counter = SEED_NOTIFICATIONS.length;
-const nextId = () => `n${++_counter}`;
+const POLL_INTERVAL = 30_000; // 30 seconds
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-  const [notifications, setNotifications] =
-    useState<AppNotification[]>(SEED_NOTIFICATIONS);
+  const { authToken, isAuthenticated } = useAuth();
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval>>();
 
-  const unreadCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
-    [notifications],
-  );
+  // ── Fetch from backend ──
 
-  const push = useCallback(
-    (
-      type: NotificationType,
-      title: string,
-      body: string,
-      opts?: { route?: string; meta?: Record<string, string> },
-    ) => {
-      const notif: AppNotification = {
-        id: nextId(),
-        type,
-        category: TYPE_TO_CATEGORY[type],
-        title,
-        body,
-        read: false,
-        createdAt: Date.now(),
-        route: opts?.route,
-        meta: opts?.meta,
-      };
-      setNotifications((prev) => [notif, ...prev]);
+  const refresh = useCallback(async () => {
+    if (!authToken) return;
+    try {
+      setLoading(true);
+      const res = await notificationApi.getNotifications(authToken);
+      setNotifications(res.notifications.map(mapNotification));
+      setUnreadCount(res.unreadCount);
+    } catch {
+      // Silently ignore fetch errors
+    } finally {
+      setLoading(false);
+    }
+  }, [authToken]);
+
+  // Load on auth change + periodic poll
+  useEffect(() => {
+    if (!isAuthenticated || !authToken) {
+      setNotifications([]);
+      setUnreadCount(0);
+      return;
+    }
+
+    refresh();
+    pollRef.current = setInterval(refresh, POLL_INTERVAL);
+    return () => clearInterval(pollRef.current);
+  }, [isAuthenticated, authToken, refresh]);
+
+  // ── Optimistic operations with API sync ──
+
+  const markRead = useCallback(
+    (id: string) => {
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+      if (authToken) {
+        notificationApi.markRead(authToken, id).catch(() => {});
+      }
     },
-    [],
+    [authToken],
   );
-
-  const markRead = useCallback((id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }, []);
 
   const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }, []);
+    setUnreadCount(0);
+    if (authToken) {
+      notificationApi.markAllRead(authToken).catch(() => {});
+    }
+  }, [authToken]);
 
-  const remove = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  }, []);
+  const remove = useCallback(
+    (id: string) => {
+      setNotifications((prev) => {
+        const removed = prev.find((n) => n.id === id);
+        if (removed && !removed.read) {
+          setUnreadCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((n) => n.id !== id);
+      });
+      if (authToken) {
+        notificationApi.deleteNotification(authToken, id).catch(() => {});
+      }
+    },
+    [authToken],
+  );
 
   const clearAll = useCallback(() => {
     setNotifications([]);
-  }, []);
+    setUnreadCount(0);
+    if (authToken) {
+      notificationApi.clearAll(authToken).catch(() => {});
+    }
+  }, [authToken]);
 
   const getCategoryForType = useCallback(
     (type: NotificationType) => TYPE_TO_CATEGORY[type],
@@ -253,7 +213,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       notifications,
       unreadCount,
-      push,
+      loading,
+      refresh,
       markRead,
       markAllRead,
       remove,
@@ -263,7 +224,8 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     [
       notifications,
       unreadCount,
-      push,
+      loading,
+      refresh,
       markRead,
       markAllRead,
       remove,

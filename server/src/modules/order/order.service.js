@@ -3,6 +3,7 @@ import Razorpay from "razorpay";
 import env from "../../config/env.js";
 import supabase from "../../config/supabase.js";
 import AppError from "../../lib/AppError.js";
+import eventBus from "../../lib/eventBus.js";
 import * as cartService from "../cart/cart.service.js";
 
 function getRazorpayClient() {
@@ -226,6 +227,8 @@ async function place(
 
   await cartService.clear(userId);
 
+  eventBus.emit("order.placed", { userId, order });
+
   return order;
 }
 
@@ -355,6 +358,8 @@ async function verifyOnlinePayment(
   await decrementStockForOrderItems(updated.items || []);
   await cartService.clear(userId);
 
+  eventBus.emit("order.payment_verified", { userId, order: updated });
+
   return updated;
 }
 
@@ -424,6 +429,9 @@ async function updateStatus(orderId, userId, status) {
     .single();
 
   if (error || !order) throw AppError.notFound("Order not found");
+
+  eventBus.emit("order.status_changed", { order, newStatus: status });
+
   return order;
 }
 
