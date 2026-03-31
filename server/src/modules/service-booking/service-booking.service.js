@@ -305,6 +305,31 @@ async function listMyBookings(userId) {
   return data || [];
 }
 
+async function listBookingsByStore(storeId, ownerId) {
+  await markExpiredBookingsAsCompleted();
+
+  // Verify the caller owns this store
+  const { data: store, error: storeErr } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("id", storeId)
+    .eq("owner_id", ownerId)
+    .single();
+
+  if (storeErr || !store) {
+    throw AppError.forbidden("You do not own this store");
+  }
+
+  const { data, error } = await supabase
+    .from("service_bookings")
+    .select("*, service:services(id, name, price), store:stores(id, store_name)")
+    .eq("store_id", storeId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 async function cancelBooking(userId, bookingId) {
   await markExpiredBookingsAsCompleted();
 
@@ -349,6 +374,7 @@ export {
   createLock,
   verifyLockedPayment,
   listMyBookings,
+  listBookingsByStore,
   cancelBooking,
   getLockedSlots,
 };

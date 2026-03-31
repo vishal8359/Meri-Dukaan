@@ -65,6 +65,10 @@ export function getOrders(token: string) {
   return apiRequest<{ orders: unknown[] }>("/orders", { token });
 }
 
+export function getStoreOrders(token: string, storeId: string) {
+  return apiRequest<{ orders: unknown[] }>(`/orders/store/${storeId}`, { token });
+}
+
 export function getOrderById(token: string, id: string) {
   return apiRequest<{ order: unknown }>(`/orders/${id}`, { token });
 }

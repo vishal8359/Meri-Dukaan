@@ -24,6 +24,14 @@ export const getMyServiceBookings = asyncHandler(async (req, res) => {
   res.json({ bookings });
 });
 
+export const getStoreServiceBookings = asyncHandler(async (req, res) => {
+  const bookings = await serviceBookingService.listBookingsByStore(
+    req.params.storeId,
+    req.user.id,
+  );
+  res.json({ bookings });
+});
+
 export const cancelServiceBooking = asyncHandler(async (req, res) => {
   const booking = await serviceBookingService.cancelBooking(
     req.user.id,

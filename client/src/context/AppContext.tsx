@@ -136,6 +136,17 @@ export interface Order {
   deliveryPhone: string;
 }
 
+// Store-received service booking (seller-side)
+export interface StoreServiceBooking {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  price: number;
+  status: string;
+  bookingDate: string;
+  createdAt: string;
+}
+
 // User Address interface
 export interface UserAddress {
   id: string;
@@ -316,6 +327,11 @@ interface AppContextType {
     }>,
   ) => Promise<void>;
   canUploadReelToday: () => boolean;
+
+  // Store Economics (seller-side data)
+  storeOrders: Order[];
+  storeBookings: StoreServiceBooking[];
+  refreshStoreEconomics: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -463,6 +479,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [reels, setReels] = useState<EnhancedReel[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [myStore, setMyStore] = useState<MyStore | null>(null);
+  const [storeOrders, setStoreOrders] = useState<Order[]>([]);
+  const [storeBookings, setStoreBookings] = useState<StoreServiceBooking[]>([]);
 
   useEffect(() => {
     if (!authUser) {
@@ -700,6 +718,46 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       // Keep current in-memory orders if refresh fails temporarily.
     }
   }, [authToken, mapOrderFromApi]);
+
+  const refreshStoreEconomics = useCallback(async () => {
+    if (!authToken || !myStore?.id) {
+      setStoreOrders([]);
+      setStoreBookings([]);
+      return;
+    }
+
+    try {
+      const [ordersRes, bookingsRes] = await Promise.all([
+        orderApi.getStoreOrders(authToken, myStore.id),
+        serviceBookingApi.getStoreServiceBookings(authToken, myStore.id),
+      ]);
+
+      const mappedOrders = Array.isArray(ordersRes.orders)
+        ? ordersRes.orders.map(mapOrderFromApi)
+        : [];
+      setStoreOrders(mappedOrders);
+
+      const mappedBookings = Array.isArray(bookingsRes.bookings)
+        ? bookingsRes.bookings.map((raw: any): StoreServiceBooking => ({
+            id: String(raw?.id ?? ""),
+            serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
+            serviceName: String(raw?.service?.name ?? "Service"),
+            price: Number(raw?.service?.price ?? 0),
+            status: String(raw?.status ?? "booked"),
+            bookingDate: String(raw?.booking_date ?? ""),
+            createdAt: String(raw?.created_at ?? ""),
+          }))
+        : [];
+      setStoreBookings(mappedBookings);
+    } catch {
+      // silently keep current data on failure
+    }
+  }, [authToken, myStore?.id, mapOrderFromApi]);
+
+  // Auto-fetch store economics when myStore changes
+  useEffect(() => {
+    refreshStoreEconomics();
+  }, [refreshStoreEconomics]);
 
   const mapMyStoreProduct = useCallback((raw: any): MyStoreProduct => {
     const imageUrls: string[] = Array.isArray(raw?.images)
@@ -1909,6 +1967,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       removeMyReel,
       updateStoreHours,
       canUploadReelToday,
+
+      // Store Economics
+      storeOrders,
+      storeBookings,
+      refreshStoreEconomics,
     }),
     [
       user,
@@ -1925,6 +1988,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       savedAddresses,
       selectedAddressId,
       myStore,
+      storeOrders,
+      storeBookings,
     ],
   );
 

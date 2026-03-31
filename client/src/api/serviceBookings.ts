@@ -71,6 +71,10 @@ export function getMyServiceBookings(token: string) {
   return apiRequest<{ bookings: any[] }>("/service-bookings/me", { token });
 }
 
+export function getStoreServiceBookings(token: string, storeId: string) {
+  return apiRequest<{ bookings: any[] }>(`/service-bookings/store/${storeId}`, { token });
+}
+
 export function cancelServiceBooking(token: string, id: string) {
   return apiRequest<{ booking: any }>(`/service-bookings/${id}/cancel`, {
     method: "PUT",

@@ -16,6 +16,7 @@ router.post(
 );
 router.post("/", validate(schema.createServiceBookingSchema), ctrl.createServiceBooking);
 router.get("/me", ctrl.getMyServiceBookings);
+router.get("/store/:storeId", ctrl.getStoreServiceBookings);
 router.put("/:id/cancel", validate(schema.cancelServiceBookingSchema, "params"), ctrl.cancelServiceBooking);
 
 export default router;

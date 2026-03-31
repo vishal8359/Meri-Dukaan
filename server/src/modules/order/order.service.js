@@ -369,6 +369,39 @@ async function listByUser(userId) {
   return data || [];
 }
 
+async function listByStore(storeId, ownerId) {
+  // Verify the caller owns this store
+  const { data: store, error: storeErr } = await supabase
+    .from("stores")
+    .select("id")
+    .eq("id", storeId)
+    .eq("owner_id", ownerId)
+    .single();
+
+  if (storeErr || !store)
+    throw AppError.forbidden("You do not own this store");
+
+  // Fetch orders that contain items for this store
+  const { data: itemRows, error: itemErr } = await supabase
+    .from("order_items")
+    .select("order_id")
+    .eq("store_id", storeId);
+
+  if (itemErr) throw itemErr;
+
+  const orderIds = [...new Set((itemRows || []).map((r) => r.order_id))];
+  if (orderIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, items:order_items(*)")
+    .in("id", orderIds)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 async function findById(orderId, userId) {
   const { data: order, error } = await supabase
     .from("orders")
@@ -397,6 +430,7 @@ async function updateStatus(orderId, userId, status) {
 export {
   createOnline,
   findById,
+  listByStore,
   listByUser,
   place,
   updateStatus,

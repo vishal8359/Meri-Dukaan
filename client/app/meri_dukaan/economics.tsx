@@ -27,24 +27,26 @@ type EconTab = "overview" | "products" | "services";
 
 export default function StoreEconomicsScreen() {
   const router = useRouter();
-  const { myStore, orders } = useApp();
+  const { myStore, storeOrders, storeBookings, refreshStoreEconomics } = useApp();
   const [activeTab, setActiveTab] = useState<EconTab>("overview");
 
-  // Compute economics from orders and store data
+  // Compute economics from store-received orders and bookings
   const economics = useMemo(() => {
     if (!myStore) return null;
 
-    const storeOrders = orders.filter((o) =>
-      o.items.some((item) => item.storeId === myStore.id),
-    );
-
-    const totalRevenue = storeOrders.reduce((sum, o) => {
+    // --- Product orders (from order_items belonging to this store) ---
+    const productRevenue = storeOrders.reduce((sum, o) => {
       const storeItems = o.items.filter((i) => i.storeId === myStore.id);
-      return (
-        sum + storeItems.reduce((s, i) => s + i.price * i.quantity, 0)
-      );
+      return sum + storeItems.reduce((s, i) => s + i.price * i.quantity, 0);
     }, 0);
 
+    // --- Service bookings revenue (from service_bookings for this store) ---
+    const paidBookings = storeBookings.filter(
+      (b) => b.status === "booked" || b.status === "completed",
+    );
+    const serviceRevenue = paidBookings.reduce((s, b) => s + b.price, 0);
+
+    const totalRevenue = productRevenue + serviceRevenue;
     const totalOrders = storeOrders.length;
     const deliveredOrders = storeOrders.filter(
       (o) => o.status === "delivered",
@@ -58,11 +60,13 @@ export default function StoreEconomicsScreen() {
 
     // Product-level economics
     const productEconomics = myStore.products.map((product) => {
-      const productOrders = storeOrders.flatMap((o) =>
-        o.items.filter((i) => i.id === product.id),
+      const productItems = storeOrders.flatMap((o) =>
+        o.items.filter(
+          (i) => i.id === product.id && i.storeId === myStore.id,
+        ),
       );
-      const unitsSold = productOrders.reduce((s, i) => s + i.quantity, 0);
-      const revenue = productOrders.reduce(
+      const unitsSold = productItems.reduce((s, i) => s + i.quantity, 0);
+      const revenue = productItems.reduce(
         (s, i) => s + i.price * i.quantity,
         0,
       );
@@ -79,16 +83,16 @@ export default function StoreEconomicsScreen() {
       };
     });
 
-    // Service-level economics
+    // Service-level economics (from service_bookings, not product orders)
     const serviceEconomics = myStore.services.map((service) => {
-      const serviceOrders = storeOrders.flatMap((o) =>
-        o.items.filter((i) => i.id === service.id),
+      const serviceBookingItems = storeBookings.filter(
+        (b) => b.serviceId === service.id,
       );
-      const bookings = serviceOrders.length;
-      const revenue = serviceOrders.reduce(
-        (s, i) => s + i.price * i.quantity,
-        0,
+      const paidServiceBookings = serviceBookingItems.filter(
+        (b) => b.status === "booked" || b.status === "completed",
       );
+      const bookings = paidServiceBookings.length;
+      const revenue = paidServiceBookings.reduce((s, b) => s + b.price, 0);
       return {
         id: service.id,
         name: service.name,
@@ -120,9 +124,9 @@ export default function StoreEconomicsScreen() {
       availableServices,
       productEconomics,
       serviceEconomics,
-      avgOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      avgOrderValue: totalOrders > 0 ? productRevenue / totalOrders : 0,
     };
-  }, [myStore, orders]);
+  }, [myStore, storeOrders, storeBookings]);
 
   if (!myStore) {
     return (

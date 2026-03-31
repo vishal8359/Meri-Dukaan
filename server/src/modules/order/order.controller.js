@@ -21,6 +21,11 @@ export const getOrders = asyncHandler(async (req, res) => {
   res.json({ orders });
 });
 
+export const getStoreOrders = asyncHandler(async (req, res) => {
+  const orders = await orderService.listByStore(req.params.storeId, req.user.id);
+  res.json({ orders });
+});
+
 export const getOrderById = asyncHandler(async (req, res) => {
   const order = await orderService.findById(req.params.id, req.user.id);
   res.json({ order });

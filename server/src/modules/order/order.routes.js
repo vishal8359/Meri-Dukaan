@@ -20,6 +20,7 @@ router.post(
 	ctrl.verifyOnlinePayment,
 );
 router.get("/", ctrl.getOrders);
+router.get("/store/:storeId", ctrl.getStoreOrders);
 router.get("/:id", ctrl.getOrderById);
 router.put("/:id/status", validate(schema.updateOrderStatusSchema), ctrl.updateOrderStatus);
 
