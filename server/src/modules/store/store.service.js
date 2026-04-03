@@ -94,14 +94,30 @@ async function getCatalog({ page = 1, limit = 20 }) {
       .order("created_at", { ascending: false }),
     supabase
       .from("services")
-      .select("*")
+      .select("*, images:service_images(id, image_url)")
       .in("store_id", storeIds)
       .eq("shown", true)
       .order("created_at", { ascending: false }),
   ]);
 
   if (productsError) throw productsError;
-  if (servicesError) throw servicesError;
+
+  // If service_images table doesn't exist, fallback to select("*")
+  let finalServices = services;
+  if (servicesError) {
+    if (servicesError.code === "PGRST200" || servicesError.message?.includes("service_images")) {
+      const { data: fallbackServices, error: fbErr } = await supabase
+        .from("services")
+        .select("*")
+        .in("store_id", storeIds)
+        .eq("shown", true)
+        .order("created_at", { ascending: false });
+      if (fbErr) throw fbErr;
+      finalServices = fallbackServices;
+    } else {
+      throw servicesError;
+    }
+  }
 
   const productsByStore = {};
   const servicesByStore = {};
@@ -118,7 +134,7 @@ async function getCatalog({ page = 1, limit = 20 }) {
     productsByStore[product.store_id].push(product);
   });
 
-  (services || []).forEach((service) => {
+  (finalServices || []).forEach((service) => {
     if (!servicesByStore[service.store_id]) {
       servicesByStore[service.store_id] = [];
     }

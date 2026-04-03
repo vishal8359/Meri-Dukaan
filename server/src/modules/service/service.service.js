@@ -13,49 +13,81 @@ function getMissingColumnName(error) {
 async function listByStore(storeId) {
   const { data, error } = await supabase
     .from("services")
-    .select("*")
+    .select("*, images:service_images(id, image_url)")
     .eq("store_id", storeId)
     .eq("shown", true)
     .order("created_at", { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    // Fallback if service_images table doesn't exist yet
+    if (error.code === "PGRST200" || error.message?.includes("service_images")) {
+      const { data: fallback, error: fbErr } = await supabase
+        .from("services")
+        .select("*")
+        .eq("store_id", storeId)
+        .eq("shown", true)
+        .order("created_at", { ascending: false });
+      if (fbErr) throw fbErr;
+      return fallback || [];
+    }
+    throw error;
+  }
   return data || [];
 }
 
 async function findById(serviceId) {
   const { data, error } = await supabase
     .from("services")
-    .select("*, store:stores(id, store_name)")
+    .select("*, store:stores(id, store_name), images:service_images(id, image_url)")
     .eq("id", serviceId)
     .eq("shown", true)
     .single();
 
-  if (error || !data) throw AppError.notFound("Service not found");
+  if (error) {
+    // Fallback if service_images table doesn't exist yet
+    if (error.code === "PGRST200" || error.message?.includes("service_images")) {
+      const { data: fallback, error: fbErr } = await supabase
+        .from("services")
+        .select("*, store:stores(id, store_name)")
+        .eq("id", serviceId)
+        .eq("shown", true)
+        .single();
+      if (fbErr || !fallback) throw AppError.notFound("Service not found");
+      return fallback;
+    }
+    throw error;
+  }
+  if (!data) throw AppError.notFound("Service not found");
   return data;
 }
 
 async function create(storeId, body) {
+  const { images, ...rest } = body;
+
   let payload = {
     store_id: storeId,
-    name: body.name,
-    price: body.price,
-    images: body.images,
-    type: body.type,
-    availability: body.availability,
-    timings: body.timings,
+    name: rest.name,
+    price: rest.price,
+    type: rest.type,
+    availability: rest.availability,
+    timings: rest.timings,
     rating: 0,
-    description: body.description,
+    description: rest.description,
   };
 
   // Legacy schemas may miss newer columns; retry after removing unknown keys.
+  let service;
   for (let attempt = 0; attempt < 6; attempt++) {
-    const { data: service, error } = await supabase
+    const { data, error } = await supabase
       .from("services")
       .insert(payload)
       .select()
       .single();
 
-    if (!error) return service;
+    if (!error) {
+      service = data;
+      break;
+    }
 
     const missingColumn = getMissingColumnName(error);
     if (!missingColumn) throw error;
@@ -65,7 +97,27 @@ async function create(storeId, body) {
     payload = nextPayload;
   }
 
-  throw AppError.badRequest("Unable to create service with current schema");
+  if (!service) {
+    throw AppError.badRequest("Unable to create service with current schema");
+  }
+
+  // Store images in service_images table (mirrors product_images pattern)
+  if (images && images.length > 0) {
+    const rows = images.map((url) => ({ service_id: service.id, image_url: url }));
+    const { error: imgErr } = await supabase.from("service_images").insert(rows);
+
+    // If service_images table doesn't exist, try storing in images column directly
+    if (imgErr) {
+      await supabase
+        .from("services")
+        .update({ images })
+        .eq("id", service.id)
+        .then(() => {}) // ignore errors for fallback
+        .catch(() => {});
+    }
+  }
+
+  return service;
 }
 
 async function update(serviceId, storeId, body) {
