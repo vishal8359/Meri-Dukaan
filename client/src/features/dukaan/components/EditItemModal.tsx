@@ -1,7 +1,8 @@
 // src/features/dukaan/components/EditItemModal.tsx
+import { PRODUCT_CATEGORIES, SERVICE_CATEGORIES } from "@/src/constants/catalog";
 import { colors, radius, spacing } from "@/src/theme/colors";
-import { Minus, Plus, Save, Trash2, X } from "lucide-react-native";
-import React, { useState } from "react";
+import { ChevronDown, Minus, Plus, Save, Trash2, X } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
     Modal,
     ScrollView,
@@ -30,6 +31,13 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
   onDelete,
 }) => {
   const [formData, setFormData] = useState(item || {});
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  // Reset form data when item changes
+  useEffect(() => {
+    setFormData(item || {});
+    setShowCategoryPicker(false);
+  }, [item]);
 
   const handleSave = () => {
     onSave(formData);
@@ -55,6 +63,28 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
     if (current > 0) {
       updateField("stock", (current - 1).toString() + " kg");
     }
+  };
+
+  // Get the appropriate categories list (skip "all" option)
+  const categories =
+    type === "product"
+      ? PRODUCT_CATEGORIES.filter((c) => c.id !== "all")
+      : SERVICE_CATEGORIES.filter((c) => c.id !== "all");
+
+  // Find the currently selected category display name
+  const currentCategory = formData.category || formData.type || "";
+  const selectedCategoryOption = categories.find(
+    (c) =>
+      c.id === currentCategory.toLowerCase() ||
+      c.name.toLowerCase() === currentCategory.toLowerCase(),
+  );
+  const categoryDisplayName =
+    selectedCategoryOption?.name || currentCategory || "Select category";
+
+  const handleCategorySelect = (categoryId: string) => {
+    updateField("category", categoryId);
+    updateField("type", categoryId);
+    setShowCategoryPicker(false);
   };
 
   return (
@@ -90,19 +120,94 @@ export const EditItemModal: React.FC<EditItemModalProps> = ({
               />
             </View>
 
+            {/* Category Picker (for both products and services) */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Category</Text>
+              <TouchableOpacity
+                style={styles.categoryPickerBtn}
+                onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+              >
+                {selectedCategoryOption && (
+                  <Text style={styles.categoryEmoji}>
+                    {selectedCategoryOption.icon}
+                  </Text>
+                )}
+                <Text
+                  style={[
+                    styles.categoryPickerText,
+                    !selectedCategoryOption && { color: colors.text.tertiary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {categoryDisplayName}
+                </Text>
+                <ChevronDown
+                  size={18}
+                  color={colors.text.secondary}
+                  style={{
+                    transform: [
+                      { rotate: showCategoryPicker ? "180deg" : "0deg" },
+                    ],
+                  }}
+                />
+              </TouchableOpacity>
+
+              {showCategoryPicker && (
+                <View style={styles.categoryDropdown}>
+                  <ScrollView
+                    style={styles.categoryDropdownScroll}
+                    nestedScrollEnabled={true}
+                    showsVerticalScrollIndicator={true}
+                  >
+                    {categories.map((cat) => {
+                      const isSelected =
+                        currentCategory.toLowerCase() === cat.id ||
+                        currentCategory.toLowerCase() ===
+                          cat.name.toLowerCase();
+                      return (
+                        <TouchableOpacity
+                          key={cat.id}
+                          style={[
+                            styles.categoryDropdownItem,
+                            isSelected && {
+                              backgroundColor: colors.tint.blueLight,
+                              borderColor: colors.brand.primaryLight,
+                            },
+                          ]}
+                          onPress={() => handleCategorySelect(cat.id)}
+                        >
+                          <Text style={styles.categoryItemEmoji}>
+                            {cat.icon}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.categoryItemText,
+                              isSelected && {
+                                color: colors.brand.primary,
+                                fontWeight: "700",
+                              },
+                            ]}
+                          >
+                            {cat.name}
+                          </Text>
+                          {isSelected && (
+                            <View
+                              style={[
+                                styles.categoryDot,
+                                { backgroundColor: cat.color },
+                              ]}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+
             {type === "product" ? (
               <>
-                {/* Category */}
-                <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Category</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={formData.category}
-                    onChangeText={(text) => updateField("category", text)}
-                    placeholder="e.g., Vegetables"
-                  />
-                </View>
-
                 {/* Price */}
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Price (₹)</Text>
@@ -318,6 +423,70 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: "top",
   },
+  // Category Picker styles
+  categoryPickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: 8,
+  },
+  categoryEmoji: {
+    fontSize: 18,
+  },
+  categoryPickerText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.text.primary,
+    fontWeight: "500",
+  },
+  categoryDropdown: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.surface,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  categoryDropdownScroll: {
+    maxHeight: 200,
+  },
+  categoryDropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.borderLight,
+    borderWidth: 1,
+    borderColor: "transparent",
+    borderRadius: 4,
+    marginHorizontal: 4,
+    marginVertical: 2,
+  },
+  categoryItemEmoji: {
+    fontSize: 16,
+  },
+  categoryItemText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text.primary,
+  },
+  categoryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  // Stock controls
   stockControl: {
     flexDirection: "row",
     alignItems: "center",

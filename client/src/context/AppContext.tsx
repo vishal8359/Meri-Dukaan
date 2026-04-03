@@ -2,13 +2,13 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
+    createContext,
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useState,
 } from "react";
 import { InteractionManager } from "react-native";
 import * as cartApi from "../api/cart";
@@ -173,6 +173,7 @@ export interface MyStoreProduct {
   unit: QuantityUnit;
   inStock: boolean;
   description?: string;
+  category?: string;
 }
 
 export interface MyStoreService {
@@ -183,6 +184,7 @@ export interface MyStoreService {
   duration: string; // e.g. "30 min", "1 hr"
   description: string;
   available: boolean;
+  category?: string;
 }
 
 export interface MyStoreReel {
@@ -846,10 +848,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const mapMyStoreService = useCallback((raw: any): MyStoreService => {
-    const imageUrls: string[] = Array.isArray(raw?.images)
-      ? raw.images
+    let rawImages = raw?.images;
+    // Handle images stored as JSON string in DB (text column)
+    if (typeof rawImages === "string") {
+      try { rawImages = JSON.parse(rawImages); } catch {
+        rawImages = rawImages.startsWith("http") ? [rawImages] : [];
+      }
+    }
+    const imageUrls: string[] = Array.isArray(rawImages)
+      ? rawImages
           .map((img: any) => (typeof img === "string" ? img : img?.image_url))
-          .filter((url: unknown): url is string => typeof url === "string")
+          .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
       : [];
 
     return {
@@ -860,6 +869,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       duration: String(raw?.timings ?? ""),
       description: String(raw?.description ?? ""),
       available: Boolean(raw?.availability ?? true),
+      category: String(raw?.type ?? "general").toLowerCase(),
     };
   }, []);
 
@@ -920,10 +930,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const mapCatalogService = useCallback(
     (store: any, raw: any): CatalogService => {
-      const imageUrls: string[] = Array.isArray(raw?.images)
-        ? raw.images
+      let rawImages = raw?.images;
+      // Handle images stored as JSON string in DB (text column)
+      if (typeof rawImages === "string") {
+        try { rawImages = JSON.parse(rawImages); } catch {
+          // Could be a single URL string, not JSON
+          rawImages = rawImages.startsWith("http") ? [rawImages] : [];
+        }
+      }
+      const imageUrls: string[] = Array.isArray(rawImages)
+        ? rawImages
             .map((img: any) => (typeof img === "string" ? img : img?.image_url))
-            .filter((url: unknown): url is string => typeof url === "string")
+            .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
         : [];
 
       return {
@@ -932,7 +950,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         storeName: String(store?.store_name ?? "Store"),
         name: String(raw?.name ?? "Service"),
         category: String(raw?.type ?? "service").toLowerCase(),
-        image: imageUrls[0],
+        image: imageUrls[0] || "",
         images: imageUrls,
         price: Number(raw?.price ?? 0),
         rating: Number(raw?.rating ?? 0),
@@ -1792,7 +1810,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await storeApi.addStoreProduct(authToken, myStore.id, {
         name: product.name,
-        type: "General",
+        type: product.category || "general",
         realPrice: product.price,
         offerPrice: product.price,
         stock: product.quantity,
@@ -1859,7 +1877,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         name: service.name,
         price: Number(service.price) || 0,
         images: Array.isArray(service.images) ? service.images : [],
-        type: "General",
+        type: service.category || "general",
         availability: service.available,
         timings: service.duration,
         description: service.description,

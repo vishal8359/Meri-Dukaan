@@ -7,39 +7,39 @@ import { CatalogProduct, CatalogService, useApp } from "@/src/context/AppContext
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    Calendar,
-    Clock,
-    Grid2x2,
-    Heart,
-    List,
-    MapPin,
-    Minus,
-    Plus,
-    Search,
-    ShoppingCart,
-    SortAsc,
-    Star,
-    X,
+  Calendar,
+  Clock,
+  Grid2x2,
+  Heart,
+  List,
+  MapPin,
+  Minus,
+  Plus,
+  Search,
+  ShoppingCart,
+  SortAsc,
+  Star,
+  X,
 } from "lucide-react-native";
 import React, {
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    Animated,
-    Dimensions,
-    FlatList,
-    Image,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -466,9 +466,13 @@ export default function MyBuszScreen() {
   const [selectedServiceCategory, setSelectedServiceCategory] = useState("all");
 
   // Sync when navigating from HomeScreen with a new category param
+  // Reset to "all" when no category param (e.g. tapping bottom tab directly)
   useEffect(() => {
     if (category && PRODUCT_CATEGORIES.some((c) => c.id === category)) {
       setSelectedCategory(category);
+    } else {
+      setSelectedCategory("all");
+      setSelectedServiceCategory("all");
     }
   }, [category]);
   const [searchQuery, setSearchQuery] = useState("");

@@ -1,9 +1,10 @@
 // app/meri_dukaan/inventory/add-product.tsx
+import { PRODUCT_CATEGORIES } from "@/src/constants/catalog";
 import { QuantityUnit, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Camera, ChevronDown, Trash2 } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
     Alert,
@@ -42,6 +43,8 @@ export default function AddProductScreen() {
   const [unit, setUnit] = useState<QuantityUnit>("pcs");
   const [images, setImages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [category, setCategory] = useState("");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   // Quantity variant tags (e.g. "200 g", "400 g", "1 kg")
   const [variants, setVariants] = useState<QuantityVariant[]>([]);
@@ -111,6 +114,8 @@ export default function AddProductScreen() {
       return Alert.alert("Error", "Enter valid quantity");
     if (images.length < 1)
       return Alert.alert("Error", "Add at least 1 product image");
+    if (!category)
+      return Alert.alert("Error", "Select a category");
 
     try {
       setIsSaving(true);
@@ -123,6 +128,7 @@ export default function AddProductScreen() {
         unit,
         description: description.trim() || undefined,
         inStock: true,
+        category,
       });
 
       Alert.alert("Success", "Product added!", [
@@ -349,6 +355,78 @@ export default function AddProductScreen() {
           )}
         </View>
 
+        {/* Category Picker */}
+        <View style={styles.section}>
+          <Text style={styles.label}>Category *</Text>
+          <TouchableOpacity
+            style={styles.categoryPickerBtn}
+            onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+          >
+            {category ? (
+              <Text style={styles.categoryEmoji}>
+                {PRODUCT_CATEGORIES.find((c) => c.id === category)?.icon}
+              </Text>
+            ) : null}
+            <Text
+              style={[
+                styles.categoryPickerText,
+                !category && { color: colors.ui.muted },
+              ]}
+            >
+              {category
+                ? PRODUCT_CATEGORIES.find((c) => c.id === category)?.name
+                : "Select category"}
+            </Text>
+            <ChevronDown
+              size={18}
+              color={colors.text.secondary}
+              style={{
+                transform: [
+                  { rotate: showCategoryPicker ? "180deg" : "0deg" },
+                ],
+              }}
+            />
+          </TouchableOpacity>
+          {showCategoryPicker && (
+            <View style={styles.categoryDropdown}>
+              <ScrollView
+                style={{ maxHeight: 200 }}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+              >
+                {PRODUCT_CATEGORIES.filter((c) => c.id !== "all").map(
+                  (cat) => {
+                    const isActive = category === cat.id;
+                    return (
+                      <TouchableOpacity
+                        key={cat.id}
+                        style={[
+                          styles.categoryItem,
+                          isActive && styles.categoryItemActive,
+                        ]}
+                        onPress={() => {
+                          setCategory(cat.id);
+                          setShowCategoryPicker(false);
+                        }}
+                      >
+                        <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
+                        <Text
+                          style={[
+                            styles.categoryItemText,
+                            isActive && { color: colors.brand.primary, fontWeight: "700" },
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  },
+                )}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+
         {/* Save */}
         <TouchableOpacity
           style={[styles.saveBtn, isSaving && styles.saveBtnDisabled]}
@@ -562,6 +640,58 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: colors.status.error,
+  },
+
+  /* Category Picker */
+  categoryPickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.ui.surface,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: Platform.OS === "ios" ? 14 : 10,
+    gap: 8,
+  },
+  categoryEmoji: {
+    fontSize: 18,
+  },
+  categoryPickerText: {
+    flex: 1,
+    fontSize: 15,
+    color: colors.text.primary,
+    fontWeight: "500",
+  },
+  categoryDropdown: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.ui.surface,
+    overflow: "hidden",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  categoryItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.border + "40",
+  },
+  categoryItemActive: {
+    backgroundColor: colors.brand.primary + "10",
+  },
+  categoryItemText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: colors.text.primary,
   },
 
   /* Save */
