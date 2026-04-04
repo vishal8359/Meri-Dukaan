@@ -68,6 +68,7 @@ async function create(storeId, body) {
     store_id: storeId,
     name: rest.name,
     price: rest.price,
+    images: Array.isArray(images) ? images : [],
     type: rest.type,
     availability: rest.availability,
     timings: rest.timings,
@@ -92,6 +93,7 @@ async function create(storeId, body) {
     const missingColumn = getMissingColumnName(error);
     if (!missingColumn) throw error;
 
+    console.log(`[service.create] Column '${missingColumn}' missing, retrying without it`);
     const nextPayload = { ...payload };
     delete nextPayload[missingColumn];
     payload = nextPayload;
@@ -101,19 +103,17 @@ async function create(storeId, body) {
     throw AppError.badRequest("Unable to create service with current schema");
   }
 
-  // Store images in service_images table (mirrors product_images pattern)
-  if (images && images.length > 0) {
-    const rows = images.map((url) => ({ service_id: service.id, image_url: url }));
-    const { error: imgErr } = await supabase.from("service_images").insert(rows);
+  // If images were stripped by the retry loop (column doesn't exist),
+  // try the service_images table as fallback
+  if (images && images.length > 0 && !payload.images) {
+    const { error: imgErr } = await supabase
+      .from("service_images")
+      .insert(images.map((url) => ({ service_id: service.id, image_url: url })));
 
-    // If service_images table doesn't exist, try storing in images column directly
     if (imgErr) {
-      await supabase
-        .from("services")
-        .update({ images })
-        .eq("id", service.id)
-        .then(() => {}) // ignore errors for fallback
-        .catch(() => {});
+      console.log("[service.create] Could not store images:", imgErr.message);
+    } else {
+      console.log("[service.create] Images stored in service_images table");
     }
   }
 

@@ -4,7 +4,7 @@ import { QuantityUnit, useApp } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, ChevronDown, Trash2 } from "lucide-react-native";
+import { ArrowLeft, Camera, ChevronDown, Search, Trash2 } from "lucide-react-native";
 import React, { useRef, useState } from "react";
 import {
     Alert,
@@ -45,6 +45,7 @@ export default function AddProductScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [category, setCategory] = useState("");
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
 
   // Quantity variant tags (e.g. "200 g", "400 g", "1 kg")
   const [variants, setVariants] = useState<QuantityVariant[]>([]);
@@ -389,12 +390,28 @@ export default function AddProductScreen() {
           </TouchableOpacity>
           {showCategoryPicker && (
             <View style={styles.categoryDropdown}>
+              <View style={styles.categorySearchBox}>
+                <Search size={16} color={colors.text.tertiary} />
+                <TextInput
+                  style={styles.categorySearchInput}
+                  placeholder="Search category..."
+                  placeholderTextColor={colors.ui.muted}
+                  value={categorySearch}
+                  onChangeText={setCategorySearch}
+                  autoFocus
+                />
+              </View>
               <ScrollView
                 style={{ maxHeight: 200 }}
                 nestedScrollEnabled
                 showsVerticalScrollIndicator
+                keyboardShouldPersistTaps="handled"
               >
-                {PRODUCT_CATEGORIES.filter((c) => c.id !== "all").map(
+                {PRODUCT_CATEGORIES.filter(
+                  (c) =>
+                    c.id !== "all" &&
+                    c.name.toLowerCase().includes(categorySearch.toLowerCase()),
+                ).map(
                   (cat) => {
                     const isActive = category === cat.id;
                     return (
@@ -407,6 +424,7 @@ export default function AddProductScreen() {
                         onPress={() => {
                           setCategory(cat.id);
                           setShowCategoryPicker(false);
+                          setCategorySearch("");
                         }}
                       >
                         <Text style={{ fontSize: 16 }}>{cat.icon}</Text>
@@ -692,6 +710,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: colors.text.primary,
+  },
+  categorySearchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.ui.border,
+    gap: 8,
+  },
+  categorySearchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text.primary,
+    paddingVertical: 4,
   },
 
   /* Save */
