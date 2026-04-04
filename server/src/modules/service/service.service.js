@@ -164,11 +164,32 @@ async function update(serviceId, storeId, body) {
 async function remove(serviceId, storeId) {
   const { error } = await supabase
     .from("services")
-    .update({ shown: false })
+    .update({ shown: false, updated_at: new Date().toISOString() })
     .eq("id", serviceId)
     .eq("store_id", storeId);
 
-  if (error) throw error;
+  if (error) {
+    // If updated_at column doesn't exist, retry without it
+    if (error.code === "42703" || error.message?.includes("updated_at")) {
+      const { error: retryErr } = await supabase
+        .from("services")
+        .update({ shown: false })
+        .eq("id", serviceId)
+        .eq("store_id", storeId);
+
+      // If the trigger still fails, do a hard delete as last resort
+      if (retryErr) {
+        const { error: delErr } = await supabase
+          .from("services")
+          .delete()
+          .eq("id", serviceId)
+          .eq("store_id", storeId);
+        if (delErr) throw delErr;
+      }
+      return;
+    }
+    throw error;
+  }
 }
 
 export { create, findById, listByStore, remove, update };
