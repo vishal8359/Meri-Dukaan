@@ -5,6 +5,80 @@ export type CategoryOption = {
   color: string;
 };
 
+export type ServicePatternOption = {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  description: string;
+  pricingModel: string;
+  bookingType: string;
+  examples: string;
+};
+
+export const SERVICE_PATTERNS: ServicePatternOption[] = [
+  {
+    id: "subscription",
+    name: "Subscription-Based",
+    icon: "🔄",
+    color: "#7c3aed",
+    description: "Recurring payment — daily, weekly, monthly, yearly",
+    pricingModel: "recurring",
+    bookingType: "none",
+    examples: "Gym membership, Netflix, Newspaper",
+  },
+  {
+    id: "time_booking",
+    name: "Time-Based Booking",
+    icon: "📅",
+    color: "#3b82f6",
+    description: "User books a time slot with fixed schedule",
+    pricingModel: "per_slot",
+    bookingType: "slot",
+    examples: "Salon appointment, Doctor consultation",
+  },
+  {
+    id: "usage",
+    name: "Duration / Usage-Based",
+    icon: "⏱️",
+    color: "#f97316",
+    description: "Pay based on actual usage time or distance",
+    pricingModel: "per_unit",
+    bookingType: "live_tracking",
+    examples: "Boat surfing, Bike rental, Pool entry",
+  },
+  {
+    id: "custom_input",
+    name: "Input-Driven Custom",
+    icon: "✏️",
+    color: "#10b981",
+    description: "Requires user inputs to calculate price/availability",
+    pricingModel: "dynamic",
+    bookingType: "custom",
+    examples: "Coaching classes, Event planning",
+  },
+  {
+    id: "fixed_package",
+    name: "Fixed Package",
+    icon: "📦",
+    color: "#ec4899",
+    description: "Predefined bundles with a fixed price",
+    pricingModel: "fixed",
+    bookingType: "date_selection",
+    examples: "Tour packages, Wedding photography",
+  },
+  {
+    id: "on_demand",
+    name: "On-Demand Instant",
+    icon: "⚡",
+    color: "#eab308",
+    description: "No pre-booking — service starts immediately",
+    pricingModel: "base_plus_hourly",
+    bookingType: "instant",
+    examples: "Electrician, Plumber, Emergency repair",
+  },
+];
+
 export const STORE_TYPES = [
   "Grocery",
   "Medical",

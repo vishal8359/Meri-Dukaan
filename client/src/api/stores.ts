@@ -63,6 +63,10 @@ export interface AddServicePayload {
   availability?: boolean;
   timings: string;
   description: string;
+  service_pattern?: string;
+  pattern_config?: string;
+  pricing_model?: string;
+  booking_type?: string;
 }
 
 export interface UpdateServicePayload {

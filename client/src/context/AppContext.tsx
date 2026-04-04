@@ -173,7 +173,6 @@ export interface MyStoreProduct {
   unit: QuantityUnit;
   inStock: boolean;
   description?: string;
-  category?: string;
 }
 
 export interface MyStoreService {
@@ -181,10 +180,14 @@ export interface MyStoreService {
   name: string;
   price: number;
   images: string[];
-  duration: string; // e.g. "30 min", "1 hr"
   description: string;
   available: boolean;
   category?: string;
+  servicePattern?: string;
+  patternConfig?: Record<string, any>;
+  pricingModel?: string;
+  bookingType?: string;
+  duration?: string;
 }
 
 export interface MyStoreReel {
@@ -685,9 +688,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const type: WishlistItem["type"] =
       (raw?.type as WishlistItem["type"]) ?? "product";
     // Reconstruct the prefixed ID used on the client side
-    const id = rawId.includes("-") && !rawId.startsWith(type)
-      ? `${type}-${rawId}`
-      : rawId;
+    const id =
+      rawId.includes("-") && !rawId.startsWith(type)
+        ? `${type}-${rawId}`
+        : rawId;
     return {
       id,
       name: String(raw?.name ?? ""),
@@ -807,15 +811,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setStoreOrders(mappedOrders);
 
       const mappedBookings = Array.isArray(bookingsRes.bookings)
-        ? bookingsRes.bookings.map((raw: any): StoreServiceBooking => ({
-            id: String(raw?.id ?? ""),
-            serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
-            serviceName: String(raw?.service?.name ?? "Service"),
-            price: Number(raw?.service?.price ?? 0),
-            status: String(raw?.status ?? "booked"),
-            bookingDate: String(raw?.booking_date ?? ""),
-            createdAt: String(raw?.created_at ?? ""),
-          }))
+        ? bookingsRes.bookings.map(
+            (raw: any): StoreServiceBooking => ({
+              id: String(raw?.id ?? ""),
+              serviceId: String(raw?.service_id ?? raw?.service?.id ?? ""),
+              serviceName: String(raw?.service?.name ?? "Service"),
+              price: Number(raw?.service?.price ?? 0),
+              status: String(raw?.status ?? "booked"),
+              bookingDate: String(raw?.booking_date ?? ""),
+              createdAt: String(raw?.created_at ?? ""),
+            }),
+          )
         : [];
       setStoreBookings(mappedBookings);
     } catch {
@@ -848,17 +854,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const mapMyStoreService = useCallback((raw: any): MyStoreService => {
-    let rawImages = raw?.images;
-    // Handle images stored as JSON string in DB (text column)
-    if (typeof rawImages === "string") {
-      try { rawImages = JSON.parse(rawImages); } catch {
-        rawImages = rawImages.startsWith("http") ? [rawImages] : [];
-      }
-    }
-    const imageUrls: string[] = Array.isArray(rawImages)
-      ? rawImages
+    const imageUrls: string[] = Array.isArray(raw?.images)
+      ? raw.images
           .map((img: any) => (typeof img === "string" ? img : img?.image_url))
-          .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
+          .filter((url: unknown): url is string => typeof url === "string")
       : [];
 
     return {
@@ -869,7 +868,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       duration: String(raw?.timings ?? ""),
       description: String(raw?.description ?? ""),
       available: Boolean(raw?.availability ?? true),
-      category: String(raw?.type ?? "general").toLowerCase(),
     };
   }, []);
 
@@ -930,18 +928,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const mapCatalogService = useCallback(
     (store: any, raw: any): CatalogService => {
-      let rawImages = raw?.images;
-      // Handle images stored as JSON string in DB (text column)
-      if (typeof rawImages === "string") {
-        try { rawImages = JSON.parse(rawImages); } catch {
-          // Could be a single URL string, not JSON
-          rawImages = rawImages.startsWith("http") ? [rawImages] : [];
-        }
-      }
-      const imageUrls: string[] = Array.isArray(rawImages)
-        ? rawImages
+      const imageUrls: string[] = Array.isArray(raw?.images)
+        ? raw.images
             .map((img: any) => (typeof img === "string" ? img : img?.image_url))
-            .filter((url: unknown): url is string => typeof url === "string" && url.length > 0)
+            .filter((url: unknown): url is string => typeof url === "string")
         : [];
 
       return {
@@ -950,7 +940,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         storeName: String(store?.store_name ?? "Store"),
         name: String(raw?.name ?? "Service"),
         category: String(raw?.type ?? "service").toLowerCase(),
-        image: imageUrls[0] || "",
+        image: imageUrls[0],
         images: imageUrls,
         price: Number(raw?.price ?? 0),
         rating: Number(raw?.rating ?? 0),
@@ -1080,12 +1070,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const [cartRes, orderRes, bookingRes, wishlistRes] = await Promise.allSettled([
-        cartApi.getCart(authToken),
-        orderApi.getOrders(authToken),
-        serviceBookingApi.getMyServiceBookings(authToken),
-        wishlistApi.getWishlist(authToken),
-      ]);
+      const [cartRes, orderRes, bookingRes, wishlistRes] =
+        await Promise.allSettled([
+          cartApi.getCart(authToken),
+          orderApi.getOrders(authToken),
+          serviceBookingApi.getMyServiceBookings(authToken),
+          wishlistApi.getWishlist(authToken),
+        ]);
 
       if (cartRes.status === "fulfilled") {
         const mappedCart = Array.isArray(cartRes.value.items)
@@ -1115,7 +1106,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (wishlistRes.status === "fulfilled") {
-        const mappedWishlist: WishlistItem[] = Array.isArray(wishlistRes.value.items)
+        const mappedWishlist: WishlistItem[] = Array.isArray(
+          wishlistRes.value.items,
+        )
           ? wishlistRes.value.items.map(mapWishlistItemFromApi)
           : [];
         setWishlist(mappedWishlist);
@@ -1810,7 +1803,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
       const response = await storeApi.addStoreProduct(authToken, myStore.id, {
         name: product.name,
-        type: product.category || "general",
+        type: "General",
         realPrice: product.price,
         offerPrice: product.price,
         stock: product.quantity,
@@ -1879,8 +1872,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         images: Array.isArray(service.images) ? service.images : [],
         type: service.category || "general",
         availability: service.available,
-        timings: service.duration,
+        timings: service.duration || "",
         description: service.description,
+        service_pattern: service.servicePattern,
+        pattern_config: service.patternConfig ? JSON.stringify(service.patternConfig) : undefined,
+        pricing_model: service.pricingModel,
+        booking_type: service.bookingType,
       });
 
       const raw = (response as any)?.service ?? {};

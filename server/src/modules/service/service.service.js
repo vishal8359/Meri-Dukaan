@@ -74,6 +74,10 @@ async function create(storeId, body) {
     timings: rest.timings,
     rating: 0,
     description: rest.description,
+    service_pattern: rest.service_pattern,
+    pattern_config: rest.pattern_config,
+    pricing_model: rest.pricing_model,
+    booking_type: rest.booking_type,
   };
 
   // Legacy schemas may miss newer columns; retry after removing unknown keys.
