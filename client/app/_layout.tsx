@@ -1,12 +1,17 @@
+import SplashOverlay from "@/src/components/common/SplashOverlay";
 import { AppProvider } from "@/src/context/AppContext";
 import { AuthProvider, useAuth } from "@/src/context/AuthContext";
 import { NotificationProvider } from "@/src/context/NotificationContext";
 import { ReelProvider } from "@/src/context/ReelContext";
 import { SettingsProvider } from "@/src/context/SettingsContext";
 import { useNotificationBridge } from "@/src/hooks/useNotificationBridge";
+import * as SplashScreen from "expo-splash-screen";
 import { Stack, useRouter, useSegments } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
+
+// ── Hold native splash until auth resolves ──
+SplashScreen.preventAutoHideAsync();
 
 /** Thin wrapper that activates the order→notification bridge */
 function NotificationBridge({ children }: { children: React.ReactNode }) {
@@ -18,27 +23,47 @@ function NotificationBridge({ children }: { children: React.ReactNode }) {
  * AuthGate — watches auth state and silently redirects:
  *   • Logged in  → (drawer) HomeScreen  (no visible loading UI)
  *   • Logged out → auth/mobile
- * While isLoading, returns null so the native splash screen stays — zero custom loading.
+ *
+ * The native splash screen stays visible while isLoading is true.
+ * Once auth resolves, we hide the native splash and show the branded
+ * SplashOverlay which fades out smoothly.
  */
 function AuthGate({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [showSplash, setShowSplash] = useState(true);
+
+  const hideSplash = useCallback(async () => {
+    // Dismiss native splash (the branded overlay takes over)
+    await SplashScreen.hideAsync();
+    // Allow the branded overlay to animate out
+    setTimeout(() => setShowSplash(false), 100);
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
+
     const inAuthGroup = (segments[0] as string) === "auth";
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/auth/mobile" as any);
     } else if (isAuthenticated && inAuthGroup) {
       router.replace("/(drawer)/(tabs)/" as any);
     }
-  }, [isAuthenticated, isLoading, segments, router]);
 
-  // While checking AsyncStorage, render nothing (native splash stays)
+    // Auth resolved — hide splash screens
+    hideSplash();
+  }, [isAuthenticated, isLoading, segments, router, hideSplash]);
+
+  // While checking AsyncStorage, render nothing (native splash stays visible)
   if (isLoading) return null;
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <SplashOverlay visible={showSplash} />
+    </>
+  );
 }
 
 export default function RootLayout() {
@@ -50,7 +75,7 @@ export default function RootLayout() {
             <NotificationBridge>
               <ReelProvider>
                 <AuthGate>
-                  <Stack screenOptions={{ headerShown: false }}>
+                  <Stack screenOptions={{ headerShown: false }} initialRouteName="(drawer)">
                     {/* Auth Screens */}
                     <Stack.Screen
                       name="auth/mobile"
