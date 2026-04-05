@@ -29,6 +29,7 @@ export interface AuthUser {
   address: string;
   email?: string;
   imageUri?: string;
+  createdAt?: string;
 }
 
 interface StoredSession {
@@ -146,6 +147,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             phone: serverUser.phone || prev.phone,
             imageUri: serverUser.profile_image || prev.imageUri,
             address: serverUser.location || prev.address,
+            createdAt: serverUser.created_at || prev.createdAt,
           };
         });
       } catch {

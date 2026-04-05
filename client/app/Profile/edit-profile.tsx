@@ -1,5 +1,7 @@
 // app/Profile/edit-profile.tsx
+import { updateProfile as apiUpdateProfile } from "@/src/api/auth";
 import { useApp, UserProfile } from "@/src/context/AppContext";
+import { useAuth } from "@/src/context/AuthContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -107,6 +109,8 @@ const InputField = React.memo(
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateProfile } = useApp();
+  const { authToken } = useAuth();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -127,22 +131,39 @@ export default function EditProfileScreen() {
     setHasChanges(true);
   }, []);
 
-  const handleSave = useCallback(() => {
-    const profileUpdate: Partial<UserProfile> = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      bio: formData.bio,
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      pincode: formData.pincode,
-    };
-    updateProfile(profileUpdate);
-    Toast.show({ type: "success", text1: "Profile updated successfully" });
-    setHasChanges(false);
-    router.back();
-  }, [formData, updateProfile, router]);
+  const handleSave = useCallback(async () => {
+    if (!authToken) return;
+    setIsSaving(true);
+    try {
+      const payload = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        location: formData.address,
+      };
+      
+      await apiUpdateProfile(authToken, payload);
+
+      const profileUpdate: Partial<UserProfile> = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        bio: formData.bio,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+      };
+      updateProfile(profileUpdate);
+      Toast.show({ type: "success", text1: "Profile updated successfully" });
+      setHasChanges(false);
+      router.back();
+    } catch (e: any) {
+      Toast.show({ type: "error", text1: e.message || "Failed to update profile" });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [formData, updateProfile, authToken, router]);
 
   const initials = formData.name
     .split(" ")
@@ -168,19 +189,19 @@ export default function EditProfileScreen() {
         <TouchableOpacity
           style={[
             styles.saveHeaderBtn,
-            !hasChanges && styles.saveHeaderBtnDisabled,
+            (!hasChanges || isSaving) && styles.saveHeaderBtnDisabled,
           ]}
           onPress={handleSave}
-          disabled={!hasChanges}
+          disabled={!hasChanges || isSaving}
           activeOpacity={0.7}
         >
           <Text
             style={[
               styles.saveHeaderBtnText,
-              !hasChanges && styles.saveHeaderBtnTextDisabled,
+              (!hasChanges || isSaving) && styles.saveHeaderBtnTextDisabled,
             ]}
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -323,9 +344,9 @@ export default function EditProfileScreen() {
             {/* Bottom Save Button */}
             <View style={styles.bottomActions}>
               <TouchableOpacity
-                style={[styles.saveBtn, !hasChanges && styles.saveBtnDisabled]}
+                style={[styles.saveBtn, (!hasChanges || isSaving) && styles.saveBtnDisabled]}
                 onPress={handleSave}
-                disabled={!hasChanges}
+                disabled={!hasChanges || isSaving}
                 activeOpacity={0.8}
               >
                 <Ionicons
@@ -333,7 +354,7 @@ export default function EditProfileScreen() {
                   size={20}
                   color={colors.text.inverse}
                 />
-                <Text style={styles.saveBtnText}>Save Changes</Text>
+                <Text style={styles.saveBtnText}>{isSaving ? "Saving..." : "Save Changes"}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

@@ -35,9 +35,13 @@ import { colors, radius, shadows, spacing } from "../../../theme/colors";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, logout, wishlist, getFollowedStores } = useApp();
+  const { user, logout, wishlist, getFollowedStores, orders } = useApp();
   const { t } = useSettings();
   const followedStores = getFollowedStores();
+
+  const memberSinceStr = user?.createdAt 
+    ? `Member since ${new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`
+    : t("profile.premiumMember");
 
   // Sub-component for Info Rows
   const InfoRow = ({ icon: Icon, label, value }: any) => (
@@ -92,18 +96,7 @@ export default function ProfileScreen() {
           </View>
 
           <Text style={styles.userName}>{user?.name || "Guest User"}</Text>
-          <Text style={styles.memberSince}>{t("profile.premiumMember")}</Text>
-
-          <View style={styles.ratingRow}>
-            <Star
-              size={14}
-              color={colors.brand.star}
-              fill={colors.brand.star}
-            />
-            <Text style={styles.ratingText}>
-              4.8 • {t("profile.verifiedMember")}
-            </Text>
-          </View>
+          <Text style={styles.memberSince}>{memberSinceStr}</Text>
 
           <TouchableOpacity
             style={styles.editBtn}
@@ -123,7 +116,7 @@ export default function ProfileScreen() {
         >
           <EnhancedStatBox
             icon={Package}
-            number="12"
+            number={String(orders.length)}
             label={t("profile.orders")}
             color="#3b82f6"
           />
@@ -148,14 +141,6 @@ export default function ProfileScreen() {
             number={String(followedStores.length)}
             label={t("profile.following")}
             color="#10b981"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={{ flex: 1 }} onPress={() => {}}>
-          <EnhancedStatBox
-            icon={Award}
-            number="3"
-            label={t("profile.badges")}
-            color="#f59e0b"
           />
         </TouchableOpacity>
       </View>

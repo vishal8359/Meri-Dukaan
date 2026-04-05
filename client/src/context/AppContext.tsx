@@ -229,6 +229,7 @@ export interface UserProfile {
   state?: string;
   pincode?: string;
   bio?: string;
+  createdAt?: string;
 }
 
 interface AppContextType {
@@ -506,6 +507,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       city: prev?.city,
       state: prev?.state,
       pincode: prev?.pincode,
+      createdAt: authUser.createdAt || prev?.createdAt,
     }));
   }, [authUser]);
 
