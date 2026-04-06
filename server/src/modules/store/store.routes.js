@@ -18,6 +18,7 @@ router.get("/catalog", optionalAuth, ctrl.getCatalog);
 router.get("/:id", optionalAuth, ctrl.getStoreById);
 
 // Protected
+router.get("/me/following", protect, ctrl.getFollowedStores);
 router.get("/me/store", protect, ctrl.getMyStore);
 router.post("/", protect, validate(schema.createStoreSchema), ctrl.createStore);
 router.put(
@@ -45,6 +46,10 @@ router.post(
   ctrl.addStoreImage,
 );
 router.delete("/:id/images/:imageId", protect, ctrl.removeStoreImage);
+
+// Store followers
+router.post("/:id/follow", protect, ctrl.followStore);
+router.delete("/:id/follow", protect, ctrl.unfollowStore);
 
 // Nested module routes: /api/stores/:id/products, /services, /inventory, /reels
 router.use("/:id/products", productRoutes);

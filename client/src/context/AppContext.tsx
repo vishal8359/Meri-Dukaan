@@ -1069,17 +1069,18 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setOrders([]);
         setBookedServices([]);
         setWishlist([]);
+        setFollowedStoreIds([]);
         return;
       }
 
-      const [cartRes, orderRes, bookingRes, wishlistRes] =
+      const [cartRes, orderRes, bookingRes, wishlistRes, followedStoresRes] =
         await Promise.allSettled([
           cartApi.getCart(authToken),
           orderApi.getOrders(authToken),
           serviceBookingApi.getMyServiceBookings(authToken),
           wishlistApi.getWishlist(authToken),
+          storeApi.getFollowedStores(authToken),
         ]);
-
       if (cartRes.status === "fulfilled") {
         const mappedCart = Array.isArray(cartRes.value.items)
           ? cartRes.value.items.map(mapCartItemFromApi)
@@ -1116,6 +1117,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setWishlist(mappedWishlist);
       } else {
         setWishlist([]);
+      }
+
+      if (followedStoresRes.status === "fulfilled") {
+        const storedIds = Array.isArray(followedStoresRes.value.storeIds)
+          ? followedStoresRes.value.storeIds
+          : [];
+        setFollowedStoreIds(storedIds);
+      } else {
+        setFollowedStoreIds([]);
       }
     })();
   }, [authToken, mapBookedServiceFromApi, mapCartItemFromApi, mapOrderFromApi]);
@@ -1539,13 +1549,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- Follow Store Functions ---
-  const toggleFollowStore = useCallback((storeId: string) => {
-    setFollowedStoreIds((prev) =>
-      prev.includes(storeId)
-        ? prev.filter((id) => id !== storeId)
-        : [...prev, storeId],
-    );
-  }, []);
+  const toggleFollowStore = useCallback(
+    (storeId: string) => {
+      const isCurrentlyFollowing = followedStoreIds.includes(storeId);
+      
+      setFollowedStoreIds((prev) =>
+        isCurrentlyFollowing
+          ? prev.filter((id) => id !== storeId)
+          : [...prev, storeId],
+      );
+
+      if (authToken) {
+        if (isCurrentlyFollowing) {
+          storeApi.unfollowStore(authToken, storeId).catch(() => {
+            // Optimistic update rollback: fallback logic if it fails
+            setFollowedStoreIds((prev) => [...prev, storeId]);
+          });
+        } else {
+          storeApi.followStore(authToken, storeId).catch(() => {
+            // Optimistic update rollback: fallback logic if it fails
+            setFollowedStoreIds((prev) => prev.filter((id) => id !== storeId));
+          });
+        }
+      }
+    },
+    [authToken, followedStoreIds],
+  );
 
   const isFollowingStore = useCallback(
     (storeId: string): boolean => {

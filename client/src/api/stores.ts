@@ -337,3 +337,24 @@ export function updateStoreHours(
     body: { schedule },
   });
 }
+
+// Store Followers
+export function getFollowedStores(token: string) {
+  return apiRequest<{ storeIds: string[] }>(`/stores/me/following`, {
+    token,
+  });
+}
+
+export function followStore(token: string, storeId: string) {
+  return apiRequest<{ message: string }>(`/stores/${storeId}/follow`, {
+    method: "POST",
+    token,
+  });
+}
+
+export function unfollowStore(token: string, storeId: string) {
+  return apiRequest<{ message: string }>(`/stores/${storeId}/follow`, {
+    method: "DELETE",
+    token,
+  });
+}

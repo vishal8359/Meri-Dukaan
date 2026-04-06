@@ -459,16 +459,100 @@ async function updateStoreHours(storeId, ownerId, schedule) {
   return inserted;
 }
 
+async function followStore(userId, storeId) {
+  const { data: store, error: storeError } = await supabase
+    .from("stores")
+    .select("store_name, followers_count")
+    .eq("id", storeId)
+    .single();
+
+  if (storeError) throw storeError;
+
+  const { data, error } = await supabase
+    .from("wishlist_items")
+    .upsert(
+      { 
+        user_id: userId, 
+        item_id: storeId, 
+        type: "store",
+        store_id: storeId,
+        store_name: store.store_name,
+        name: store.store_name || "Store",
+        price: 0
+      },
+      { onConflict: "user_id,item_id" }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  await supabase
+    .from("stores")
+    .update({ followers_count: (store.followers_count || 0) + 1 })
+    .eq("id", storeId);
+
+  return data;
+}
+
+async function unfollowStore(userId, storeId) {
+  const { data: existing, error: findError } = await supabase
+    .from("wishlist_items")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("item_id", storeId)
+    .eq("type", "store")
+    .single();
+
+  if (findError || !existing) return;
+
+  const { error } = await supabase
+    .from("wishlist_items")
+    .delete()
+    .eq("user_id", userId)
+    .eq("item_id", storeId)
+    .eq("type", "store");
+
+  if (error) throw error;
+
+  const { data: store } = await supabase
+    .from("stores")
+    .select("followers_count")
+    .eq("id", storeId)
+    .single();
+
+  if (store) {
+    await supabase
+      .from("stores")
+      .update({ followers_count: Math.max((store.followers_count || 0) - 1, 0) })
+      .eq("id", storeId);
+  }
+}
+
+async function getFollowedStoreIds(userId) {
+  const { data, error } = await supabase
+    .from("wishlist_items")
+    .select("item_id")
+    .eq("user_id", userId)
+    .eq("type", "store");
+
+  if (error) throw error;
+  return data.map((row) => row.item_id);
+}
+
 export {
     addImage,
     create,
     findById,
     findByOwner,
+    followStore,
     getCatalog,
+    getFollowedStoreIds,
     getStoreHours,
     list,
     remove,
     removeImage,
+    unfollowStore,
     update,
     updateStoreHours,
     verifyOwnership

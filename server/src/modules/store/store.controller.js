@@ -65,3 +65,18 @@ export const updateStoreHours = asyncHandler(async (req, res) => {
   );
   res.json({ hours });
 });
+
+export const getFollowedStores = asyncHandler(async (req, res) => {
+  const storeIds = await storeService.getFollowedStoreIds(req.user.id);
+  res.json({ storeIds });
+});
+
+export const followStore = asyncHandler(async (req, res) => {
+  await storeService.followStore(req.user.id, req.params.id);
+  res.json({ message: "Store followed successfully" });
+});
+
+export const unfollowStore = asyncHandler(async (req, res) => {
+  await storeService.unfollowStore(req.user.id, req.params.id);
+  res.json({ message: "Store unfollowed successfully" });
+});
