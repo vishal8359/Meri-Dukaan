@@ -4,26 +4,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    ArrowLeft,
-    ChevronRight,
-    FileText,
-    HelpCircle,
-    Mail,
-    MessageCircle,
-    Phone,
-    Send,
+  ArrowLeft,
+  ChevronRight,
+  FileText,
+  HelpCircle,
+  Mail,
+  MessageCircle,
+  Phone,
+  Send,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    Linking,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Linking,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const FAQ_DATA = [
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     ...shadows.small,
   },
   sendButtonText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "700",
     color: colors.text.inverse,
   },
