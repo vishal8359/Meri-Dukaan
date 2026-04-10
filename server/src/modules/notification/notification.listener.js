@@ -14,6 +14,8 @@ const TYPE_TO_CATEGORY = {
   booking_confirmed: "orders",
   booking_cancelled: "orders",
   payment_received: "orders",
+  onboarding_verified: "general",
+  onboarding_rejected: "general",
   general: "general",
 };
 
@@ -289,6 +291,46 @@ export function registerEventListeners() {
       }
     } catch (err) {
       console.error("[notification-listener] booking.cancelled:", err.message);
+    }
+  });
+
+  // ─── Onboarding Verified ───────────────────────
+  eventBus.on("onboarding:verified", async ({ userId, partnerId, score }) => {
+    try {
+      await enqueue(
+        userId,
+        build(
+          "onboarding_verified",
+          "🎉 You're Verified!",
+          `Congratulations! You are now a verified myBusz delivery partner. Score: ${score}/100`,
+          `/Transporter/transporter`,
+          { partnerId, score },
+        ),
+      );
+    } catch (err) {
+      console.error("[notification-listener] onboarding:verified:", err.message);
+    }
+  });
+
+  // ─── Onboarding Rejected ──────────────────────
+  eventBus.on("onboarding:rejected", async ({ userId, partnerId, reasons, score }) => {
+    try {
+      const reasonText = (reasons || [])
+        .map((r) => r.message)
+        .join(", ") || "Verification requirements not met";
+
+      await enqueue(
+        userId,
+        build(
+          "onboarding_rejected",
+          "Application Update",
+          `Your delivery partner application was not approved: ${reasonText}`,
+          `/Transporter/transporter`,
+          { partnerId, reasons, score },
+        ),
+      );
+    } catch (err) {
+      console.error("[notification-listener] onboarding:rejected:", err.message);
     }
   });
 

@@ -34,6 +34,12 @@ const env = {
   firebase: {
     serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH || "",
   },
+
+  gemini: {
+    apiKey: process.env.GEMINI_API_KEY || "",
+  },
+
+  aadhaarEncryptionKey: process.env.AADHAAR_ENCRYPTION_KEY || "",
 };
 
 // Fail fast on missing critical env vars

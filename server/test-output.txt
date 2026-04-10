@@ -1,0 +1,7 @@
+Key present: true
+Key starts: sk-ant-api03-wazB5S2...
+Key ends: ...A-CqXNXwAA
+FAIL: claude-sonnet-4-20250514 → 404 model 'claude-sonnet-4-20250514' not found
+FAIL: claude-3-5-sonnet-latest → 404 model 'claude-3-5-sonnet-latest' not found
+FAIL: claude-3-5-sonnet-20241022 → 404 model 'claude-3-5-sonnet-20241022' not found
+FAIL: claude-3-haiku-20240307 → 404 model 'claude-3-haiku-20240307' not found

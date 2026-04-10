@@ -38,6 +38,10 @@ export function setApiAuthToken(token: string | null) {
   globalAuthToken = token;
 }
 
+export function getGlobalAuthToken(): string | null {
+  return globalAuthToken;
+}
+
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;

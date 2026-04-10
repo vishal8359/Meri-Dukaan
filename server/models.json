@@ -1,0 +1,46 @@
+{
+  "options": {
+    "method": "get",
+    "path": "/v1/models",
+    "query": {},
+    "headers": {
+      "values": {},
+      "nulls": {}
+    }
+  },
+  "response": {},
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen3-coder:latest",
+        "object": "model",
+        "created": 1775504376,
+        "owned_by": "library"
+      },
+      {
+        "id": "llama3.2:latest",
+        "object": "model",
+        "created": 1765448521,
+        "owned_by": "library"
+      }
+    ]
+  },
+  "data": [
+    {
+      "id": "qwen3-coder:latest",
+      "object": "model",
+      "created": 1775504376,
+      "owned_by": "library"
+    },
+    {
+      "id": "llama3.2:latest",
+      "object": "model",
+      "created": 1765448521,
+      "owned_by": "library"
+    }
+  ],
+  "has_more": false,
+  "first_id": null,
+  "last_id": null
+}

@@ -12,11 +12,13 @@ import cartRoutes from "./modules/cart/cart.routes.js";
 import orderRoutes from "./modules/order/order.routes.js";
 import serviceBookingRoutes from "./modules/service-booking/service-booking.routes.js";
 import wishlistRoutes from "./modules/wishlist/wishlist.routes.js";
+import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
 import notificationRoutes from "./modules/notification/notification.routes.js";
 import * as reelService from "./modules/reel/reel.service.js";
 import asyncHandler from "./lib/asyncHandler.js";
 import { registerEventListeners } from "./modules/notification/notification.listener.js";
 import { startNotificationWorker } from "./modules/notification/notification.worker.js";
+import { startOnboardingWorker } from "./modules/onboarding/onboarding.worker.js";
 
 // ── Express app ─────────────────────────────────────────────
 const app = express();
@@ -40,6 +42,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/service-bookings", serviceBookingRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 
 // A convenience reel-feed endpoint (not store-scoped)
 app.get("/api/reels/feed", asyncHandler(async (req, res) => {
@@ -54,5 +57,6 @@ app.use(errorHandler);
 // ── Notification system (event-driven) ──────────────────────
 registerEventListeners();
 startNotificationWorker();
+startOnboardingWorker();
 
 export default app;
