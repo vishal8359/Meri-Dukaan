@@ -13,6 +13,8 @@ import axios from "axios";
 export async function uploadOnboardingDocuments(
   aadhaarUri: string,
   selfieUri: string,
+  panCardUri: string,
+  drivingLicenseUri: string | null,
   upiId: string,
   bankDetails?: {
     bankAccountHolder?: string;
@@ -31,20 +33,52 @@ export async function uploadOnboardingDocuments(
   const formData = new FormData();
 
   // Append Aadhaar image
-  const aadhaarFile = {
-    uri: aadhaarUri,
-    type: "image/jpeg",
-    name: "aadhaar.jpg",
-  } as any;
-  formData.append("aadhaar", aadhaarFile);
+  if (aadhaarUri.startsWith("http")) {
+    formData.append("aadhaarUrl", aadhaarUri);
+  } else {
+    formData.append("aadhaar", {
+      uri: aadhaarUri,
+      type: "image/jpeg",
+      name: "aadhaar.jpg",
+    } as any);
+  }
 
   // Append selfie image
-  const selfieFile = {
-    uri: selfieUri,
-    type: "image/jpeg",
-    name: "selfie.jpg",
-  } as any;
-  formData.append("selfie", selfieFile);
+  if (selfieUri.startsWith("http")) {
+    formData.append("selfieUrl", selfieUri);
+  } else {
+    formData.append("selfie", {
+      uri: selfieUri,
+      type: "image/jpeg",
+      name: "selfie.jpg",
+    } as any);
+  }
+
+  // Append PAN image
+  if (panCardUri) {
+    if (panCardUri.startsWith("http")) {
+      formData.append("panCardUrl", panCardUri);
+    } else {
+      formData.append("panCard", {
+        uri: panCardUri,
+        type: "image/jpeg",
+        name: "pancard.jpg",
+      } as any);
+    }
+  }
+
+  // Append License image
+  if (drivingLicenseUri) {
+    if (drivingLicenseUri.startsWith("http")) {
+      formData.append("drivingLicenseUrl", drivingLicenseUri);
+    } else {
+      formData.append("drivingLicense", {
+        uri: drivingLicenseUri,
+        type: "image/jpeg",
+        name: "license.jpg",
+      } as any);
+    }
+  }
 
   // Append text fields
   formData.append("upiId", upiId);
@@ -145,6 +179,10 @@ export interface OnboardingResult {
     bankAccountHolder: string | null;
     bankName: string | null;
     vehicleType: string | null;
+    aadhaarImageUrl: string | null;
+    selfieImageUrl: string | null;
+    panCardImageUrl: string | null;
+    drivingLicenseImageUrl: string | null;
   };
   scores: {
     overall: number;
@@ -163,4 +201,13 @@ export interface OnboardingResult {
 
 export async function getOnboardingResult(): Promise<OnboardingResult> {
   return apiRequest<OnboardingResult>("/onboarding/result");
+}
+
+/**
+ * Manually cancel the in-progress onboarding pipeline.
+ */
+export async function cancelOnboarding(): Promise<{ message: string; status: string }> {
+  return apiRequest("/onboarding/cancel", {
+    method: "POST",
+  });
 }

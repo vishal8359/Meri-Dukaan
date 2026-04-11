@@ -48,13 +48,15 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024, // 5MB per file
-    files: 2, // max 2 files (aadhaar + selfie)
+    files: 4, // max 4 files (aadhaar + selfie + pan + license)
   },
 });
 
 const uploadFields = upload.fields([
   { name: "aadhaar", maxCount: 1 },
   { name: "selfie", maxCount: 1 },
+  { name: "panCard", maxCount: 1 },
+  { name: "drivingLicense", maxCount: 1 },
 ]);
 
 const router = Router();
@@ -78,5 +80,8 @@ router.put("/review", validate(reviewSchema), asyncHandler(ctrl.review));
 
 // Get final decision and scores
 router.get("/result", asyncHandler(ctrl.result));
+
+// Cancel ongoing onboarding process manually
+router.post("/cancel", asyncHandler(ctrl.cancel));
 
 export default router;

@@ -4,6 +4,7 @@ import {
   getOnboardingStatus,
   submitOnboardingReview,
   getOnboardingResult,
+  cancelOnboarding,
   type OnboardingStep,
   type OnboardingStatus,
   type OnboardingResult,
@@ -73,6 +74,8 @@ export default function TransporterScreen() {
   // Upload step state
   const [aadhaarImage, setAadhaarImage] = useState<string | null>(null);
   const [selfieImage, setSelfieImage] = useState<string | null>(null);
+  const [panCardImage, setPanCardImage] = useState<string | null>(null);
+  const [drivingLicenseImage, setDrivingLicenseImage] = useState<string | null>(null);
   const [upiId, setUpiId] = useState("");
   const [showBankDetails, setShowBankDetails] = useState(false);
   const [bankDetails, setBankDetails] = useState({
@@ -193,7 +196,7 @@ export default function TransporterScreen() {
   };
 
   // ── Image Picker ───────────────────────────────────
-  const pickImage = async (type: "aadhaar" | "selfie") => {
+  const pickImage = async (type: "aadhaar" | "selfie" | "pancard" | "license") => {
     const isSelfie = type === "selfie";
 
     const permResult = isSelfie
@@ -221,16 +224,26 @@ export default function TransporterScreen() {
     if (!result.canceled && result.assets[0]) {
       if (type === "aadhaar") {
         setAadhaarImage(result.assets[0].uri);
-      } else {
+      } else if (type === "selfie") {
         setSelfieImage(result.assets[0].uri);
+      } else if (type === "pancard") {
+        setPanCardImage(result.assets[0].uri);
+      } else if (type === "license") {
+        setDrivingLicenseImage(result.assets[0].uri);
       }
     }
   };
 
   // ── Upload & Start Pipeline ────────────────────────
   const handleUpload = async () => {
-    if (!aadhaarImage || !selfieImage || !upiId.trim()) {
-      Alert.alert("Missing Fields", "Please upload Aadhaar, take a selfie, and enter UPI ID.");
+    if (!aadhaarImage || !selfieImage || !panCardImage || !upiId.trim()) {
+      Alert.alert("Missing Fields", "Please upload Aadhaar, PAN Card, Selfie, and enter UPI ID.");
+      return;
+    }
+
+    const isMotorized = vehicleType && !["Walk", "Bicycle"].includes(vehicleType);
+    if (isMotorized && !drivingLicenseImage) {
+      Alert.alert("Missing License", "Driving License is required for motorized vehicles.");
       return;
     }
 
@@ -239,6 +252,8 @@ export default function TransporterScreen() {
       const result = await uploadOnboardingDocuments(
         aadhaarImage,
         selfieImage,
+        panCardImage,
+        drivingLicenseImage,
         upiId.trim(),
         {
           bankAccountHolder: bankDetails.accountHolder || undefined,
@@ -282,13 +297,41 @@ export default function TransporterScreen() {
 
   // ── Retry ──────────────────────────────────────────
   const handleRetry = () => {
-    setAadhaarImage(null);
-    setSelfieImage(null);
-    setUpiId("");
+    if (resultData?.profile) {
+      setAadhaarImage(resultData.profile.aadhaarImageUrl || null);
+      setSelfieImage(resultData.profile.selfieImageUrl || null);
+      setPanCardImage(resultData.profile.panCardImageUrl || null);
+      setDrivingLicenseImage(resultData.profile.drivingLicenseImageUrl || null);
+      setUpiId(resultData.profile.upiId || "");
+      if (resultData.profile.vehicleType) {
+        setVehicleType(resultData.profile.vehicleType);
+      }
+    } else {
+      setAadhaarImage(null);
+      setSelfieImage(null);
+      setPanCardImage(null);
+      setDrivingLicenseImage(null);
+      setUpiId("");
+    }
     setResultData(null);
     setProcessingStatus(null);
     setTermsAccepted(false);
     animateTransition("upload");
+  };
+
+  // ── Cancel ─────────────────────────────────────────
+  const handleCancel = async () => {
+    try {
+      await cancelOnboarding();
+      if (pollingRef) {
+        clearInterval(pollingRef);
+        setPollingRef(null);
+      }
+      setProcessingStatus(null);
+      animateTransition("upload");
+    } catch (err: any) {
+      Alert.alert("Cancellation Failed", err.message || "Failed to cancel process");
+    }
   };
 
   // ── Step Indicator ─────────────────────────────────
@@ -447,7 +490,7 @@ export default function TransporterScreen() {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Vehicle Type</Text>
           <View style={styles.vehicleRow}>
-            {["Bicycle", "Bike", "Auto", "Mini Truck"].map((v) => (
+            {["Walk", "Bicycle", "Bike", "Auto", "Mini Truck"].map((v) => (
               <TouchableOpacity
                 key={v}
                 onPress={() => setVehicleType(v)}
@@ -460,6 +503,80 @@ export default function TransporterScreen() {
             ))}
           </View>
         </View>
+
+        {/* PAN Card Upload */}
+        <View style={[styles.card, { marginTop: 16, borderTopWidth: 0 }]}>
+          <View style={styles.cardHeader}>
+            <View style={[styles.cardIconWrap, { backgroundColor: colors.tint.orangeLight }]}>
+              <FileText size={20} color={colors.tint.orange} />
+            </View>
+            <View>
+              <Text style={styles.cardTitle}>PAN Card <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.cardSubtitle}>Required for tax purposes</Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.uploadZone, panCardImage && styles.uploadZoneDone]}
+            onPress={() => pickImage("pancard")}
+            activeOpacity={0.7}
+          >
+            {panCardImage ? (
+              <View style={styles.uploadPreview}>
+                <Image source={{ uri: panCardImage }} style={styles.previewImage} contentFit="cover" />
+                <View style={styles.uploadOverlay}>
+                  <CheckCircle2 size={32} color={colors.status.success} />
+                  <Text style={styles.uploadOverlayText}>Captured</Text>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.uploadPlaceholder}>
+                <View style={[styles.uploadIconCircle, { backgroundColor: colors.tint.orangeLight }]}>
+                  <Upload size={28} color={colors.tint.orange} />
+                </View>
+                <Text style={styles.uploadMainText}>Upload PAN Card</Text>
+                <Text style={styles.uploadHintText}>Clear photo of front side</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Driving License Upload (Conditional) */}
+        {vehicleType && !["Walk", "Bicycle"].includes(vehicleType) && (
+          <View style={[styles.card, { marginTop: 16, borderTopWidth: 0 }]}>
+            <View style={styles.cardHeader}>
+              <View style={[styles.cardIconWrap, { backgroundColor: colors.tint.purpleLight }]}>
+                <FileText size={20} color={colors.tint.purple} />
+              </View>
+              <View>
+                <Text style={styles.cardTitle}>Driving License <Text style={styles.required}>*</Text></Text>
+                <Text style={styles.cardSubtitle}>Required for motorized vehicles</Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              style={[styles.uploadZone, drivingLicenseImage && styles.uploadZoneDone]}
+              onPress={() => pickImage("license")}
+              activeOpacity={0.7}
+            >
+              {drivingLicenseImage ? (
+                <View style={styles.uploadPreview}>
+                  <Image source={{ uri: drivingLicenseImage }} style={styles.previewImage} contentFit="cover" />
+                  <View style={styles.uploadOverlay}>
+                    <CheckCircle2 size={32} color={colors.status.success} />
+                    <Text style={styles.uploadOverlayText}>Captured</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.uploadPlaceholder}>
+                  <View style={[styles.uploadIconCircle, { backgroundColor: colors.tint.purpleLight }]}>
+                    <Upload size={28} color={colors.tint.purple} />
+                  </View>
+                  <Text style={styles.uploadMainText}>Upload Driving License</Text>
+                  <Text style={styles.uploadHintText}>Clear photo of front side</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Optional Bank Details toggle */}
         <TouchableOpacity
@@ -618,6 +735,14 @@ export default function TransporterScreen() {
               );
             })}
           </View>
+          
+          {/* Cancel Button */}
+          <TouchableOpacity
+            style={[styles.button, styles.buttonOutline, { marginTop: 24, borderColor: colors.status.error }]}
+            onPress={handleCancel}
+          >
+            <Text style={[styles.buttonText, { color: colors.status.error }]}>Cancel Verification</Text>
+          </TouchableOpacity>
         </View>
       </Animated.View>
     );
@@ -724,7 +849,7 @@ export default function TransporterScreen() {
         )}
 
         {/* Extracted Profile */}
-        {isVerified && resultData.profile && (
+        {resultData.profile && (
           <View style={[styles.card, { marginTop: 16 }]}>
             <Text style={styles.sectionTitle}>Your Partner Profile</Text>
             {[
@@ -896,6 +1021,17 @@ export default function TransporterScreen() {
 
         {renderFooter()}
       </KeyboardAvoidingView>
+
+      {/* Floating Upload Overlay */}
+      {isLoading && flowStep === "upload" && (
+        <View style={styles.fullScreenOverlay}>
+          <View style={styles.overlayContent}>
+            <ActivityIndicator size="large" color={colors.brand.primary} style={{ transform: [{ scale: 1.5 }] }} />
+            <Text style={styles.overlayTitle}>Uploading Documents...</Text>
+            <Text style={styles.overlaySubtitle}>Encrypting your data securely</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1237,4 +1373,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.brand.primary,
   },
   retryBtnText: { fontSize: 15, fontWeight: "700", color: colors.brand.primary },
+
+  // ── Overlay ───────────────────────────────────────
+  fullScreenOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  overlayContent: {
+    backgroundColor: colors.ui.surface,
+    padding: 32,
+    borderRadius: 20,
+    alignItems: "center",
+    width: "85%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  overlayTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text.primary,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  overlaySubtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: "center",
+  },
 });

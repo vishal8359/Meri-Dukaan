@@ -15,7 +15,7 @@
  * Decision: Score ≥ 90 → VERIFIED, else → REJECTED
  */
 
-const WEIGHTS = {
+const DEFAULT_WEIGHTS = {
   aadhaarAuthenticity: 0.30,
   faceMatch:          0.25,
   ageEligibility:     0.10,
@@ -24,7 +24,7 @@ const WEIGHTS = {
   imageClarity:       0.10,
 };
 
-const VERIFY_THRESHOLD = 90;
+const VERIFY_THRESHOLD = 85;
 
 /**
  * Calculate final score and make decision.
@@ -34,6 +34,8 @@ const VERIFY_THRESHOLD = 90;
  * @param {number} scores.faceMatch
  * @param {number} scores.ageEligibility
  * @param {number} scores.upiValidity
+ * @param {number} scores.panAuthenticity (Optional)
+ * @param {number} scores.licenseAuthenticity (Optional)
  * @param {number} scores.dataConsistency
  * @param {number} scores.imageClarity
  * @returns {Object} Final scoring result with decision
@@ -42,18 +44,43 @@ export function calculateScore(scores) {
   // Clamp each score to 0–100
   const clamped = {};
   for (const [key, val] of Object.entries(scores)) {
-    clamped[key] = Math.max(0, Math.min(100, Number(val) || 0));
+    if (val !== undefined && val !== null) {
+      clamped[key] = Math.max(0, Math.min(100, Number(val) || 0));
+    }
+  }
+
+  // Adjust weights if optional documents are present
+  let activeWeights = { ...DEFAULT_WEIGHTS };
+  
+  const hasPan = clamped.panAuthenticity !== undefined;
+  const hasLicense = clamped.licenseAuthenticity !== undefined;
+
+  if (hasPan || hasLicense) {
+    // Redistribute weights
+    activeWeights = {
+      aadhaarAuthenticity: 0.20,
+      faceMatch: 0.20,
+      ageEligibility: 0.10,
+      upiValidity: 0.10,
+      dataConsistency: 0.15,
+      imageClarity: 0.05,
+    };
+    if (hasPan && hasLicense) {
+      activeWeights.panAuthenticity = 0.10;
+      activeWeights.licenseAuthenticity = 0.10;
+    } else if (hasPan) {
+      activeWeights.panAuthenticity = 0.20;
+    } else if (hasLicense) {
+      activeWeights.licenseAuthenticity = 0.20;
+    }
   }
 
   // Weighted sum
-  const overallScore = Math.round(
-    (clamped.aadhaarAuthenticity || 0) * WEIGHTS.aadhaarAuthenticity +
-    (clamped.faceMatch || 0)           * WEIGHTS.faceMatch +
-    (clamped.ageEligibility || 0)      * WEIGHTS.ageEligibility +
-    (clamped.upiValidity || 0)         * WEIGHTS.upiValidity +
-    (clamped.dataConsistency || 0)     * WEIGHTS.dataConsistency +
-    (clamped.imageClarity || 0)        * WEIGHTS.imageClarity
-  );
+  let overallScore = 0;
+  for (const [key, weight] of Object.entries(activeWeights)) {
+    overallScore += (clamped[key] || 0) * weight;
+  }
+  overallScore = Math.round(overallScore);
 
   // Decision
   const decision = overallScore >= VERIFY_THRESHOLD ? "verified" : "rejected";
@@ -66,7 +93,7 @@ export function calculateScore(scores) {
         code: "AADHAAR_LOW_CONFIDENCE",
         message: "Aadhaar card could not be verified — unclear or potentially invalid document",
         suggestion: "Please upload a clear, high-resolution photo of your original Aadhaar card",
-        weight: WEIGHTS.aadhaarAuthenticity,
+        weight: activeWeights.aadhaarAuthenticity,
         score: clamped.aadhaarAuthenticity,
       });
     }
@@ -76,7 +103,7 @@ export function calculateScore(scores) {
         code: "FACE_MISMATCH",
         message: "Selfie does not match the photo on your Aadhaar card",
         suggestion: "Take a clear, well-lit selfie in a neutral background. Ensure your face is clearly visible",
-        weight: WEIGHTS.faceMatch,
+        weight: activeWeights.faceMatch,
         score: clamped.faceMatch,
       });
     }
@@ -86,7 +113,7 @@ export function calculateScore(scores) {
         code: "AGE_INELIGIBLE",
         message: "Applicant must be at least 18 years old",
         suggestion: "You must be 18 years or older to become a delivery partner",
-        weight: WEIGHTS.ageEligibility,
+        weight: activeWeights.ageEligibility,
         score: clamped.ageEligibility,
       });
     }
@@ -96,7 +123,7 @@ export function calculateScore(scores) {
         code: "UPI_INVALID",
         message: "UPI ID format is invalid or not recognized",
         suggestion: "Enter a valid UPI ID (e.g., yourname@paytm, yourname@ybl)",
-        weight: WEIGHTS.upiValidity,
+        weight: activeWeights.upiValidity,
         score: clamped.upiValidity,
       });
     }
@@ -106,7 +133,7 @@ export function calculateScore(scores) {
         code: "DATA_INCONSISTENT",
         message: "Data inconsistencies detected across your documents",
         suggestion: "Ensure the name on your Aadhaar matches your bank account details",
-        weight: WEIGHTS.dataConsistency,
+        weight: activeWeights.dataConsistency,
         score: clamped.dataConsistency,
       });
     }
@@ -116,8 +143,28 @@ export function calculateScore(scores) {
         code: "IMAGE_UNCLEAR",
         message: "Uploaded images are blurry or too dark",
         suggestion: "Upload clear, well-lit photos. Avoid glare and ensure all text is readable",
-        weight: WEIGHTS.imageClarity,
+        weight: activeWeights.imageClarity,
         score: clamped.imageClarity,
+      });
+    }
+
+    if (hasPan && clamped.panAuthenticity < 70) {
+      rejectionReasons.push({
+        code: "PAN_INVALID",
+        message: "PAN Card could not be verified — unclear or potentially invalid",
+        suggestion: "Please upload a clear, high-resolution photo of your original PAN Card",
+        weight: activeWeights.panAuthenticity,
+        score: clamped.panAuthenticity,
+      });
+    }
+
+    if (hasLicense && clamped.licenseAuthenticity < 70) {
+      rejectionReasons.push({
+        code: "LICENSE_INVALID",
+        message: "Driving License could not be verified — unclear or potentially invalid",
+        suggestion: "Please upload a clear, high-resolution photo of your original Driving License",
+        weight: activeWeights.licenseAuthenticity,
+        score: clamped.licenseAuthenticity,
       });
     }
 
@@ -135,7 +182,7 @@ export function calculateScore(scores) {
 
   return {
     scores: clamped,
-    weights: WEIGHTS,
+    weights: activeWeights,
     overallScore,
     threshold: VERIFY_THRESHOLD,
     decision,

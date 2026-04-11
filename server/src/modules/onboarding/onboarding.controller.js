@@ -26,3 +26,8 @@ export const result = async (req, res) => {
   const data = await onboardingService.getResult(req.user.id);
   res.json(data);
 };
+
+export const cancel = async (req, res) => {
+  const result = await onboardingService.cancelOnboarding(req.user.id);
+  res.json(result);
+};

@@ -59,8 +59,9 @@ export function validateAadhaarChecksum(aadhaarNumber) {
 /**
  * Validate UPI ID format.
  * Valid formats: name@provider (e.g., user@paytm, user@ybl, 9876543210@upi)
+ * Also gracefully accepts pure 10-digit mobile numbers as valid (assuming mobile-based UPI).
  * @param {string} upiId
- * @returns {{ valid: boolean, reason?: string }}
+ * @returns {{ valid: boolean, reason?: string, provider?: string, isKnownProvider?: boolean }}
  */
 export function validateUpiId(upiId) {
   if (!upiId || typeof upiId !== "string") {
@@ -69,12 +70,17 @@ export function validateUpiId(upiId) {
 
   const trimmed = upiId.trim().toLowerCase();
 
+  // If it's a pure 10 digit number, consider it valid (we can assume it's phone number based)
+  if (/^\d{10}$/.test(trimmed)) {
+    return { valid: true, isKnownProvider: true, provider: "mobile" };
+  }
+
   if (!trimmed.includes("@")) {
     return { valid: false, reason: "UPI ID must contain @" };
   }
 
   // Standard UPI format: alphanumeric.alphanumeric@provider
-  const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z][a-zA-Z0-9]*$/;
+  const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9][a-zA-Z0-9.-]*$/;
   if (!upiRegex.test(trimmed)) {
     return { valid: false, reason: "Invalid UPI ID format" };
   }
@@ -86,11 +92,11 @@ export function validateUpiId(upiId) {
     "unionbankofindia", "cboi", "csbpay", "dbs", "federal",
     "freecharge", "icici", "idfcfirst", "indus", "jio",
     "kotak", "mahb", "postbank", "rbl", "slice", "tap",
-    "waheed", "idbi",
+    "waheed", "idbi", "axb", "pingpay", "shmart", "hdfcbank", "hsbc"
   ];
 
   const provider = trimmed.split("@")[1];
-  const isKnownProvider = knownProviders.includes(provider);
+  const isKnownProvider = knownProviders.includes(provider) || /^[a-zA-Z0-9]+bank$/.test(provider);
 
   return {
     valid: true,
@@ -181,16 +187,44 @@ export function validateIndianResident(address) {
 }
 
 /**
+ * Validate PAN Card format.
+ * Format: 5 uppercase letters, 4 digits, 1 uppercase letter.
+ */
+export function validatePanNumber(panNumber) {
+  if (!panNumber || typeof panNumber !== "string") {
+    return false;
+  }
+  return /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panNumber.toUpperCase());
+}
+
+/**
+ * Validate Driving License structure.
+ * Typical format: XX-00-00000000000 (usually 15-16 alphanumeric chars, exact formats vary by state).
+ */
+export function validateLicenseNumber(licenseNumber) {
+  if (!licenseNumber || typeof licenseNumber !== "string") {
+    return false;
+  }
+  // Remove non-alphanumeric
+  const cleaned = licenseNumber.replace(/[^A-Z0-9]/gi, "");
+  return cleaned.length >= 10 && cleaned.length <= 18;
+}
+
+/**
  * Run all validations and return categorized results.
  * @param {Object} data - Extracted data from OCR
  * @param {string} upiId - User-provided UPI ID
+ * @param {string} panNumber - Extracted PAN
+ * @param {string} licenseNumber - Extracted License
  * @returns {Object} Validation results
  */
-export function runAllValidations(data, upiId) {
+export function runAllValidations(data, upiId, panNumber, licenseNumber) {
   const aadhaarValid = validateAadhaarChecksum(data.aadhaarNumber);
   const ageResult = validateAge(data.dateOfBirth);
   const upiResult = validateUpiId(upiId);
   const residencyResult = validateIndianResident(data.address);
+  const panValid = panNumber ? validatePanNumber(panNumber) : null;
+  const licenseValid = licenseNumber ? validateLicenseNumber(licenseNumber) : null;
 
   return {
     aadhaar: {
@@ -209,5 +243,13 @@ export function runAllValidations(data, upiId) {
       ...residencyResult,
       score: residencyResult.isIndian ? 100 : 0,
     },
+    pan: {
+      isValid: panValid,
+      score: panValid ? 100 : (panValid === false ? 0 : null),
+    },
+    license: {
+      isValid: licenseValid,
+      score: licenseValid ? 100 : (licenseValid === false ? 0 : null),
+    }
   };
 }

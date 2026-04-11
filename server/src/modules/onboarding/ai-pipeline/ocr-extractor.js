@@ -157,3 +157,123 @@ function getFailedResult(reason) {
     error: reason,
   };
 }
+
+/**
+ * Extract structured data from a PAN Card image.
+ */
+export async function extractPanData(imagePath) {
+  const imageBuffer = await sharp(imagePath)
+    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+    
+  const base64Image = imageBuffer.toString("base64");
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: `Analyze this Indian PAN card image. Return a STRICT JSON object:
+{
+  "full_name": "Name on card",
+  "father_name": "Father's name",
+  "date_of_birth": "DD/MM/YYYY format",
+  "pan_number": "10-character alphanumeric PAN",
+  "confidence": { "overall": 0.0-1.0 },
+  "authenticity_markers": {
+    "has_photo": true/false,
+    "has_signature": true/false,
+    "has_income_tax_logo": true/false,
+    "has_hologram": true/false
+  }
+}`,
+          },
+          {
+            inlineData: { data: base64Image, mimeType: "image/jpeg" },
+          },
+        ],
+      },
+    ]
+  });
+
+  const rawText = response.text || "{}";
+  try {
+    const rawMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    const parseText = rawMatch ? rawMatch[1] : rawText;
+    const data = JSON.parse(parseText.trim());
+    return {
+      fullName: data.full_name || null,
+      fatherName: data.father_name || null,
+      dateOfBirth: data.date_of_birth || null,
+      panNumber: data.pan_number ? data.pan_number.toUpperCase().replace(/\s+/g, "") : null,
+      confidence: data.confidence?.overall ?? 0,
+      authenticityMarkers: data.authenticity_markers || {},
+    };
+  } catch (error) {
+    return { error: `OCR parsing failed for PAN: ${error.message}` };
+  }
+}
+
+/**
+ * Extract structured data from a Driving License image.
+ */
+export async function extractLicenseData(imagePath) {
+  const imageBuffer = await sharp(imagePath)
+    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+    
+  const base64Image = imageBuffer.toString("base64");
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: `Analyze this Indian Driving License image. Return a STRICT JSON object:
+{
+  "full_name": "Name on license",
+  "date_of_birth": "DD/MM/YYYY format",
+  "license_number": "License number exactly as printed",
+  "blood_group": "e.g. O+, B- etc.",
+  "vehicle_classes": ["LMV", "MCWG"],
+  "validity_date": "DD/MM/YYYY format",
+  "confidence": { "overall": 0.0-1.0 },
+  "authenticity_markers": {
+    "has_photo": true/false,
+    "has_transport_authority_name": true/false,
+    "has_chip_or_smartcard_features": true/false
+  }
+}`,
+          },
+          {
+            inlineData: { data: base64Image, mimeType: "image/jpeg" },
+          },
+        ],
+      },
+    ]
+  });
+
+  const rawText = response.text || "{}";
+  try {
+    const rawMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    const parseText = rawMatch ? rawMatch[1] : rawText;
+    const data = JSON.parse(parseText.trim());
+    return {
+      fullName: data.full_name || null,
+      dateOfBirth: data.date_of_birth || null,
+      licenseNumber: data.license_number ? data.license_number.toUpperCase().replace(/\s+/g, "") : null,
+      vehicleClasses: data.vehicle_classes || [],
+      validityDate: data.validity_date || null,
+      confidence: data.confidence?.overall ?? 0,
+      authenticityMarkers: data.authenticity_markers || {},
+    };
+  } catch (error) {
+    return { error: `OCR parsing failed for License: ${error.message}` };
+  }
+}

@@ -32,6 +32,8 @@ export function startOnboardingWorker() {
         partnerId,
         aadhaarImagePath,
         selfieImagePath,
+        panCardImagePath,
+        drivingLicenseImagePath,
         upiId,
         bankDetails,
         userId,
@@ -43,6 +45,8 @@ export function startOnboardingWorker() {
         partnerId,
         aadhaarImagePath,
         selfieImagePath,
+        panCardImagePath,
+        drivingLicenseImagePath,
         upiId,
         bankDetails,
       });
@@ -105,7 +109,7 @@ export function startOnboardingWorker() {
  * Process an onboarding job synchronously (fallback when no Redis).
  */
 export async function processOnboardingSync(jobData) {
-  const { partnerId, aadhaarImagePath, selfieImagePath, upiId, bankDetails, userId } =
+  const { partnerId, aadhaarImagePath, selfieImagePath, panCardImagePath, drivingLicenseImagePath, upiId, bankDetails, userId } =
     jobData;
 
   console.info(`[onboarding-sync] Processing for partner ${partnerId}`);
@@ -114,6 +118,8 @@ export async function processOnboardingSync(jobData) {
     partnerId,
     aadhaarImagePath,
     selfieImagePath,
+    panCardImagePath,
+    drivingLicenseImagePath,
     upiId,
     bankDetails,
   });

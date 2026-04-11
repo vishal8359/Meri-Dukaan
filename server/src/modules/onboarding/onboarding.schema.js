@@ -17,8 +17,12 @@ export const uploadSchema = Joi.object({
     }),
   bankName: Joi.string().allow("", null),
   vehicleType: Joi.string()
-    .valid("Bicycle", "Bike", "Auto", "Mini Truck")
+    .valid("Walk", "Bicycle", "Bike", "Auto", "Mini Truck")
     .allow("", null),
+  aadhaarUrl: Joi.string().allow("", null),
+  selfieUrl: Joi.string().allow("", null),
+  panCardUrl: Joi.string().allow("", null),
+  drivingLicenseUrl: Joi.string().allow("", null),
 });
 
 export const reviewSchema = Joi.object({
@@ -27,7 +31,7 @@ export const reviewSchema = Joi.object({
   address: Joi.string().allow("", null),
   upiId: Joi.string().allow("", null),
   vehicleType: Joi.string()
-    .valid("Bicycle", "Bike", "Auto", "Mini Truck")
+    .valid("Walk", "Bicycle", "Bike", "Auto", "Mini Truck")
     .allow("", null),
   termsAccepted: Joi.boolean().required().valid(true).messages({
     "any.only": "You must accept the terms and conditions",

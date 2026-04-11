@@ -11,7 +11,7 @@
  *  Phase 4 (sequential): Consistency Check
  *  Phase 5 (sequential): Scoring → Decision
  */
-import { extractAadhaarData } from "./ocr-extractor.js";
+import { extractAadhaarData, extractPanData, extractLicenseData } from "./ocr-extractor.js";
 import { detectFace, matchFaces } from "./face-detector.js";
 import { analyzeImageQuality } from "./image-analyzer.js";
 import { runAllValidations } from "./validator.js";
@@ -45,6 +45,8 @@ export async function runPipeline({
   partnerId,
   aadhaarImagePath,
   selfieImagePath,
+  panCardImagePath,
+  drivingLicenseImagePath,
   upiId,
   bankDetails = {},
 }) {
@@ -61,7 +63,7 @@ export async function runPipeline({
     // ── Step 2: Phase 1 — Parallel (OCR + Image Quality + Selfie Face) ──
     await updateStep(partnerId, "extracting_data", "processing");
 
-    const [ocrResult, selfieQuality, aadhaarQuality, selfieFaceResult] =
+    const [ocrResult, selfieQuality, aadhaarQuality, selfieFaceResult, panResult, licenseResult] =
       await Promise.all([
         extractAadhaarData(aadhaarImagePath).catch((err) => {
           stepErrors.push(`OCR failed: ${err.message}`);
@@ -79,9 +81,23 @@ export async function runPipeline({
           stepErrors.push(`Selfie face detection failed: ${err.message}`);
           return null;
         }),
+        panCardImagePath
+          ? extractPanData(panCardImagePath).catch((err) => {
+              stepErrors.push(`PAN OCR failed: ${err.message}`);
+              return null;
+            })
+          : Promise.resolve(null),
+        drivingLicenseImagePath
+          ? extractLicenseData(drivingLicenseImagePath).catch((err) => {
+              stepErrors.push(`License OCR failed: ${err.message}`);
+              return null;
+            })
+          : Promise.resolve(null),
       ]);
 
     results.ocr = ocrResult;
+    results.panOcr = panResult;
+    results.licenseOcr = licenseResult;
     results.selfieQuality = selfieQuality;
     results.aadhaarQuality = aadhaarQuality;
     results.selfieFace = selfieFaceResult;
@@ -136,7 +152,12 @@ export async function runPipeline({
     // ── Step 4: Validation ───────────────────────────────────
     await updateStep(partnerId, "validation", "processing");
 
-    const validationResult = runAllValidations(ocrResult, upiId);
+    const validationResult = runAllValidations(
+      ocrResult,
+      upiId,
+      panResult?.panNumber,
+      licenseResult?.licenseNumber
+    );
     results.validation = validationResult;
 
     // Encrypt Aadhaar number
@@ -157,7 +178,9 @@ export async function runPipeline({
     const consistencyResult = checkConsistency(
       ocrResult,
       bankDetails,
-      results.faceMatch
+      results.faceMatch,
+      panResult,
+      licenseResult
     );
     results.consistency = consistencyResult;
 
@@ -180,6 +203,26 @@ export async function runPipeline({
       dataConsistency: consistencyResult.overallScore,
       imageClarity: calculateClarityScore(selfieQuality, aadhaarQuality),
     };
+    
+    if (panResult) {
+      componentScores.panAuthenticity = Math.max(
+        0, 
+        panResult.confidence * 40 + 
+        (panResult.authenticityMarkers?.has_photo ? 20 : 0) + 
+        (panResult.authenticityMarkers?.has_hologram ? 20 : 0) + 
+        (panResult.authenticityMarkers?.has_income_tax_logo ? 20 : 0)
+      );
+    }
+    
+    if (licenseResult) {
+      componentScores.licenseAuthenticity = Math.max(
+        0,
+        licenseResult.confidence * 40 +
+        (licenseResult.authenticityMarkers?.has_photo ? 20 : 0) +
+        (licenseResult.authenticityMarkers?.has_transport_authority_name ? 20 : 0) +
+        (licenseResult.authenticityMarkers?.has_chip_or_smartcard_features ? 20 : 0)
+      );
+    }
 
     const scoringResult = calculateScore(componentScores);
     results.scoring = scoringResult;
@@ -210,6 +253,8 @@ export async function runPipeline({
       aadhaar_last_four: aadhaarLastFour,
       overall_score: scoringResult.overallScore,
       aadhaar_authenticity_score: componentScores.aadhaarAuthenticity,
+      pan_authenticity_score: componentScores.panAuthenticity || 0,
+      license_authenticity_score: componentScores.licenseAuthenticity || 0,
       face_match_score: componentScores.faceMatch,
       age_eligibility_score: componentScores.ageEligibility,
       upi_validity_score: componentScores.upiValidity,
@@ -284,6 +329,22 @@ export async function runPipeline({
 
 // ── Helper: Update pipeline step status in DB ────────────────
 async function updateStep(partnerId, stepName, status, result = null, errorMessage = null) {
+  // Check if pipeline was cancelled manually
+  const { data: partner } = await supabase
+    .from("delivery_partners")
+    .select("status, rejection_reasons")
+    .eq("id", partnerId)
+    .single();
+
+  // If status is rejected and it was cancelled by user, throw a special error
+  if (
+    partner &&
+    partner.status === "rejected" &&
+    partner.rejection_reasons?.some((r) => r.code === "CANCELLED_BY_USER")
+  ) {
+    throw new Error("PIPELINE_CANCELLED_BY_USER");
+  }
+
   const updateData = { status };
 
   if (status === "processing") {

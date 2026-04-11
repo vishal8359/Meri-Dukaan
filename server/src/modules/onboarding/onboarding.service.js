@@ -17,11 +17,37 @@ import { maskAadhaar } from "./ai-pipeline/encryption.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import axios from "axios";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Temp upload directory
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "..", "uploads", "onboarding");
+
+/**
+ * Helper to download an existing Supabase URL to local temp directory.
+ */
+async function downloadTempUrl(url, prefix) {
+  if (!url) return null;
+  const fileName = `${prefix}_${Date.now()}.jpg`;
+  const filePath = path.join(UPLOAD_DIR, fileName);
+  try {
+    const response = await axios({
+      url,
+      method: 'GET',
+      responseType: 'stream'
+    });
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+    return new Promise((resolve, reject) => {
+      writer.on('finish', () => resolve(filePath));
+      writer.on('error', reject);
+    });
+  } catch (err) {
+    console.error(`[storage] Failed to download existing image ${url}:`, err.message);
+    throw AppError.internal("Failed to retrieve existing documents");
+  }
+}
 
 /**
  * Ensure upload directory exists.
@@ -79,78 +105,112 @@ async function initiateOnboarding(userId, files, body) {
     if (existing.status === "processing") {
       throw AppError.conflict("Your application is currently being processed");
     }
-    // If pending or rejected, allow re-submission — delete old record
+    // Clean up steps, but DO NOT delete the primary row.
     if (existing.status === "rejected" || existing.status === "pending") {
       await supabase
         .from("onboarding_steps")
         .delete()
         .eq("partner_id", existing.id);
-      await supabase
-        .from("delivery_partners")
-        .delete()
-        .eq("id", existing.id);
     }
   }
 
-  // Validate files
-  if (!files.aadhaar || !files.aadhaar[0]) {
-    throw AppError.badRequest("Aadhaar card image is required");
+  // 1. Resolve Aadhaar
+  let aadhaarUrl = body.aadhaarUrl || "";
+  let aadhaarTempPath = null;
+  if (files.aadhaar && files.aadhaar[0]) {
+    aadhaarUrl = await uploadToStorage(files.aadhaar[0].path, "delivery-documents", `aadhaar_${userId}_${Date.now()}`);
+    aadhaarTempPath = files.aadhaar[0].path;
+  } else if (aadhaarUrl && existing) {
+    // User is reusing the old url
+    aadhaarTempPath = await downloadTempUrl(aadhaarUrl, "dl_aadhaar");
   }
-  if (!files.selfie || !files.selfie[0]) {
-    throw AppError.badRequest("Selfie image is required");
+  if (!aadhaarUrl) throw AppError.badRequest("Aadhaar card image is required");
+
+  // 2. Resolve Selfie
+  let selfieUrl = body.selfieUrl || "";
+  let selfieTempPath = null;
+  if (files.selfie && files.selfie[0]) {
+    selfieUrl = await uploadToStorage(files.selfie[0].path, "delivery-selfies", `selfie_${userId}_${Date.now()}`);
+    selfieTempPath = files.selfie[0].path;
+  } else if (selfieUrl && existing) {
+    selfieTempPath = await downloadTempUrl(selfieUrl, "dl_selfie");
+  }
+  if (!selfieUrl) throw AppError.badRequest("Selfie image is required");
+
+  // 3. Resolve PAN Card
+  let panCardUrl = body.panCardUrl || "";
+  let panCardTempPath = null;
+  if (files.panCard && files.panCard[0]) {
+    panCardUrl = await uploadToStorage(files.panCard[0].path, "delivery-documents", `pan_${userId}_${Date.now()}`);
+    panCardTempPath = files.panCard[0].path;
+  } else if (panCardUrl && existing) {
+    panCardTempPath = await downloadTempUrl(panCardUrl, "dl_pan");
+  }
+  if (!panCardUrl) throw AppError.badRequest("PAN Card image is required");
+
+  // 4. Resolve Driving License
+  const isMotorized = body.vehicleType && !["Walk", "Bicycle"].includes(body.vehicleType);
+  let drivingLicenseUrl = body.drivingLicenseUrl || "";
+  let drivingLicenseTempPath = null;
+  if (files.drivingLicense && files.drivingLicense[0]) {
+    drivingLicenseUrl = await uploadToStorage(files.drivingLicense[0].path, "delivery-documents", `license_${userId}_${Date.now()}`);
+    drivingLicenseTempPath = files.drivingLicense[0].path;
+  } else if (drivingLicenseUrl && existing) {
+    drivingLicenseTempPath = await downloadTempUrl(drivingLicenseUrl, "dl_license");
+  }
+  if (isMotorized && !drivingLicenseUrl) {
+    throw AppError.badRequest("Driving License is required for motorized vehicles");
   }
 
-  const aadhaarFile = files.aadhaar[0];
-  const selfieFile = files.selfie[0];
+  // Delivery radius logic
+  let maxDeliveryRadiusKm = null;
+  if (body.vehicleType === "Walk") maxDeliveryRadiusKm = 1.3;
+  else if (body.vehicleType === "Bicycle") maxDeliveryRadiusKm = 5.0;
 
-  // Upload to Supabase Storage
-  const timestamp = Date.now();
-  const aadhaarUrl = await uploadToStorage(
-    aadhaarFile.path,
-    "delivery-documents",
-    `aadhaar_${userId}_${timestamp}`
-  );
-  const selfieUrl = await uploadToStorage(
-    selfieFile.path,
-    "delivery-selfies",
-    `selfie_${userId}_${timestamp}`
-  );
+  // Upsert delivery partner record
+  const updatePayload = {
+    user_id: userId,
+    status: "processing",
+    upi_id: body.upiId,
+    bank_account_holder: body.bankAccountHolder || null,
+    bank_account_number: body.bankAccountNumber || null,
+    bank_ifsc: body.bankIfsc || null,
+    bank_name: body.bankName || null,
+    vehicle_type: body.vehicleType || "Walk",
+    max_delivery_radius_km: maxDeliveryRadiusKm,
+    aadhaar_image_url: aadhaarUrl,
+    selfie_image_url: selfieUrl,
+    pan_card_image_url: panCardUrl,
+    driving_license_image_url: drivingLicenseUrl || null,
+  };
 
-  // Create delivery partner record
-  const { data: partner, error: insertErr } = await supabase
-    .from("delivery_partners")
-    .insert({
-      user_id: userId,
-      status: "processing",
-      upi_id: body.upiId,
-      bank_account_holder: body.bankAccountHolder || null,
-      bank_account_number: body.bankAccountNumber || null,
-      bank_ifsc: body.bankIfsc || null,
-      bank_name: body.bankName || null,
-      vehicle_type: body.vehicleType || null,
-      aadhaar_image_url: aadhaarUrl,
-      selfie_image_url: selfieUrl,
-    })
-    .select("id")
-    .single();
-
-  if (insertErr) throw insertErr;
+  let partnerId;
+  if (existing) {
+    const { data, error } = await supabase.from("delivery_partners").update(updatePayload).eq("id", existing.id).select("id").single();
+    if (error) throw error;
+    partnerId = data.id;
+  } else {
+    const { data, error } = await supabase.from("delivery_partners").insert(updatePayload).select("id").single();
+    if (error) throw error;
+    partnerId = data.id;
+  }
 
   // Create pipeline steps for tracking
   const stepInserts = PIPELINE_STEPS.map((step) => ({
-    partner_id: partner.id,
+    partner_id: partnerId,
     step_name: step.name,
     step_order: step.order,
     status: "pending",
   }));
-
   await supabase.from("onboarding_steps").insert(stepInserts);
 
   // Enqueue the AI pipeline job
   const jobData = {
-    partnerId: partner.id,
-    aadhaarImagePath: aadhaarFile.path,
-    selfieImagePath: selfieFile.path,
+    partnerId: partnerId,
+    aadhaarImagePath: aadhaarTempPath,
+    selfieImagePath: selfieTempPath,
+    panCardImagePath: panCardTempPath,
+    drivingLicenseImagePath: drivingLicenseTempPath,
     upiId: body.upiId,
     bankDetails: {
       bankAccountHolder: body.bankAccountHolder,
@@ -171,7 +231,7 @@ async function initiateOnboarding(userId, files, body) {
   }
 
   return {
-    partnerId: partner.id,
+    partnerId: partnerId,
     status: "processing",
     message: "Onboarding process started — AI is verifying your documents",
     queued: !!queueResult,
@@ -284,7 +344,8 @@ async function getResult(userId) {
       age_eligibility_score, upi_validity_score,
       data_consistency_score, image_clarity_score,
       rejection_reasons, decision_made_at, terms_accepted,
-      created_at
+      created_at,
+      aadhaar_image_url, selfie_image_url, pan_card_image_url, driving_license_image_url
     `)
     .eq("user_id", userId)
     .single();
@@ -309,6 +370,10 @@ async function getResult(userId) {
       bankAccountHolder: partner.bank_account_holder,
       bankName: partner.bank_name,
       vehicleType: partner.vehicle_type,
+      aadhaarImageUrl: partner.aadhaar_image_url,
+      selfieImageUrl: partner.selfie_image_url,
+      panCardImageUrl: partner.pan_card_image_url,
+      drivingLicenseImageUrl: partner.driving_license_image_url,
     },
     scores: {
       overall: partner.overall_score,
@@ -326,9 +391,51 @@ async function getResult(userId) {
   };
 }
 
+/**
+ * Manually cancel an ongoing onboarding pipeline.
+ */
+async function cancelOnboarding(userId) {
+  const { data: partner, error } = await supabase
+    .from("delivery_partners")
+    .select("id, status")
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !partner) {
+    throw AppError.notFound("No onboarding application found to cancel");
+  }
+
+  if (partner.status === "verified" || partner.status === "rejected") {
+    throw AppError.badRequest("Application is already finalized");
+  }
+
+  // Update status to rejected with cancelled reason so it can be safely retried
+  const { data: updated, error: updateErr } = await supabase
+    .from("delivery_partners")
+    .update({
+      status: "rejected",
+      rejection_reasons: [
+        {
+          code: "CANCELLED_BY_USER",
+          message: "Verification was cancelled by the user.",
+          suggestion: "Click 'Try Again' to resume where you left off.",
+        },
+      ],
+      decision_made_at: new Date().toISOString(),
+    })
+    .eq("id", partner.id)
+    .select("id, status")
+    .single();
+
+  if (updateErr) throw updateErr;
+
+  return { message: "Verification cancelled successfully", status: updated.status };
+}
+
 export {
   initiateOnboarding,
   getStatus,
   submitReview,
   getResult,
+  cancelOnboarding,
 };

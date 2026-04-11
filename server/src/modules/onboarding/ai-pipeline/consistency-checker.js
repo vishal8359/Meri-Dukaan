@@ -10,9 +10,11 @@
  * @param {Object} ocrData - Data extracted from Aadhaar via OCR
  * @param {Object} userProvided - Data provided by user (bank details, etc.)
  * @param {Object} faceResult - Face matching results
+ * @param {Object} panData - Extracted PAN card data
+ * @param {Object} licenseData - Extracted Driving License data
  * @returns {Object} Consistency score and details
  */
-export function checkConsistency(ocrData, userProvided, faceResult) {
+export function checkConsistency(ocrData, userProvided, faceResult, panData = null, licenseData = null) {
   const checks = [];
   let totalScore = 0;
   let checkCount = 0;
@@ -24,8 +26,36 @@ export function checkConsistency(ocrData, userProvided, faceResult) {
       userProvided.bankAccountHolder
     );
     checks.push({
-      field: "name_match",
+      field: "name_match_bank",
       description: "Name on Aadhaar vs Bank Account Holder",
+      score: nameMatch.score,
+      match: nameMatch.isMatch,
+      detail: nameMatch.detail,
+    });
+    totalScore += nameMatch.score;
+    checkCount++;
+  }
+
+  // ── 1.1 Name consistency (OCR name vs PAN) ──
+  if (ocrData.fullName && panData?.fullName) {
+    const nameMatch = fuzzyNameMatch(ocrData.fullName, panData.fullName);
+    checks.push({
+      field: "name_match_pan",
+      description: "Name on Aadhaar vs PAN Card",
+      score: nameMatch.score,
+      match: nameMatch.isMatch,
+      detail: nameMatch.detail,
+    });
+    totalScore += nameMatch.score;
+    checkCount++;
+  }
+
+  // ── 1.2 Name consistency (OCR name vs License) ──
+  if (ocrData.fullName && licenseData?.fullName) {
+    const nameMatch = fuzzyNameMatch(ocrData.fullName, licenseData.fullName);
+    checks.push({
+      field: "name_match_license",
+      description: "Name on Aadhaar vs Driving License",
       score: nameMatch.score,
       match: nameMatch.isMatch,
       detail: nameMatch.detail,

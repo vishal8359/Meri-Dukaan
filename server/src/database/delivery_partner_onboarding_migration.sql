@@ -26,6 +26,14 @@ CREATE TABLE IF NOT EXISTS delivery_partners (
   -- Last 4 digits (masked display: XXXX-XXXX-1234)
   aadhaar_last_four TEXT CHECK (char_length(aadhaar_last_four) = 4),
 
+  -- PAN Card
+  pan_number_encrypted BYTEA,
+  pan_last_four TEXT CHECK (char_length(pan_last_four) = 4),
+  
+  -- Driving License
+  license_number_encrypted BYTEA,
+  license_last_four TEXT CHECK (char_length(license_last_four) = 4),
+
   -- User-provided payment details
   upi_id TEXT,
   bank_account_holder TEXT,
@@ -35,10 +43,13 @@ CREATE TABLE IF NOT EXISTS delivery_partners (
 
   -- Delivery config
   vehicle_type TEXT,
+  max_delivery_radius_km NUMERIC(5,2),
 
   -- ── AI Scores (0–100 each) ───────────────────────────────
   overall_score NUMERIC(5,2) DEFAULT 0,
   aadhaar_authenticity_score NUMERIC(5,2) DEFAULT 0,
+  pan_authenticity_score NUMERIC(5,2) DEFAULT 0,
+  license_authenticity_score NUMERIC(5,2) DEFAULT 0,
   face_match_score NUMERIC(5,2) DEFAULT 0,
   age_eligibility_score NUMERIC(5,2) DEFAULT 0,
   upi_validity_score NUMERIC(5,2) DEFAULT 0,
@@ -48,6 +59,8 @@ CREATE TABLE IF NOT EXISTS delivery_partners (
   -- Document URLs (Supabase Storage)
   aadhaar_image_url TEXT,
   selfie_image_url TEXT,
+  pan_card_image_url TEXT,
+  driving_license_image_url TEXT,
   aadhaar_face_crop_url TEXT,
 
   -- Decision metadata
