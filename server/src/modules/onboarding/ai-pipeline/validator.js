@@ -70,8 +70,8 @@ export function validateUpiId(upiId) {
 
   const trimmed = upiId.trim().toLowerCase();
 
-  // If it's a pure 10 digit number, consider it valid (we can assume it's phone number based)
-  if (/^\d{10}$/.test(trimmed)) {
+  // If it's a pure 10-13 digit number (with optional +), consider it valid (we can assume it's phone number based)
+  if (/^\+?\d{10,13}$/.test(trimmed)) {
     return { valid: true, isKnownProvider: true, provider: "mobile" };
   }
 
@@ -80,7 +80,8 @@ export function validateUpiId(upiId) {
   }
 
   // Standard UPI format: alphanumeric.alphanumeric@provider
-  const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9][a-zA-Z0-9.-]*$/;
+  // Allowed special chars in prefix: . _ - +
+  const upiRegex = /^[a-zA-Z0-9._+-]+@[a-zA-Z0-9][a-zA-Z0-9.-]*$/;
   if (!upiRegex.test(trimmed)) {
     return { valid: false, reason: "Invalid UPI ID format" };
   }
