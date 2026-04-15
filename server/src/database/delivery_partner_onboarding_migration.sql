@@ -111,5 +111,50 @@ $$ LANGUAGE plpgsql;
 DROP TRIGGER IF EXISTS trg_delivery_partners_updated_at ON delivery_partners;
 CREATE TRIGGER trg_delivery_partners_updated_at
   BEFORE UPDATE ON delivery_partners
-  FOR EACH ROW
   EXECUTE FUNCTION update_delivery_partners_updated_at();
+
+-- ============================================================
+-- Row Level Security (RLS) Policies
+-- ============================================================
+
+-- ── delivery_partners RLS ───────────────────────────────────
+ALTER TABLE public.delivery_partners ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their own delivery partner profile
+CREATE POLICY "Users can view own delivery partner profile"
+  ON public.delivery_partners
+  FOR SELECT
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- Users can insert their own delivery partner profile
+CREATE POLICY "Users can insert own delivery partner profile"
+  ON public.delivery_partners
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (user_id = auth.uid());
+
+-- Users can update their own delivery partner profile
+CREATE POLICY "Users can update own delivery partner profile"
+  ON public.delivery_partners
+  FOR UPDATE
+  TO authenticated
+  USING (user_id = auth.uid());
+
+-- ── onboarding_steps RLS ────────────────────────────────────
+ALTER TABLE public.onboarding_steps ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their own onboarding steps
+CREATE POLICY "Users can view own onboarding steps"
+  ON public.onboarding_steps
+  FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.delivery_partners dp
+      WHERE dp.id = onboarding_steps.partner_id
+        AND dp.user_id = auth.uid()
+    )
+  );
+
+-- Service role bypasses RLS by default, so backend can still write.
