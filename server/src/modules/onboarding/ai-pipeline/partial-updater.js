@@ -66,6 +66,9 @@ export async function processPartialUpdate({
       componentScores.upiValidity = vResult.upi.score;
       updates.upi_id = value;
     } 
+    else if (field === "vehicleType") {
+      updates.vehicle_type = value;
+    } 
     else if (field === "aadhaar") {
       const [ocrData, aadhaarQuality] = await Promise.all([
         extractAadhaarData(imagePath),

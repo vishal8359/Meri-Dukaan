@@ -1,17 +1,17 @@
-import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import {
-  uploadOnboardingDocuments,
+  cancelOnboarding,
+  getOnboardingResult,
   getOnboardingStatus,
   submitOnboardingReview,
-  getOnboardingResult,
-  cancelOnboarding,
   updateOnboardingDetail,
-  type OnboardingStep,
-  type OnboardingStatus,
+  uploadOnboardingDocuments,
   type OnboardingResult,
+  type OnboardingStatus
 } from "@/src/api/onboarding";
-import { useRouter } from "expo-router";
+import { colors, radius, shadows, spacing } from "@/src/theme/colors";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -23,14 +23,12 @@ import {
   FileText,
   Landmark,
   Loader2,
-  MapPin,
+  Pencil,
   RefreshCw,
   ShieldCheck,
   Truck,
   Upload,
-  User,
-  XCircle,
-  Pencil,
+  XCircle
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -47,7 +45,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Image } from "expo-image";
 
 // ── Step Flow ────────────────────────────────────────────────
 type FlowStep = "upload" | "processing" | "review" | "result";
@@ -109,6 +106,9 @@ export default function TransporterScreen() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showUpiPrompt, setShowUpiPrompt] = useState(false);
   const [newUpiText, setNewUpiText] = useState("");
+
+  const [showVehiclePrompt, setShowVehiclePrompt] = useState(false);
+  const [newVehicleText, setNewVehicleText] = useState("");
 
 
   // ── Pulse animation for processing ─────────────────
@@ -353,7 +353,11 @@ export default function TransporterScreen() {
       if (fieldKey === "Aadhaar") apiField = "aadhaar";
       else if (fieldKey === "PAN Card") apiField = "panCard";
       else if (fieldKey === "Selfie") apiField = "selfie";
-      else if (fieldKey === "Vehicle") apiField = "drivingLicense";
+      else if (fieldKey === "Vehicle") {
+        setNewVehicleText(resultData?.profile.vehicleType || "");
+        setShowVehiclePrompt(true);
+        return;
+      }
       
       const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permResult.granted) return;
@@ -395,6 +399,27 @@ export default function TransporterScreen() {
       }
     } catch (err: any) {
       Alert.alert("Error", err.message || "Failed to update UPI");
+    } finally {
+      setIsUpdating(false);
+      setUpdatingField(null);
+    }
+  };
+
+  const submitVehicleUpdate = async () => {
+    if (!newVehicleText.trim()) return;
+    setShowVehiclePrompt(false);
+    setIsUpdating(true);
+    setUpdatingField("Vehicle");
+    try {
+      const res = await updateOnboardingDetail("vehicleType", newVehicleText.trim());
+      Alert.alert("Success", res.message);
+      const status = await getOnboardingStatus();
+      if (status.status === "verified" || status.status === "rejected") {
+        const finalRes = await getOnboardingResult();
+        setResultData(finalRes);
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update Vehicle");
     } finally {
       setIsUpdating(false);
       setUpdatingField(null);
@@ -1115,31 +1140,94 @@ export default function TransporterScreen() {
 
       {/* UPI Update Prompt Modal */}
       {showUpiPrompt && (
-        <View style={styles.fullScreenOverlay}>
-          <View style={[styles.overlayContent, { width: "90%" }]}>
+        <TouchableOpacity 
+          style={styles.fullScreenOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowUpiPrompt(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={[styles.overlayContent, { width: "90%" }]}
+          >
             <Text style={styles.cardTitle}>Update UPI ID</Text>
             <TextInput
-              style={[styles.input, { width: "100%", borderWidth: 1, borderColor: colors.ui.border, borderRadius: radius.md, marginTop: 16 }]}
+              style={{
+                width: "100%",
+                borderWidth: 1.5,
+                borderColor: colors.ui.border,
+                borderRadius: radius.md,
+                marginTop: 16,
+                backgroundColor: "#F3F4F6",
+                color: "#111827",
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                fontSize: 16,
+                fontWeight: "500"
+              }}
               value={newUpiText}
               onChangeText={setNewUpiText}
               placeholder="e.g. yourname@okicici"
+              placeholderTextColor="#9CA3AF"
             />
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
               <TouchableOpacity
-                style={[styles.button, styles.buttonOutline, { flex: 1 }]}
+                style={[styles.submitBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: colors.brand.primary }]}
                 onPress={() => setShowUpiPrompt(false)}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={[styles.submitBtnText, { color: colors.brand.primary }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { flex: 1, backgroundColor: colors.brand.primary }]}
+                style={[styles.submitBtn, { flex: 1, backgroundColor: colors.brand.primary }]}
                 onPress={submitUpiUpdate}
               >
-                <Text style={{ color: "#fff", fontWeight: "700" }}>Update</Text>
+                <Text style={styles.submitBtnText}>Update</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+
+      {/* Vehicle Type Update Prompt Modal */}
+      {showVehiclePrompt && (
+        <TouchableOpacity 
+          style={styles.fullScreenOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowVehiclePrompt(false)}
+        >
+          <TouchableOpacity 
+            activeOpacity={1} 
+            style={[styles.overlayContent, { width: "90%" }]}
+          >
+            <Text style={styles.cardTitle}>Update Vehicle Type</Text>
+            <View style={[styles.vehicleRow, { marginTop: 16 }]}>
+              {["Walk", "Bicycle", "Bike", "Auto", "Mini Truck"].map((v) => (
+                <TouchableOpacity
+                  key={v}
+                  onPress={() => setNewVehicleText(v)}
+                  style={[styles.vehicleChip, newVehicleText === v && styles.vehicleChipActive]}
+                >
+                  <Text style={[styles.vehicleChipText, newVehicleText === v && styles.vehicleChipTextActive]}>
+                    {v}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 28 }}>
+              <TouchableOpacity
+                style={[styles.submitBtn, { flex: 1, backgroundColor: "transparent", borderWidth: 1, borderColor: colors.brand.primary }]}
+                onPress={() => setShowVehiclePrompt(false)}
+              >
+                <Text style={[styles.submitBtnText, { color: colors.brand.primary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitBtn, { flex: 1, backgroundColor: colors.brand.primary }]}
+                onPress={submitVehicleUpdate}
+              >
+                <Text style={styles.submitBtnText}>Update</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       )}
     </View>
   );
