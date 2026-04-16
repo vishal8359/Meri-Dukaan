@@ -203,11 +203,54 @@ export async function getOnboardingResult(): Promise<OnboardingResult> {
   return apiRequest<OnboardingResult>("/onboarding/result");
 }
 
-/**
- * Manually cancel the in-progress onboarding pipeline.
- */
 export async function cancelOnboarding(): Promise<{ message: string; status: string }> {
   return apiRequest("/onboarding/cancel", {
     method: "POST",
   });
 }
+
+/**
+ * Update a specific detail of an existing application.
+ */
+export async function updateOnboardingDetail(
+  field: string,
+  value?: string,
+  fileUri?: string | null
+): Promise<{
+  success: boolean;
+  message: string;
+  decision: string;
+  overallScore: number;
+}> {
+  const token = getGlobalAuthToken();
+  const formData = new FormData();
+
+  formData.append("field", field);
+  
+  if (value) {
+    formData.append("value", value);
+  }
+
+  if (fileUri) {
+    formData.append("file", {
+      uri: fileUri,
+      type: "image/jpeg",
+      name: `${field}.jpg`,
+    } as any);
+  }
+
+  const response = await axios.patch(
+    `${API_BASE_URL}/onboarding/update-detail`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      timeout: 60000,
+    }
+  );
+
+  return response.data;
+}
+

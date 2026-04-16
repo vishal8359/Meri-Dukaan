@@ -5,6 +5,7 @@ import {
   submitOnboardingReview,
   getOnboardingResult,
   cancelOnboarding,
+  updateOnboardingDetail,
   type OnboardingStep,
   type OnboardingStatus,
   type OnboardingResult,
@@ -29,6 +30,7 @@ import {
   Upload,
   User,
   XCircle,
+  Pencil,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -101,6 +103,13 @@ export default function TransporterScreen() {
 
   // Result step state
   const [resultData, setResultData] = useState<OnboardingResult | null>(null);
+
+  // Partial update state
+  const [updatingField, setUpdatingField] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showUpiPrompt, setShowUpiPrompt] = useState(false);
+  const [newUpiText, setNewUpiText] = useState("");
+
 
   // ── Pulse animation for processing ─────────────────
   useEffect(() => {
@@ -331,6 +340,64 @@ export default function TransporterScreen() {
       animateTransition("upload");
     } catch (err: any) {
       Alert.alert("Cancellation Failed", err.message || "Failed to cancel process");
+    }
+  };
+
+  // ── Partial Update ─────────────────────────────────
+  const handleUpdateDetail = async (fieldKey: string) => {
+    if (fieldKey === "UPI ID") {
+      setNewUpiText(resultData?.profile.upiId || "");
+      setShowUpiPrompt(true);
+    } else {
+      let apiField = "";
+      if (fieldKey === "Aadhaar") apiField = "aadhaar";
+      else if (fieldKey === "PAN Card") apiField = "panCard";
+      else if (fieldKey === "Selfie") apiField = "selfie";
+      else if (fieldKey === "Vehicle") apiField = "drivingLicense";
+      
+      const permResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permResult.granted) return;
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
+      if (!result.canceled && result.assets[0].uri) {
+        setIsUpdating(true);
+        setUpdatingField(fieldKey);
+        try {
+          const res = await updateOnboardingDetail(apiField, undefined, result.assets[0].uri);
+          Alert.alert("Success", res.message);
+          // Manually restart fetch logic instead of calling checkExistingApplication directly to re-fetch
+          const status = await getOnboardingStatus();
+          if (status.status === "verified" || status.status === "rejected") {
+            const finalRes = await getOnboardingResult();
+            setResultData(finalRes);
+          }
+        } catch (err: any) {
+          Alert.alert("Error", err.message || "Failed to update detail");
+        } finally {
+          setIsUpdating(false);
+          setUpdatingField(null);
+        }
+      }
+    }
+  };
+
+  const submitUpiUpdate = async () => {
+    if (!newUpiText.trim()) return;
+    setShowUpiPrompt(false);
+    setIsUpdating(true);
+    setUpdatingField("UPI ID");
+    try {
+      const res = await updateOnboardingDetail("upiId", newUpiText.trim());
+      Alert.alert("Success", res.message);
+      const status = await getOnboardingStatus();
+      if (status.status === "verified" || status.status === "rejected") {
+        const finalRes = await getOnboardingResult();
+        setResultData(finalRes);
+      }
+    } catch (err: any) {
+      Alert.alert("Error", err.message || "Failed to update UPI");
+    } finally {
+      setIsUpdating(false);
+      setUpdatingField(null);
     }
   };
 
@@ -853,18 +920,27 @@ export default function TransporterScreen() {
           <View style={[styles.card, { marginTop: 16 }]}>
             <Text style={styles.sectionTitle}>Your Partner Profile</Text>
             {[
-              { label: "Name", value: resultData.profile.fullName },
-              { label: "Date of Birth", value: resultData.profile.dateOfBirth },
-              { label: "Gender", value: resultData.profile.gender },
-              { label: "Aadhaar", value: resultData.profile.aadhaarMasked },
-              { label: "UPI ID", value: resultData.profile.upiId },
-              { label: "Vehicle", value: resultData.profile.vehicleType },
+              { label: "Name", value: resultData.profile.fullName, editable: false },
+              { label: "Date of Birth", value: resultData.profile.dateOfBirth, editable: false },
+              { label: "Gender", value: resultData.profile.gender, editable: false },
+              { label: "Aadhaar", value: resultData.profile.aadhaarMasked, editable: true },
+              { label: "PAN Card", value: "Uploaded", editable: true },
+              { label: "Selfie", value: "Uploaded", editable: true },
+              { label: "UPI ID", value: resultData.profile.upiId, editable: true },
+              { label: "Vehicle", value: resultData.profile.vehicleType, editable: true },
             ]
               .filter((f) => f.value)
               .map((field) => (
                 <View key={field.label} style={styles.profileField}>
                   <Text style={styles.profileLabel}>{field.label}</Text>
-                  <Text style={styles.profileValue}>{field.value}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Text style={styles.profileValue}>{field.value}</Text>
+                    {field.editable && (
+                      <TouchableOpacity onPress={() => handleUpdateDetail(field.label)}>
+                        <Pencil size={14} color={colors.brand.primary} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
               ))}
           </View>
@@ -1023,12 +1099,45 @@ export default function TransporterScreen() {
       </KeyboardAvoidingView>
 
       {/* Floating Upload Overlay */}
-      {isLoading && flowStep === "upload" && (
+      {(isLoading && flowStep === "upload") || isUpdating ? (
         <View style={styles.fullScreenOverlay}>
           <View style={styles.overlayContent}>
             <ActivityIndicator size="large" color={colors.brand.primary} style={{ transform: [{ scale: 1.5 }] }} />
-            <Text style={styles.overlayTitle}>Uploading Documents...</Text>
-            <Text style={styles.overlaySubtitle}>Encrypting your data securely</Text>
+            <Text style={styles.overlayTitle}>
+              {isUpdating ? `Updating ${updatingField}...` : "Uploading Documents..."}
+            </Text>
+            <Text style={styles.overlaySubtitle}>
+              {isUpdating ? "Verifying partial update" : "Encrypting your data securely"}
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
+      {/* UPI Update Prompt Modal */}
+      {showUpiPrompt && (
+        <View style={styles.fullScreenOverlay}>
+          <View style={[styles.overlayContent, { width: "90%" }]}>
+            <Text style={styles.cardTitle}>Update UPI ID</Text>
+            <TextInput
+              style={[styles.input, { width: "100%", borderWidth: 1, borderColor: colors.ui.border, borderRadius: radius.md, marginTop: 16 }]}
+              value={newUpiText}
+              onChangeText={setNewUpiText}
+              placeholder="e.g. yourname@okicici"
+            />
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonOutline, { flex: 1 }]}
+                onPress={() => setShowUpiPrompt(false)}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, { flex: 1, backgroundColor: colors.brand.primary }]}
+                onPress={submitUpiUpdate}
+              >
+                <Text style={{ color: "#fff", fontWeight: "700" }}>Update</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}

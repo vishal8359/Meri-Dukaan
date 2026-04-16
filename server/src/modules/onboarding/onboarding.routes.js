@@ -59,6 +59,8 @@ const uploadFields = upload.fields([
   { name: "drivingLicense", maxCount: 1 },
 ]);
 
+const uploadSingle = upload.single("file");
+
 const router = Router();
 
 // All routes require authentication
@@ -80,6 +82,13 @@ router.put("/review", validate(reviewSchema), asyncHandler(ctrl.review));
 
 // Get final decision and scores
 router.get("/result", asyncHandler(ctrl.result));
+
+// Update specific detail
+router.patch(
+  "/update-detail",
+  uploadSingle,
+  asyncHandler(ctrl.updateDetail)
+);
 
 // Cancel ongoing onboarding process manually
 router.post("/cancel", asyncHandler(ctrl.cancel));

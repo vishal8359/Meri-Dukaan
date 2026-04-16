@@ -14,6 +14,7 @@ import { PIPELINE_STEPS } from "./ai-pipeline/index.js";
 import { enqueueOnboardingJob } from "./onboarding.queue.js";
 import { processOnboardingSync } from "./onboarding.worker.js";
 import { maskAadhaar } from "./ai-pipeline/encryption.js";
+import { processPartialUpdate } from "./ai-pipeline/partial-updater.js";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -432,10 +433,91 @@ async function cancelOnboarding(userId) {
   return { message: "Verification cancelled successfully", status: updated.status };
 }
 
+/**
+ * Manually update a specific detail (used for partial resubmission / updates).
+ */
+async function updateSpecificDetail(userId, field, file, value, body) {
+  const { data: partner, error } = await supabase
+    .from("delivery_partners")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
+
+  if (error || !partner) {
+    throw AppError.notFound("No onboarding application found to update");
+  }
+
+  ensureUploadDir();
+
+  let tempPath = null;
+  let newUrl = null;
+
+  // Resolve new image target
+  if (file) {
+    let bucket = "delivery-documents";
+    if (field === "selfie") bucket = "delivery-selfies";
+    newUrl = await uploadToStorage(file.path, bucket, `${field}_${userId}_update_${Date.now()}`);
+    tempPath = file.path;
+  }
+
+  let oldSelfiePath = null;
+  let oldAadhaarPath = null;
+
+  // If we need cross-referencing for face match
+  if (field === "aadhaar" && partner.selfie_image_url) {
+    oldSelfiePath = await downloadTempUrl(partner.selfie_image_url, "dl_selfie");
+  }
+  if (field === "selfie" && partner.aadhaar_image_url) {
+    oldAadhaarPath = await downloadTempUrl(partner.aadhaar_image_url, "dl_aadhaar");
+  }
+
+  // Call the isolated partial updater
+  const partialResult = await processPartialUpdate({
+    partner,
+    field,
+    value: value || body.value,
+    imagePath: tempPath,
+    oldSelfiePath,
+    oldAadhaarPath,
+  });
+
+  if (partialResult.errors && partialResult.errors.length > 0) {
+    throw AppError.badRequest("Verification failed: " + partialResult.errors[0]);
+  }
+
+  // Set the new URLs in the updates object if a file was provided
+  const updates = partialResult.updates;
+  if (newUrl) {
+    if (field === "aadhaar") updates.aadhaar_image_url = newUrl;
+    if (field === "selfie") updates.selfie_image_url = newUrl;
+    if (field === "panCard") updates.pan_card_image_url = newUrl;
+    if (field === "drivingLicense") updates.driving_license_image_url = newUrl;
+  }
+
+  updates.decision_made_at = new Date().toISOString();
+
+  // Commit updates to DB
+  const { error: updateErr } = await supabase
+    .from("delivery_partners")
+    .update(updates)
+    .eq("id", partner.id);
+
+  if (updateErr) throw updateErr;
+
+  return {
+    success: true,
+    message: "Detail updated and verified",
+    decision: updates.status,
+    overallScore: updates.overall_score
+  };
+}
+
 export {
   initiateOnboarding,
   getStatus,
   submitReview,
   getResult,
   cancelOnboarding,
+  updateSpecificDetail,
 };
+

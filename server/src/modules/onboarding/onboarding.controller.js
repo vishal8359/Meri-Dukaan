@@ -31,3 +31,19 @@ export const cancel = async (req, res) => {
   const result = await onboardingService.cancelOnboarding(req.user.id);
   res.json(result);
 };
+
+export const updateDetail = async (req, res) => {
+  const { field } = req.body;
+  const value = req.body.value;
+  const file = req.file;
+
+  const result = await onboardingService.updateSpecificDetail(
+    req.user.id,
+    field,
+    file,
+    value,
+    req.body
+  );
+  
+  res.json(result);
+};
