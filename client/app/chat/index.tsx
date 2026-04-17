@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   StatusBar,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -52,9 +53,29 @@ export default function ChatScreen() {
     "Track order",
     "Show stores",
   ]);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const flatListRef = useRef<FlatList>(null);
   const inputRef = useRef<TextInput>(null);
+
+  // Track keyboard visibility
+  useEffect(() => {
+    const showSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      () => {
+        setKeyboardVisible(true);
+        scrollToBottom();
+      }
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => setKeyboardVisible(false)
+    );
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Welcome message on mount
   useEffect(() => {
@@ -79,9 +100,10 @@ export default function ChatScreen() {
   const loadHistory = async () => {
     if (!sessionId || !token) return;
     try {
-      const res = await getChatHistory(token, sessionId);
-      if (res.data?.messages?.length > 0) {
-        const mapped: DisplayMessage[] = res.data.messages.map(
+      const res: any = await getChatHistory(token, sessionId);
+      const msgs = res?.data?.messages || res?.messages || [];
+      if (msgs.length > 0) {
+        const mapped: DisplayMessage[] = msgs.map(
           (m: ChatMessage, i: number) => ({
             id: m.id || `hist-${i}`,
             role: m.role,
@@ -100,15 +122,28 @@ export default function ChatScreen() {
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    }, 150);
   }, []);
 
   const handleSend = useCallback(
     async (text?: string) => {
       const msg = (text || inputText).trim();
-      if (!msg || isLoading || !token) return;
+      if (!msg || isLoading) return;
+
+      // Check auth
+      if (!token) {
+        const errorMsg: DisplayMessage = {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content: "Please log in to use the chatbot.",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+        return;
+      }
 
       setInputText("");
+      Keyboard.dismiss();
 
       // Add user message
       const userMsg: DisplayMessage = {
@@ -123,27 +158,30 @@ export default function ChatScreen() {
       scrollToBottom();
 
       try {
-        const res = await sendChatMessage(token, msg, sessionId);
-        const data = res.data;
+        const res: any = await sendChatMessage(token, msg, sessionId);
+
+        // apiRequest unwraps response.data, so res = { success, data: {...} }
+        const payload = res?.data || res;
 
         // Save session ID for subsequent messages
-        if (data.sessionId && !sessionId) {
-          setSessionId(data.sessionId);
+        if (payload.sessionId && !sessionId) {
+          setSessionId(payload.sessionId);
         }
 
         // Add assistant response
         const assistantMsg: DisplayMessage = {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content: data.message,
-          cards: data.cards,
-          quickReplies: data.quickReplies,
+          content: payload.message || "I received your message!",
+          cards: payload.cards,
+          quickReplies: payload.quickReplies,
           timestamp: new Date().toISOString(),
         };
 
         setMessages((prev) => [...prev, assistantMsg]);
-        setQuickReplies(data.quickReplies || []);
+        setQuickReplies(payload.quickReplies || []);
       } catch (err: any) {
+        console.warn("Chat error:", err);
         // Show error as assistant message
         const errorMsg: DisplayMessage = {
           id: `error-${Date.now()}`,
@@ -332,8 +370,8 @@ export default function ChatScreen() {
       {/* Chat Messages */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
         <FlatList
           ref={flatListRef}
@@ -343,6 +381,7 @@ export default function ChatScreen() {
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           onContentSizeChange={scrollToBottom}
+          keyboardShouldPersistTaps="handled"
           ListFooterComponent={
             <>
               {isLoading && <TypingIndicator />}
@@ -357,7 +396,7 @@ export default function ChatScreen() {
         />
 
         {/* Input Area */}
-        <View style={styles.inputArea}>
+        <View style={[styles.inputArea, keyboardVisible && styles.inputAreaKeyboard]}>
           <View style={styles.inputRow}>
             <TextInput
               ref={inputRef}
@@ -369,6 +408,7 @@ export default function ChatScreen() {
               multiline
               maxLength={2000}
               editable={!isLoading}
+              returnKeyType="send"
               onSubmitEditing={() => handleSend()}
               blurOnSubmit={false}
             />
@@ -535,6 +575,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     paddingBottom: Platform.OS === "ios" ? 24 : 8,
+  },
+  inputAreaKeyboard: {
+    paddingBottom: 8,
   },
   inputRow: {
     flexDirection: "row",

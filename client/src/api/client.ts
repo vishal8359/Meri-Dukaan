@@ -51,7 +51,7 @@ type RequestOptions = {
 
 const http = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
 });
 
 export async function apiRequest<T>(
