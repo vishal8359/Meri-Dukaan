@@ -830,10 +830,10 @@ export default function TransporterScreen() {
           
           {/* Cancel Button */}
           <TouchableOpacity
-            style={[styles.button, styles.buttonOutline, { marginTop: 24, borderColor: colors.status.error }]}
+            style={[styles.retryBtn, { marginTop: 24, borderColor: colors.status.error }]}
             onPress={handleCancel}
           >
-            <Text style={[styles.buttonText, { color: colors.status.error }]}>Cancel Verification</Text>
+            <Text style={[styles.retryBtnText, { color: colors.status.error }]}>Cancel Verification</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
