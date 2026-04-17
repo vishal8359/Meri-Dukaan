@@ -39,6 +39,12 @@ const env = {
     apiKey: process.env.GEMINI_API_KEY || "",
   },
 
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY || "",
+    model: process.env.OPENAI_MODEL || "gpt-4o",
+    embeddingModel: process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small",
+  },
+
   aadhaarEncryptionKey: process.env.AADHAAR_ENCRYPTION_KEY || "",
 };
 

@@ -1,0 +1,568 @@
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+  StatusBar,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { colors, radius, spacing, shadows } from "../../src/theme/colors";
+import { useAuth } from "../../src/context/AuthContext";
+import {
+  sendChatMessage,
+  getChatHistory,
+  type ChatMessage,
+  type ChatCard,
+} from "../../src/api/chat";
+import ChatBubble from "./components/ChatBubble";
+import ProductCard from "./components/ProductCard";
+import OrderCard from "./components/OrderCard";
+import QuickReplies from "./components/QuickReplies";
+import TypingIndicator from "./components/TypingIndicator";
+
+interface DisplayMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  cards?: ChatCard[];
+  quickReplies?: string[];
+  timestamp?: string;
+}
+
+export default function ChatScreen() {
+  const router = useRouter();
+  const { authToken: token } = useAuth();
+
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [quickReplies, setQuickReplies] = useState<string[]>([
+    "Search products",
+    "View my cart",
+    "Track order",
+    "Show stores",
+  ]);
+
+  const flatListRef = useRef<FlatList>(null);
+  const inputRef = useRef<TextInput>(null);
+
+  // Welcome message on mount
+  useEffect(() => {
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content:
+          "Hey! 👋 I'm your MyBusz assistant. I can help you search products, manage your cart, place orders, and much more.\n\nWhat would you like to do?",
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+  }, []);
+
+  // Load history if we have a sessionId
+  useEffect(() => {
+    if (sessionId && token) {
+      loadHistory();
+    }
+  }, [sessionId]);
+
+  const loadHistory = async () => {
+    if (!sessionId || !token) return;
+    try {
+      const res = await getChatHistory(token, sessionId);
+      if (res.data?.messages?.length > 0) {
+        const mapped: DisplayMessage[] = res.data.messages.map(
+          (m: ChatMessage, i: number) => ({
+            id: m.id || `hist-${i}`,
+            role: m.role,
+            content: m.content,
+            cards: m.cards || undefined,
+            timestamp: m.created_at,
+          })
+        );
+        setMessages(mapped);
+      }
+    } catch (err) {
+      console.warn("Failed to load chat history:", err);
+    }
+  };
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  }, []);
+
+  const handleSend = useCallback(
+    async (text?: string) => {
+      const msg = (text || inputText).trim();
+      if (!msg || isLoading || !token) return;
+
+      setInputText("");
+
+      // Add user message
+      const userMsg: DisplayMessage = {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: msg,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+      setQuickReplies([]);
+      setIsLoading(true);
+      scrollToBottom();
+
+      try {
+        const res = await sendChatMessage(token, msg, sessionId);
+        const data = res.data;
+
+        // Save session ID for subsequent messages
+        if (data.sessionId && !sessionId) {
+          setSessionId(data.sessionId);
+        }
+
+        // Add assistant response
+        const assistantMsg: DisplayMessage = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: data.message,
+          cards: data.cards,
+          quickReplies: data.quickReplies,
+          timestamp: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, assistantMsg]);
+        setQuickReplies(data.quickReplies || []);
+      } catch (err: any) {
+        // Show error as assistant message
+        const errorMsg: DisplayMessage = {
+          id: `error-${Date.now()}`,
+          role: "assistant",
+          content:
+            err?.message ||
+            "Oops, something went wrong. Please try again.",
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+        setQuickReplies(["Try again", "Search products"]);
+      } finally {
+        setIsLoading(false);
+        scrollToBottom();
+      }
+    },
+    [inputText, isLoading, token, sessionId, scrollToBottom]
+  );
+
+  const handleQuickReply = useCallback(
+    (reply: string) => {
+      handleSend(reply);
+    },
+    [handleSend]
+  );
+
+  const handleAddToCart = useCallback(
+    (productId: string) => {
+      handleSend(`Add this product to my cart: ${productId}`);
+    },
+    [handleSend]
+  );
+
+  const handleTrackOrder = useCallback(
+    (orderId: string) => {
+      handleSend(`Track order ${orderId}`);
+    },
+    [handleSend]
+  );
+
+  // ── Render Functions ───────────────────────────────────────
+
+  const renderCards = (cards: ChatCard[]) => {
+    return cards.map((card, i) => {
+      switch (card.type) {
+        case "product":
+          return (
+            <ProductCard
+              key={`card-${i}`}
+              data={card.data}
+              onAddToCart={handleAddToCart}
+            />
+          );
+        case "order":
+        case "delivery":
+          return (
+            <OrderCard
+              key={`card-${i}`}
+              data={card.data}
+              onTrack={handleTrackOrder}
+            />
+          );
+        case "store":
+          return (
+            <TouchableOpacity
+              key={`card-${i}`}
+              style={styles.storeCard}
+              onPress={() =>
+                handleSend(`Show me details of store ${card.data.id}`)
+              }
+              activeOpacity={0.8}
+            >
+              <View style={styles.storeInfo}>
+                <Text style={styles.storeName}>{card.data.storeName}</Text>
+                <Text style={styles.storeCategory}>
+                  {card.data.category || "General"}{" "}
+                  {card.data.rating ? `⭐ ${card.data.rating}` : ""}
+                </Text>
+                {card.data.location && (
+                  <Text style={styles.storeLocation}>
+                    📍 {card.data.location}
+                  </Text>
+                )}
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.text.tertiary}
+              />
+            </TouchableOpacity>
+          );
+        case "cart":
+          return (
+            <View key={`card-${i}`} style={styles.cartCard}>
+              <View style={styles.cartHeader}>
+                <Ionicons
+                  name="cart"
+                  size={20}
+                  color={colors.brand.primary}
+                />
+                <Text style={styles.cartTitle}>
+                  Your Cart ({card.data.itemCount} items)
+                </Text>
+              </View>
+              <View style={styles.cartTotal}>
+                <Text style={styles.cartTotalLabel}>Total</Text>
+                <Text style={styles.cartTotalValue}>
+                  ₹{card.data.total}
+                </Text>
+              </View>
+            </View>
+          );
+        default:
+          return null;
+      }
+    });
+  };
+
+  const renderItem = ({ item }: { item: DisplayMessage }) => {
+    return (
+      <View>
+        <ChatBubble
+          role={item.role}
+          content={item.content}
+          timestamp={item.timestamp}
+        />
+        {item.cards && item.cards.length > 0 && (
+          <View style={styles.cardsContainer}>{renderCards(item.cards)}</View>
+        )}
+      </View>
+    );
+  };
+
+  // ── Main Render ────────────────────────────────────────────
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top"]}>
+      <StatusBar barStyle="light-content" />
+
+      {/* Header */}
+      <LinearGradient
+        colors={[colors.gradient.navyStart, colors.gradient.navyEnd]}
+        style={styles.header}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+
+        <View style={styles.headerCenter}>
+          <View style={styles.headerAvatar}>
+            <Text style={{ fontSize: 18 }}>🤖</Text>
+          </View>
+          <View>
+            <Text style={styles.headerTitle}>MyBusz Assistant</Text>
+            <Text style={styles.headerSubtitle}>
+              {isLoading ? "Thinking..." : "Online"}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.menuBtn}
+          onPress={() => {
+            setMessages([
+              {
+                id: "welcome-new",
+                role: "assistant",
+                content:
+                  "Starting a fresh chat! 🔄 How can I help you?",
+                timestamp: new Date().toISOString(),
+              },
+            ]);
+            setSessionId(null);
+            setQuickReplies(["Search products", "View cart", "Track order"]);
+          }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="refresh" size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+      </LinearGradient>
+
+      {/* Chat Messages */}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={0}
+      >
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.messageList}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={scrollToBottom}
+          ListFooterComponent={
+            <>
+              {isLoading && <TypingIndicator />}
+              {!isLoading && quickReplies.length > 0 && (
+                <QuickReplies
+                  replies={quickReplies}
+                  onPress={handleQuickReply}
+                />
+              )}
+            </>
+          }
+        />
+
+        {/* Input Area */}
+        <View style={styles.inputArea}>
+          <View style={styles.inputRow}>
+            <TextInput
+              ref={inputRef}
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Ask me anything..."
+              placeholderTextColor={colors.text.tertiary}
+              multiline
+              maxLength={2000}
+              editable={!isLoading}
+              onSubmitEditing={() => handleSend()}
+              blurOnSubmit={false}
+            />
+            <TouchableOpacity
+              style={[
+                styles.sendBtn,
+                (!inputText.trim() || isLoading) && styles.sendBtnDisabled,
+              ]}
+              onPress={() => handleSend()}
+              disabled={!inputText.trim() || isLoading}
+              activeOpacity={0.8}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Ionicons name="send" size={20} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+// ── Styles ─────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.gradient.navyStart,
+  },
+  flex: {
+    flex: 1,
+    backgroundColor: colors.ui.background,
+  },
+
+  // Header
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    padding: 4,
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 12,
+    gap: 10,
+  },
+  headerAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
+    marginTop: 1,
+  },
+  menuBtn: {
+    padding: 4,
+  },
+
+  // Messages
+  messageList: {
+    paddingVertical: 12,
+    paddingBottom: 8,
+  },
+  cardsContainer: {
+    marginTop: 4,
+    marginBottom: 6,
+  },
+
+  // Store Card (inline)
+  storeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
+    marginHorizontal: 12,
+    marginVertical: 4,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    ...shadows.small,
+  },
+  storeInfo: {
+    flex: 1,
+  },
+  storeName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  storeCategory: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  storeLocation: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+
+  // Cart Card (inline)
+  cartCard: {
+    backgroundColor: colors.ui.surface,
+    borderRadius: radius.md,
+    marginHorizontal: 12,
+    marginVertical: 4,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+    ...shadows.small,
+  },
+  cartHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  cartTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text.primary,
+  },
+  cartTotal: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderTopWidth: 1,
+    borderTopColor: colors.ui.borderLight,
+    paddingTop: 10,
+  },
+  cartTotalLabel: {
+    fontSize: 13,
+    color: colors.text.secondary,
+  },
+  cartTotalValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.brand.primary,
+  },
+
+  // Input Area
+  inputArea: {
+    backgroundColor: colors.ui.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.ui.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    paddingBottom: Platform.OS === "ios" ? 24 : 8,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  textInput: {
+    flex: 1,
+    backgroundColor: colors.ui.background,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: colors.text.primary,
+    maxHeight: 100,
+    borderWidth: 1,
+    borderColor: colors.ui.border,
+  },
+  sendBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: colors.brand.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.small,
+  },
+  sendBtnDisabled: {
+    backgroundColor: colors.ui.disabled,
+  },
+});

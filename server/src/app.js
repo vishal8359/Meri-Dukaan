@@ -14,6 +14,7 @@ import serviceBookingRoutes from "./modules/service-booking/service-booking.rout
 import wishlistRoutes from "./modules/wishlist/wishlist.routes.js";
 import onboardingRoutes from "./modules/onboarding/onboarding.routes.js";
 import notificationRoutes from "./modules/notification/notification.routes.js";
+import chatRoutes from "./modules/chatbot/chatbot.routes.js";
 import * as reelService from "./modules/reel/reel.service.js";
 import asyncHandler from "./lib/asyncHandler.js";
 import { registerEventListeners } from "./modules/notification/notification.listener.js";
@@ -43,6 +44,7 @@ app.use("/api/service-bookings", serviceBookingRoutes);
 app.use("/api/wishlist", wishlistRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/chat", chatRoutes);
 
 // A convenience reel-feed endpoint (not store-scoped)
 app.get("/api/reels/feed", asyncHandler(async (req, res) => {
