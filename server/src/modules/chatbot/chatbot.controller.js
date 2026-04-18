@@ -28,10 +28,12 @@ export const sendMessage = async (req, res) => {
     const status = err.status || err.statusCode || 500;
     const code = err.code || err.type || "unknown";
 
-    if (status === 429 || code === "insufficient_quota") {
+    if (status === 429 || code === "insufficient_quota" || code === "tool_use_failed") {
       return res.status(503).json({
         success: false,
-        error: "The AI service is temporarily unavailable. Please try again later.",
+        error: code === "tool_use_failed"
+          ? "I had trouble processing that. Could you rephrase your question?"
+          : "The AI service is temporarily unavailable. Please try again later.",
       });
     }
 

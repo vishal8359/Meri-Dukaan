@@ -6,22 +6,22 @@ import * as roleResolver from "./context/role-resolver.js";
 import { getToolDefinitions, executeTool } from "./tools/index.js";
 import { buildSystemPrompt } from "./prompts/system-prompt.js";
 
-// ── Gemini Client (OpenAI-compatible) ────────────────────────
+// ── Groq Client (OpenAI-compatible) ──────────────────────────
 
-let geminiClient;
+let groqClient;
 function getClient() {
-  if (!geminiClient) {
-    if (!env.gemini.apiKey) {
+  if (!groqClient) {
+    if (!env.groq.apiKey) {
       throw AppError.serviceUnavailable(
-        "Chatbot is unavailable. Configure GEMINI_API_KEY environment variable."
+        "Chatbot is unavailable. Configure GROQ_API_KEY environment variable."
       );
     }
-    geminiClient = new OpenAI({
-      apiKey: env.gemini.apiKey,
-      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    groqClient = new OpenAI({
+      apiKey: env.groq.apiKey,
+      baseURL: "https://api.groq.com/openai/v1",
     });
   }
-  return geminiClient;
+  return groqClient;
 }
 
 const MAX_TOOL_ITERATIONS = 6;
@@ -73,7 +73,7 @@ export async function processMessage(userId, sessionId, message) {
     iterations++;
 
     const completionParams = {
-      model: "gemini-2.0-flash",
+      model: "llama-3.3-70b-versatile",
       messages,
       temperature: 0.7,
       max_tokens: 1024,
@@ -84,7 +84,21 @@ export async function processMessage(userId, sessionId, message) {
       completionParams.tool_choice = "auto";
     }
 
-    const completion = await client.chat.completions.create(completionParams);
+    let completion;
+    try {
+      completion = await client.chat.completions.create(completionParams);
+    } catch (apiErr) {
+      // Groq sometimes fails to parse tool calls from the model.
+      // Retry once without tools so it falls back to a text response.
+      if (apiErr.code === "tool_use_failed" && completionParams.tools) {
+        console.warn("[chatbot] Tool call failed, retrying without tools");
+        delete completionParams.tools;
+        delete completionParams.tool_choice;
+        completion = await client.chat.completions.create(completionParams);
+      } else {
+        throw apiErr;
+      }
+    }
     const choice = completion.choices[0];
     const assistantMsg = choice.message;
 

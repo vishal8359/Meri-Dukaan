@@ -39,6 +39,10 @@ const env = {
     apiKey: process.env.GEMINI_API_KEY || "",
   },
 
+  groq: {
+    apiKey: process.env.GROQ_API_KEY || "",
+  },
+
   openai: {
     apiKey: process.env.OPENAI_API_KEY || "",
     model: process.env.OPENAI_MODEL || "gpt-4o",
