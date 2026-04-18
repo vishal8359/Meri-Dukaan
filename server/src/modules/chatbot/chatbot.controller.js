@@ -8,12 +8,35 @@ export const sendMessage = async (req, res) => {
   const { sessionId, message } = req.body;
   const userId = req.user.id;
 
-  const result = await chatbotService.processMessage(userId, sessionId, message);
+  try {
+    const result = await chatbotService.processMessage(userId, sessionId, message);
 
-  res.json({
-    success: true,
-    data: result,
-  });
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    console.error("[chatbot] Error details:", {
+      message: err.message,
+      status: err.status,
+      code: err.code,
+      type: err.type,
+      error: err.error,
+    });
+
+    // Handle API quota / rate-limit errors gracefully
+    const status = err.status || err.statusCode || 500;
+    const code = err.code || err.type || "unknown";
+
+    if (status === 429 || code === "insufficient_quota") {
+      return res.status(503).json({
+        success: false,
+        error: "The AI service is temporarily unavailable. Please try again later.",
+      });
+    }
+
+    throw err; // Let global error handler deal with other errors
+  }
 };
 
 /**

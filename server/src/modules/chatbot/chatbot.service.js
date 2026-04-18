@@ -6,19 +6,22 @@ import * as roleResolver from "./context/role-resolver.js";
 import { getToolDefinitions, executeTool } from "./tools/index.js";
 import { buildSystemPrompt } from "./prompts/system-prompt.js";
 
-// ── OpenAI Client ────────────────────────────────────────────
+// ── Gemini Client (OpenAI-compatible) ────────────────────────
 
-let openai;
+let geminiClient;
 function getClient() {
-  if (!openai) {
-    if (!env.openai.apiKey) {
+  if (!geminiClient) {
+    if (!env.gemini.apiKey) {
       throw AppError.serviceUnavailable(
-        "Chatbot is unavailable. Configure OPENAI_API_KEY environment variable."
+        "Chatbot is unavailable. Configure GEMINI_API_KEY environment variable."
       );
     }
-    openai = new OpenAI({ apiKey: env.openai.apiKey });
+    geminiClient = new OpenAI({
+      apiKey: env.gemini.apiKey,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    });
   }
-  return openai;
+  return geminiClient;
 }
 
 const MAX_TOOL_ITERATIONS = 6;
@@ -70,7 +73,7 @@ export async function processMessage(userId, sessionId, message) {
     iterations++;
 
     const completionParams = {
-      model: env.openai.model,
+      model: "gemini-2.0-flash",
       messages,
       temperature: 0.7,
       max_tokens: 1024,
