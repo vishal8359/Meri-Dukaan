@@ -122,9 +122,22 @@ export async function processMessage(userId, sessionId, message) {
     if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
       let cleaned = cleanResponse(assistantMsg.content || "");
       if (!cleaned.trim()) {
-        cleaned = "I couldn't quite find what you're looking for. Could you try rephrasing your search?";
+        cleaned = "I was unable to retrieve a relevant result. Could you please provide more details or try a different query?";
       }
       finalContent = cleaned;
+
+      // Deduplicate cards to prevent redundant UI elements
+      const uniqueCards = [];
+      const seenCards = new Set();
+      for (const card of allCards) {
+        const key = card.type + "-" + (card.data?.id || JSON.stringify(card.data));
+        if (!seenCards.has(key)) {
+          seenCards.add(key);
+          uniqueCards.push(card);
+        }
+      }
+      allCards.length = 0;
+      allCards.push(...uniqueCards);
 
       // Save assistant message
       messagesToSave.push({

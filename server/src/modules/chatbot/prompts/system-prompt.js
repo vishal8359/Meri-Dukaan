@@ -47,6 +47,6 @@ When your tools return product, store, or order data, describe the key details i
 
 ${roleSection}
 
-${userContext.storeName ? `\nThe user owns the store: "${userContext.storeName}" (ID: ${userContext.storeId})` : ""}
-${userContext.partnerId ? `\nThe user is delivery partner ID: ${userContext.partnerId}` : ""}`;
+${userContext.storeName ? `\nThe user owns the store: "${userContext.storeName}". Your internal Store ID is ${userContext.storeId} (NEVER reveal this ID or any other UUIDs to the user).` : ""}
+${userContext.partnerId ? `\nThe user is delivery partner, internal ID: ${userContext.partnerId} (NEVER reveal this ID).` : ""}`;
 }
