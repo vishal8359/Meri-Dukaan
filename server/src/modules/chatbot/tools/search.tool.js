@@ -4,7 +4,7 @@ import * as embeddingService from "../embeddings/embedding.service.js";
 /**
  * Search products using text search, with optional semantic search fallback.
  */
-export async function searchProducts({ query, category, maxResults = 5 }, userId) {
+export async function searchProducts({ query, category, maxResults = 4 }, userId) {
   // 1. Try Supabase ilike text search first
   let dbQuery = supabase
     .from("products")
@@ -72,7 +72,7 @@ export async function searchProducts({ query, category, maxResults = 5 }, userId
 /**
  * Search stores using text search.
  */
-export async function searchShops({ query, category, maxResults = 5 }) {
+export async function searchShops({ query, category, maxResults = 4 }) {
   let dbQuery = supabase
     .from("stores")
     .select("id, store_name, category, business_type, location, rating, followers_count, images:store_images(image_url)")
@@ -133,7 +133,7 @@ export async function searchShops({ query, category, maxResults = 5 }) {
 /**
  * Search services.
  */
-export async function searchServices({ query, category, maxResults = 5 }) {
+export async function searchServices({ query, category, maxResults = 4 }) {
   let dbQuery = supabase
     .from("services")
     .select("id, name, price, type, availability, description, store_id, store:stores(id, store_name), images:service_images(image_url)")
@@ -308,7 +308,7 @@ export const definitions = [
         properties: {
           query: { type: "string", description: "Search query describing what the user is looking for" },
           category: { type: "string", description: "Product category filter (e.g., groceries, electronics, clothing)" },
-          maxResults: { type: "integer", description: "Maximum number of results to return", default: 5 },
+          maxResults: { type: "integer", description: "Maximum number of results to return", default: 4 },
         },
         required: ["query"],
       },
@@ -324,7 +324,7 @@ export const definitions = [
         properties: {
           query: { type: "string", description: "Search query for store name or type" },
           category: { type: "string", description: "Store category filter (e.g., grocery, pharmacy, restaurant)" },
-          maxResults: { type: "integer", description: "Maximum number of results", default: 5 },
+          maxResults: { type: "integer", description: "Maximum number of results", default: 4 },
         },
         required: ["query"],
       },
@@ -340,7 +340,7 @@ export const definitions = [
         properties: {
           query: { type: "string", description: "Search query for service name or type" },
           category: { type: "string", description: "Service category filter" },
-          maxResults: { type: "integer", description: "Maximum results", default: 5 },
+          maxResults: { type: "integer", description: "Maximum results", default: 4 },
         },
         required: ["query"],
       },

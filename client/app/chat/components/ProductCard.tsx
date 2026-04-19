@@ -37,22 +37,26 @@ export default function ProductCard({
       activeOpacity={0.85}
       onPress={() => onViewDetails?.(data.id)}
     >
-      {data.image && (
+      {data.image ? (
         <Image
           source={{ uri: data.image }}
           style={styles.image}
           contentFit="cover"
           transition={200}
         />
+      ) : (
+        <View style={[styles.image, styles.imagePlaceholder]}>
+          <Text style={{ fontSize: 20 }}>📦</Text>
+        </View>
       )}
 
       <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={2}>
+        <Text style={styles.name} numberOfLines={1}>
           {data.name}
         </Text>
 
         {data.storeName && (
-          <Text style={styles.store}>🏪 {data.storeName}</Text>
+          <Text style={styles.store} numberOfLines={1}>🏪 {data.storeName}</Text>
         )}
 
         <View style={styles.priceRow}>
@@ -61,109 +65,107 @@ export default function ProductCard({
             <>
               <Text style={styles.mrp}>₹{data.realPrice}</Text>
               <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>{discount}% off</Text>
+                <Text style={styles.discountText}>{discount}%</Text>
               </View>
             </>
           )}
         </View>
-
-        {data.stock !== undefined && data.stock < 5 && data.stock > 0 && (
-          <Text style={styles.lowStock}>Only {data.stock} left!</Text>
-        )}
-
-        {data.available !== false ? (
-          <TouchableOpacity
-            style={styles.addBtn}
-            onPress={() => onAddToCart?.(data.id)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.addBtnText}>+ Add to Cart</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={[styles.addBtn, styles.outOfStock]}>
-            <Text style={[styles.addBtnText, { color: colors.text.tertiary }]}>
-              Out of Stock
-            </Text>
-          </View>
-        )}
       </View>
+
+      {data.available !== false ? (
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => onAddToCart?.(data.id)}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.addBtnText}>+</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[styles.addBtn, styles.outOfStock]}>
+          <Text style={[styles.addBtnText, { color: colors.text.tertiary }]}>✕</Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: colors.ui.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     marginHorizontal: 12,
-    marginVertical: 4,
-    overflow: "hidden",
+    marginVertical: 3,
+    padding: 8,
     borderWidth: 1,
     borderColor: colors.ui.border,
     ...shadows.small,
   },
   image: {
-    width: "100%",
-    height: 140,
+    width: 52,
+    height: 52,
+    borderRadius: radius.sm,
     backgroundColor: colors.ui.backgroundAlt,
   },
+  imagePlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
   body: {
-    padding: 12,
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 8,
   },
   name: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "600",
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 1,
   },
   store: {
-    fontSize: 12,
+    fontSize: 10,
     color: colors.text.secondary,
-    marginBottom: 6,
+    marginBottom: 3,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: 4,
   },
   price: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.brand.primary,
   },
   mrp: {
-    fontSize: 13,
+    fontSize: 10,
     color: colors.text.tertiary,
     textDecorationLine: "line-through",
   },
   discountBadge: {
     backgroundColor: colors.status.successLight,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
   },
   discountText: {
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: "600",
     color: colors.status.successDark,
   },
-  lowStock: {
-    fontSize: 12,
-    color: colors.status.warning,
-    fontWeight: "500",
-    marginBottom: 6,
-  },
   addBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.brand.primary,
-    borderRadius: radius.sm,
-    paddingVertical: 10,
     alignItems: "center",
+    justifyContent: "center",
   },
   addBtnText: {
     color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 16,
+    fontWeight: "700",
   },
   outOfStock: {
     backgroundColor: colors.ui.backgroundAlt,

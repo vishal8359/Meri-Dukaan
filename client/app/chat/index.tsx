@@ -225,7 +225,8 @@ export default function ChatScreen() {
   // ── Render Functions ───────────────────────────────────────
 
   const renderCards = (cards: ChatCard[]) => {
-    return cards.map((card, i) => {
+    const limited = cards.slice(0, 4); // Show max 4 cards in chat
+    return limited.map((card, i) => {
       switch (card.type) {
         case "product":
           return (

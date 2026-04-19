@@ -26,6 +26,19 @@ function getClient() {
 
 const MAX_TOOL_ITERATIONS = 6;
 
+/**
+ * Strip raw function-call markup that Llama models sometimes leak into text.
+ * e.g. <function=searchProducts{"query":"shoes"}></function>
+ */
+function cleanResponse(text) {
+  if (!text) return "";
+  return text
+    .replace(/<function=[^>]*>[\s\S]*?<\/function>/gi, "")
+    .replace(/<function=[^>]*\/?>/gi, "")
+    .replace(/\[?\{?"?function"?\s*[:=]\s*\w+.*?\}?\]?/gi, "")
+    .trim();
+}
+
 // ── Core Message Processing ──────────────────────────────────
 
 /**
@@ -107,7 +120,11 @@ export async function processMessage(userId, sessionId, message) {
 
     // No tool calls → final response
     if (!assistantMsg.tool_calls || assistantMsg.tool_calls.length === 0) {
-      finalContent = assistantMsg.content || "";
+      let cleaned = cleanResponse(assistantMsg.content || "");
+      if (!cleaned.trim()) {
+        cleaned = "I couldn't quite find what you're looking for. Could you try rephrasing your search?";
+      }
+      finalContent = cleaned;
 
       // Save assistant message
       messagesToSave.push({
