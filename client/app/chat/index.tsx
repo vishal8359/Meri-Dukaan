@@ -232,7 +232,7 @@ export default function ChatScreen() {
           return (
             <ProductCard
               key={`card-${i}`}
-              data={card.data}
+              data={card.data as any}
               onAddToCart={handleAddToCart}
             />
           );
@@ -241,7 +241,7 @@ export default function ChatScreen() {
           return (
             <OrderCard
               key={`card-${i}`}
-              data={card.data}
+              data={card.data as any}
               onTrack={handleTrackOrder}
             />
           );
@@ -251,7 +251,7 @@ export default function ChatScreen() {
               key={`card-${i}`}
               style={styles.storeCard}
               onPress={() =>
-                handleSend(`Show me details of store ${card.data.id}`)
+                handleSend(`Show me details of store: ${card.data.storeName}`)
               }
               activeOpacity={0.8}
             >
