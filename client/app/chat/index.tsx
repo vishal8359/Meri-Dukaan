@@ -1,32 +1,32 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
+  ActivityIndicator,
   FlatList,
-  TouchableOpacity,
-  StyleSheet,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   StatusBar,
-  Keyboard,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { colors, radius, spacing, shadows } from "../../src/theme/colors";
-import { useAuth } from "../../src/context/AuthContext";
 import {
-  sendChatMessage,
   getChatHistory,
-  type ChatMessage,
+  sendChatMessage,
   type ChatCard,
+  type ChatMessage,
 } from "../../src/api/chat";
+import { useAuth } from "../../src/context/AuthContext";
+import { colors, radius, shadows } from "../../src/theme/colors";
 import ChatBubble from "./components/ChatBubble";
-import ProductCard from "./components/ProductCard";
 import OrderCard from "./components/OrderCard";
+import ProductCard from "./components/ProductCard";
 import QuickReplies from "./components/QuickReplies";
 import TypingIndicator from "./components/TypingIndicator";
 
@@ -588,7 +588,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     backgroundColor: colors.ui.background,
-    borderRadius: 22,
+    borderRadius: 21,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontSize: 15,
