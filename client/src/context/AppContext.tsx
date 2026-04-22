@@ -173,6 +173,7 @@ export interface MyStoreProduct {
   unit: QuantityUnit;
   inStock: boolean;
   description?: string;
+  category?: string;
 }
 
 export interface MyStoreService {
