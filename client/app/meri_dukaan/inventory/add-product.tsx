@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
   },
   variantAddBtn: {
     backgroundColor: colors.brand.primary,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderRadius: radius.md,
     alignItems: "center",
     marginTop: 8,
