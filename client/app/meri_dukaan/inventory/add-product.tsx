@@ -635,7 +635,7 @@ const styles = StyleSheet.create({
   variantTags: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: 9,
     marginTop: spacing.sm,
   },
   variantTag: {
