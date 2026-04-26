@@ -2,22 +2,22 @@
 import { MyStoreProduct } from "@/src/context/AppContext";
 import { colors, radius, spacing } from "@/src/theme/colors";
 import {
-    ChevronDown,
-    ChevronUp,
-    Minus,
-    Package,
-    Plus,
-    Trash2,
+  ChevronDown,
+  ChevronUp,
+  Minus,
+  Package,
+  Plus,
+  Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Image,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ProductsTab({
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: colors.brand.primary,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 9,
     borderRadius: 999,
     gap: 5,
   },
