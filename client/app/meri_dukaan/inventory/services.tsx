@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   emptyTab: {
     alignItems: "center",
     paddingVertical: 40,
-    gap: 8,
+    gap: 7,
   },
   emptyText: { fontSize: 16, fontWeight: "700", color: colors.text.secondary },
   emptySubtext: { fontSize: 13, color: colors.text.tertiary },
