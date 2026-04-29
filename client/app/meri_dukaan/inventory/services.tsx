@@ -4,12 +4,12 @@ import { colors, radius, spacing } from "@/src/theme/colors";
 import { Plus, Trash2, Wrench } from "lucide-react-native";
 import React from "react";
 import {
-    Image,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function ServicesTab({
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     gap: 7,
   },
-  emptyText: { fontSize: 16, fontWeight: "700", color: colors.text.secondary },
+  emptyText: { fontSize: 15, fontWeight: "700", color: colors.text.secondary },
   emptySubtext: { fontSize: 13, color: colors.text.tertiary },
   itemCard: {
     flexDirection: "row",
