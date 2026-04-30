@@ -209,15 +209,15 @@ export default function ChatScreen() {
   );
 
   const handleAddToCart = useCallback(
-    (productId: string) => {
-      handleSend(`Add this product to my cart: ${productId}`);
+    (productName: string) => {
+      handleSend(`Add ${productName} to my cart`);
     },
     [handleSend]
   );
 
   const handleTrackOrder = useCallback(
-    (orderId: string) => {
-      handleSend(`Track order ${orderId}`);
+    (shortId: string) => {
+      handleSend(`Track order #${shortId}`);
     },
     [handleSend]
   );

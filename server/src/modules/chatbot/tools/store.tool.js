@@ -20,10 +20,12 @@ export async function viewStoreOrders(_args, userId, userContext) {
     }
 
     const pending = recent.filter((o) => o.status === "processing").length;
+    // Text: Only short IDs, no raw UUIDs
     const summary = recent.slice(0, 5).map((o) => {
       const total = o.total_price || o.total_amount || 0;
       const itemCount = o.items?.length || 0;
-      return `• #${String(o.id).slice(0, 8).toUpperCase()} — ₹${total} — ${o.status} (${itemCount} items)`;
+      const shortId = String(o.id).slice(0, 8).toUpperCase();
+      return `• #${shortId} — ₹${total} — ${o.status} (${itemCount} items)`;
     }).join("\n");
 
     return {
@@ -65,6 +67,7 @@ export async function addProduct({ name, type, realPrice, offerPrice, stock, des
       available: true,
     });
 
+    // Text: NO IDs
     return {
       text: `✅ Product "${name}" added successfully!\n\nPrice: ₹${offerPrice || realPrice}\nStock: ${stock || 0}\nCategory: ${type || "general"}`,
       cards: [{
@@ -88,12 +91,30 @@ export async function addProduct({ name, type, realPrice, offerPrice, stock, des
 
 /**
  * Update a product in the owner's store.
+ * Accepts productName (human-readable) instead of productId.
  */
-export async function updateProduct({ productId, name, realPrice, offerPrice, stock, description, available }, userId, userContext) {
+export async function updateProduct({ productName, name, realPrice, offerPrice, stock, description, available }, userId, userContext) {
   try {
     const storeId = userContext?.storeId;
     if (!storeId) {
       return { text: "Store not found.", cards: [] };
+    }
+
+    // RAG: Resolve product by name within the owner's store
+    const { data: productMatch } = await supabase
+      .from("products")
+      .select("id, name")
+      .eq("store_id", storeId)
+      .ilike("name", `%${productName}%`)
+      .eq("shown", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (!productMatch) {
+      return {
+        text: `Could not find a product matching "${productName}" in your store. Check your products and try again.`,
+        cards: [],
+      };
     }
 
     const updates = {};
@@ -104,8 +125,9 @@ export async function updateProduct({ productId, name, realPrice, offerPrice, st
     if (description !== undefined) updates.description = description;
     if (available !== undefined) updates.available = available;
 
-    const product = await productService.update(productId, storeId, updates);
+    const product = await productService.update(productMatch.id, storeId, updates);
 
+    // Text: NO IDs
     return {
       text: `✅ Product "${product.name}" updated successfully.`,
       cards: [{
@@ -153,6 +175,7 @@ export async function getStoreAnalytics(_args, userId, userContext) {
     const uniqueOrders = new Set(orderItems.map((i) => i.order_id));
     const lowStock = products.filter((p) => (p.stock || 0) < 5);
 
+    // Text: NO IDs, only names and stats
     return {
       text: `📊 **Store Analytics — ${userContext.storeName}**\n\n• Total Orders: ${uniqueOrders.size}\n• Total Revenue: ₹${totalRevenue.toFixed(2)}\n• Active Products: ${products.length}\n• Low Stock Items: ${lowStock.length}${lowStock.length > 0 ? ` (${lowStock.map((p) => p.name).join(", ")})` : ""}`,
       cards: [],
@@ -196,11 +219,11 @@ export const definitions = [
     type: "function",
     function: {
       name: "updateProduct",
-      description: "Update an existing product in the owner's store. Specify productId and fields to change.",
+      description: "Update an existing product in the owner's store. Specify the product NAME and the fields to change. Do NOT pass a UUID.",
       parameters: {
         type: "object",
         properties: {
-          productId: { type: "string", description: "UUID of the product to update" },
+          productName: { type: "string", description: "Name of the product to update (human-readable, NOT a UUID)" },
           name: { type: "string", description: "New product name" },
           realPrice: { type: "number", description: "New MRP" },
           offerPrice: { type: "number", description: "New offer price" },
@@ -208,7 +231,7 @@ export const definitions = [
           description: { type: "string", description: "New description" },
           available: { type: "boolean", description: "Product availability" },
         },
-        required: ["productId"],
+        required: ["productName"],
       },
     },
   },

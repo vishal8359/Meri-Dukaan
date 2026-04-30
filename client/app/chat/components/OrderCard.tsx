@@ -114,7 +114,7 @@ export default function OrderCard({ data, onTrack }: OrderCardProps) {
       {data.status !== "delivered" && data.status !== "cancelled" && (
         <TouchableOpacity
           style={styles.trackBtn}
-          onPress={() => onTrack?.(data.id)}
+          onPress={() => onTrack?.(data.shortId)}
           activeOpacity={0.8}
         >
           <Text style={styles.trackBtnText}>📍 Track Order</Text>

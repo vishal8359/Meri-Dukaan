@@ -16,8 +16,8 @@ interface ProductCardProps {
     image?: string | null;
     description?: string;
   };
-  onAddToCart?: (productId: string) => void;
-  onViewDetails?: (productId: string) => void;
+  onAddToCart?: (productName: string) => void;
+  onViewDetails?: (productName: string) => void;
 }
 
 export default function ProductCard({
@@ -35,7 +35,7 @@ export default function ProductCard({
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.85}
-      onPress={() => onViewDetails?.(data.id)}
+      onPress={() => onViewDetails?.(data.name)}
     >
       {data.image ? (
         <Image
@@ -75,7 +75,7 @@ export default function ProductCard({
       {data.available !== false ? (
         <TouchableOpacity
           style={styles.addBtn}
-          onPress={() => onAddToCart?.(data.id)}
+          onPress={() => onAddToCart?.(data.name)}
           activeOpacity={0.8}
         >
           <Text style={styles.addBtnText}>+</Text>

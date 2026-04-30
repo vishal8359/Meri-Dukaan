@@ -36,6 +36,8 @@ function cleanResponse(text) {
     .replace(/<function=[^>]*>[\s\S]*?<\/function>/gi, "")
     .replace(/<function=[^>]*\/?>/gi, "")
     .replace(/\[?\{?"?function"?\s*[:=]\s*\w+.*?\}?\]?/gi, "")
+    // Strip any leaked UUIDs (e.g., "3a7f9b2e-1234-5678-9abc-def012345678")
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, "[hidden]")
     .trim();
 }
 

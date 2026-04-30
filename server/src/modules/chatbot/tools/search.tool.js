@@ -46,9 +46,10 @@ export async function searchProducts({ query, category, maxResults = 4 }, userId
 
   const limited = results.slice(0, maxResults);
 
+  // Text response: NO IDs, only human-readable info
   return {
     text: limited.length > 0
-      ? `Found ${limited.length} product(s) matching "${query || "all"}": ${limited.map((p) => `${p.name} - ₹${p.offer_price || p.real_price} (${p.store?.store_name || "Unknown store"})`).join("; ")}`
+      ? `Found ${limited.length} product(s) matching "${query || "all"}":\n${limited.map((p) => `• ${p.name} — ₹${p.offer_price || p.real_price} (${p.store?.store_name || "Unknown store"}, ${p.stock || 0} in stock)`).join("\n")}`
       : `No products found matching "${query}". Try a different search term.`,
     cards: limited.map((p) => ({
       type: "product",
@@ -110,9 +111,10 @@ export async function searchShops({ query, category, maxResults = 4 }) {
 
   const limited = results.slice(0, maxResults);
 
+  // Text response: NO IDs
   return {
     text: limited.length > 0
-      ? `Found ${limited.length} store(s): ${limited.map((s) => `${s.store_name} (${s.category || "General"}, ⭐ ${s.rating || "N/A"})`).join("; ")}`
+      ? `Found ${limited.length} store(s):\n${limited.map((s) => `• ${s.store_name} (${s.category || "General"}, ⭐ ${s.rating || "N/A"}${s.location ? `, 📍 ${s.location}` : ""})`).join("\n")}`
       : `No stores found matching "${query}". Try a different search.`,
     cards: limited.map((s) => ({
       type: "store",
@@ -158,7 +160,7 @@ export async function searchServices({ query, category, maxResults = 4 }) {
 
     return {
       text: limited.length > 0
-        ? `Found ${limited.length} service(s): ${limited.map((s) => `${s.name} - ₹${s.price} (${s.store?.store_name || "Unknown"})`).join("; ")}`
+        ? `Found ${limited.length} service(s):\n${limited.map((s) => `• ${s.name} — ₹${s.price} (${s.store?.store_name || "Unknown"}${s.availability ? ", Available" : ""})`).join("\n")}`
         : `No services found matching "${query}".`,
       cards: limited.map((s) => ({
         type: "service",
@@ -183,7 +185,7 @@ export async function searchServices({ query, category, maxResults = 4 }) {
 
   return {
     text: limited.length > 0
-      ? `Found ${limited.length} service(s): ${limited.map((s) => `${s.name} - ₹${s.price} (${s.store?.store_name || "Unknown"})`).join("; ")}`
+      ? `Found ${limited.length} service(s):\n${limited.map((s) => `• ${s.name} — ₹${s.price} (${s.store?.store_name || "Unknown"}${s.availability ? ", Available" : ""})`).join("\n")}`
       : `No services found matching "${query}".`,
     cards: limited.map((s) => ({
       type: "service",
@@ -204,30 +206,35 @@ export async function searchServices({ query, category, maxResults = 4 }) {
 
 /**
  * Get detailed store info with its products and services.
+ * Accepts storeName (human-readable) and resolves to ID internally.
  */
-export async function getShopDetails({ storeId }) {
-  const { data: store, error } = await supabase
+export async function getShopDetails({ storeName }) {
+  // RAG: Resolve store by name
+  const { data: storeMatch, error: matchErr } = await supabase
     .from("stores")
     .select("id, store_name, category, business_type, location, rating, followers_count, opening_time, closing_time, images:store_images(image_url)")
-    .eq("id", storeId)
+    .ilike("store_name", `%${storeName}%`)
     .eq("shown", true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
-  if (error || !store) {
-    return { text: "Store not found.", cards: [] };
+  if (matchErr || !storeMatch) {
+    return { text: `No store found matching "${storeName}". Try searching for stores first.`, cards: [] };
   }
+
+  const store = storeMatch;
 
   const [{ data: products }, { data: services }] = await Promise.all([
     supabase
       .from("products")
       .select("id, name, offer_price, real_price, stock, type, images:product_images(image_url)")
-      .eq("store_id", storeId)
+      .eq("store_id", store.id)
       .eq("shown", true)
       .limit(10),
     supabase
       .from("services")
       .select("id, name, price, type")
-      .eq("store_id", storeId)
+      .eq("store_id", store.id)
       .eq("shown", true)
       .limit(10),
   ]);
@@ -235,6 +242,7 @@ export async function getShopDetails({ storeId }) {
   const prodList = (products || []).map((p) => `${p.name} ₹${p.offer_price || p.real_price}`).join(", ");
   const svcList = (services || []).map((s) => `${s.name} ₹${s.price}`).join(", ");
 
+  // Text response: NO IDs
   return {
     text: `**${store.store_name}** (${store.category || "General"}) ⭐ ${store.rating || "N/A"}\nLocation: ${store.location || "Not specified"}\nHours: ${store.opening_time || "09:00"} - ${store.closing_time || "21:00"}\n\nProducts (${(products || []).length}): ${prodList || "None"}\nServices (${(services || []).length}): ${svcList || "None"}`,
     cards: [
@@ -261,19 +269,25 @@ export async function getShopDetails({ storeId }) {
 
 /**
  * Get product details.
+ * Accepts productName (human-readable) and resolves to ID internally.
  */
-export async function getProductDetails({ productId }) {
-  const { data: product, error } = await supabase
+export async function getProductDetails({ productName }) {
+  // RAG: Resolve product by name
+  const { data: productMatch, error: matchErr } = await supabase
     .from("products")
     .select("id, name, type, real_price, offer_price, stock, available, description, store_id, images:product_images(image_url), store:stores(id, store_name)")
-    .eq("id", productId)
+    .ilike("name", `%${productName}%`)
     .eq("shown", true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
-  if (error || !product) {
-    return { text: "Product not found.", cards: [] };
+  if (matchErr || !productMatch) {
+    return { text: `No product found matching "${productName}". Try searching for products first.`, cards: [] };
   }
 
+  const product = productMatch;
+
+  // Text response: NO IDs
   return {
     text: `**${product.name}** — ₹${product.offer_price || product.real_price}${product.real_price && product.offer_price ? ` (MRP: ₹${product.real_price})` : ""}\nCategory: ${product.type || "General"}\nStock: ${product.stock || 0} available\nStore: ${product.store?.store_name || "Unknown"}\n${product.description || ""}`,
     cards: [{
@@ -350,13 +364,13 @@ export const definitions = [
     type: "function",
     function: {
       name: "getShopDetails",
-      description: "Get complete details of a specific store including its products and services. Use when user wants to know more about a store.",
+      description: "Get complete details of a specific store including its products and services. Use when user wants to know more about a store. Pass the store name, NOT an ID.",
       parameters: {
         type: "object",
         properties: {
-          storeId: { type: "string", description: "The UUID of the store" },
+          storeName: { type: "string", description: "The name of the store (human-readable, NOT a UUID)" },
         },
-        required: ["storeId"],
+        required: ["storeName"],
       },
     },
   },
@@ -364,13 +378,13 @@ export const definitions = [
     type: "function",
     function: {
       name: "getProductDetails",
-      description: "Get detailed information about a specific product. Use when user wants full details about a product.",
+      description: "Get detailed information about a specific product. Use when user wants full details about a product. Pass the product name, NOT an ID.",
       parameters: {
         type: "object",
         properties: {
-          productId: { type: "string", description: "The UUID of the product" },
+          productName: { type: "string", description: "The name of the product (human-readable, NOT a UUID)" },
         },
-        required: ["productId"],
+        required: ["productName"],
       },
     },
   },

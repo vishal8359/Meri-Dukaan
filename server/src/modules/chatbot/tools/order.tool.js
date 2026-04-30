@@ -3,9 +3,37 @@ import * as cartService from "../../cart/cart.service.js";
 import supabase from "../../../config/supabase.js";
 
 /**
- * Place an order from the user's cart.
+ * Resolve an order by short ID (first 8 chars of UUID) for a user.
  */
-export async function placeOrder({ storeId, deliveryAddress, deliveryPhone }, userId) {
+async function resolveOrderByShortId(shortId, userId) {
+  const orders = await orderService.listByUser(userId);
+  if (!orders || orders.length === 0) return null;
+
+  const normalised = (shortId || "").toLowerCase().replace("#", "");
+  return orders.find((o) =>
+    String(o.id).toLowerCase().startsWith(normalised)
+  ) || null;
+}
+
+/**
+ * Resolve store by name. Returns store { id, store_name } or null.
+ */
+async function resolveStoreByName(storeName) {
+  const { data } = await supabase
+    .from("stores")
+    .select("id, store_name")
+    .ilike("store_name", `%${storeName}%`)
+    .eq("shown", true)
+    .limit(1)
+    .maybeSingle();
+  return data;
+}
+
+/**
+ * Place an order from the user's cart.
+ * Accepts storeName (human-readable) instead of storeId.
+ */
+export async function placeOrder({ storeName, deliveryAddress, deliveryPhone }, userId) {
   try {
     // Get cart items to build order
     const { items } = await cartService.getItems(userId);
@@ -20,7 +48,7 @@ export async function placeOrder({ storeId, deliveryAddress, deliveryPhone }, us
     // Group items by store
     const itemsByStore = {};
     for (const item of items) {
-      const sid = item.product?.store_id || storeId;
+      const sid = item.product?.store_id;
       if (!sid) continue;
       if (!itemsByStore[sid]) itemsByStore[sid] = [];
       itemsByStore[sid].push({
@@ -29,9 +57,18 @@ export async function placeOrder({ storeId, deliveryAddress, deliveryPhone }, us
       });
     }
 
-    // If storeId is provided, only order from that store
-    // Otherwise use the first store in cart
-    const targetStoreId = storeId || Object.keys(itemsByStore)[0];
+    // Resolve store ID from name if provided
+    let targetStoreId = null;
+    if (storeName) {
+      const store = await resolveStoreByName(storeName);
+      if (store) targetStoreId = store.id;
+    }
+
+    // Fallback to the first store in cart
+    if (!targetStoreId) {
+      targetStoreId = Object.keys(itemsByStore)[0];
+    }
+
     const targetItems = itemsByStore[targetStoreId];
 
     if (!targetItems || targetItems.length === 0) {
@@ -50,14 +87,16 @@ export async function placeOrder({ storeId, deliveryAddress, deliveryPhone }, us
     });
 
     const total = order.total_price || order.total_amount || 0;
+    const shortId = String(order.id).slice(0, 8).toUpperCase();
 
+    // Text response: Only short ID, no raw UUID
     return {
-      text: `✅ Order placed successfully!\n\nOrder ID: #${String(order.id).slice(0, 8).toUpperCase()}\nTotal: ₹${total}\nPayment: Cash on Delivery\nStatus: Processing\n\nYou can track your order anytime by saying "track my order".`,
+      text: `✅ Order placed successfully!\n\nOrder: #${shortId}\nTotal: ₹${total}\nPayment: Cash on Delivery\nStatus: Processing\n\nYou can track your order anytime by saying "track my order".`,
       cards: [{
         type: "order",
         data: {
           id: order.id,
-          shortId: String(order.id).slice(0, 8).toUpperCase(),
+          shortId,
           total,
           status: order.status || "processing",
           paymentMethod: "cod",
@@ -76,13 +115,15 @@ export async function placeOrder({ storeId, deliveryAddress, deliveryPhone }, us
 
 /**
  * Track a specific order or get latest order status.
+ * Accepts orderShortId (first 8 chars, human-readable) instead of full UUID.
  */
-export async function trackOrder({ orderId }, userId) {
+export async function trackOrder({ orderShortId }, userId) {
   try {
     let order;
 
-    if (orderId) {
-      order = await orderService.findById(orderId, userId);
+    if (orderShortId) {
+      // RAG: Resolve full order from short ID
+      order = await resolveOrderByShortId(orderShortId, userId);
     } else {
       // Get the most recent order
       const orders = await orderService.listByUser(userId);
@@ -107,14 +148,16 @@ export async function trackOrder({ orderId }, userId) {
     const emoji = statusEmoji[order.status] || "📋";
     const total = order.total_price || order.total_amount || 0;
     const itemCount = order.items?.length || 0;
+    const shortId = String(order.id).slice(0, 8).toUpperCase();
 
+    // Text response: Only short display ID, no raw UUID
     return {
-      text: `${emoji} **Order #${String(order.id).slice(0, 8).toUpperCase()}**\n\nStatus: ${order.status?.toUpperCase()}\nTotal: ₹${total}\nItems: ${itemCount}\nPayment: ${order.payment_method || "COD"} (${order.payment_status || "pending"})\nPlaced: ${new Date(order.created_at).toLocaleDateString("en-IN")}`,
+      text: `${emoji} **Order #${shortId}**\n\nStatus: ${order.status?.toUpperCase()}\nTotal: ₹${total}\nItems: ${itemCount}\nPayment: ${order.payment_method || "COD"} (${order.payment_status || "pending"})\nPlaced: ${new Date(order.created_at).toLocaleDateString("en-IN")}`,
       cards: [{
         type: "order",
         data: {
           id: order.id,
-          shortId: String(order.id).slice(0, 8).toUpperCase(),
+          shortId,
           total,
           status: order.status,
           paymentMethod: order.payment_method,
@@ -151,9 +194,11 @@ export async function listOrders(_args, userId) {
       };
     }
 
+    // Text response: Only short IDs, no raw UUIDs
     const summary = recent.map((o) => {
       const total = o.total_price || o.total_amount || 0;
-      return `• #${String(o.id).slice(0, 8).toUpperCase()} — ₹${total} — ${o.status}`;
+      const shortId = String(o.id).slice(0, 8).toUpperCase();
+      return `• #${shortId} — ₹${total} — ${o.status}`;
     }).join("\n");
 
     return {
@@ -185,11 +230,11 @@ export const definitions = [
     type: "function",
     function: {
       name: "placeOrder",
-      description: "Place an order from the user's cart. Ask for delivery address before calling. Use when user says to place/confirm/submit their order.",
+      description: "Place an order from the user's cart. Ask for delivery address before calling. Use when user says to place/confirm/submit their order. Pass store NAME if specified, not an ID.",
       parameters: {
         type: "object",
         properties: {
-          storeId: { type: "string", description: "Store ID to order from. If not given, uses the first store in cart." },
+          storeName: { type: "string", description: "Store name to order from (human-readable, NOT a UUID). If not given, uses the first store in cart." },
           deliveryAddress: { type: "string", description: "Delivery address for the order" },
           deliveryPhone: { type: "string", description: "Phone number for delivery contact" },
         },
@@ -200,11 +245,11 @@ export const definitions = [
     type: "function",
     function: {
       name: "trackOrder",
-      description: "Track the status of an order. If no orderId given, tracks the most recent order. Use when user asks about order status, delivery, or 'where is my order'.",
+      description: "Track the status of an order. If no order reference given, tracks the most recent order. Use when user asks about order status, delivery, or 'where is my order'. Pass the short order reference (e.g., '3A7F9B2E'), NOT a full UUID.",
       parameters: {
         type: "object",
         properties: {
-          orderId: { type: "string", description: "Specific order UUID to track. Leave empty for latest order." },
+          orderShortId: { type: "string", description: "Short order reference (first 8 chars, e.g., '3A7F9B2E'). Leave empty for latest order." },
         },
       },
     },
