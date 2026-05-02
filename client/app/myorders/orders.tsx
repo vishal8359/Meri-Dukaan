@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
   },
   paymentMethod: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.text.secondary,
     marginTop: 1,
   },
