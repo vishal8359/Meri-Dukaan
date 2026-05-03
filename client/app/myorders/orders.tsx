@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orderId: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.text.secondary,
     marginBottom: 2,
