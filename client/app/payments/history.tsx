@@ -694,8 +694,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   } as ViewStyle,
   storeThumbPlaceholder: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     marginRight: spacing.sm,
     backgroundColor: colors.ui.backgroundAlt,
