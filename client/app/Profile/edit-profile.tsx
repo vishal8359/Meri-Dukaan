@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
   sectionIconCircle: {
     width: 30,
     height: 30,
-    borderRadius: 8,
+    borderRadius: 9,
     backgroundColor: colors.tint.blueLight,
     justifyContent: "center",
     alignItems: "center",
@@ -590,7 +590,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: radius.md,
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 1.4,
     borderColor: colors.ui.border,
     backgroundColor: colors.ui.surface,
   },
