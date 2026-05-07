@@ -668,7 +668,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text.tertiary,
     fontWeight: "600",
-    paddingHorizontal: spacing.md + 4,
+    paddingHorizontal: spacing.md + 3,
     marginBottom: spacing.sm,
   } as TextStyle,
 
