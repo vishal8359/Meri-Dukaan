@@ -1581,7 +1581,7 @@ const styles = StyleSheet.create({
   },
   overlayContent: {
     backgroundColor: colors.ui.surface,
-    padding: 32,
+    padding: 30,
     borderRadius: 20,
     alignItems: "center",
     width: "85%",
