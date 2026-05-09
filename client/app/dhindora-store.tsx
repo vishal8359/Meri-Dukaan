@@ -8,21 +8,21 @@ import * as NavigationBar from "expo-navigation-bar";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Store } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    FlatList,
-    Platform,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    useWindowDimensions,
-    View,
+  FlatList,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
 } from "react-native";
 
 const REELS_PER_PAGE = 3;
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: Platform.OS === "ios" ? 50 : 40,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
     backgroundColor: "rgba(0,0,0,0.3)",
   },
   backButton: {
