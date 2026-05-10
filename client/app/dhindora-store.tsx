@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingTop: Platform.OS === "ios" ? 50 : 40,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingBottom: 10,
     backgroundColor: "rgba(0,0,0,0.3)",
   },
