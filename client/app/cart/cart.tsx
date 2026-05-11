@@ -3,27 +3,27 @@ import { useSettings } from "@/src/context/SettingsContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Calendar,
-    CheckCircle,
-    Clock,
-    Minus,
-    Plus,
-    ShoppingBag,
-    Store,
-    Trash2,
-    Wrench,
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Minus,
+  Plus,
+  ShoppingBag,
+  Store,
+  Trash2,
+  Wrench,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    FlatList,
-    Image,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -600,8 +600,8 @@ const styles = StyleSheet.create({
     color: colors.brand.primary,
   },
   deleteBtn: {
-    width: 40,
-    height: 40,
+    width: 38,
+    height: 38,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: radius.md,
