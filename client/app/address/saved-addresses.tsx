@@ -4,22 +4,22 @@ import { useApp, UserAddress } from "@/src/context/AppContext";
 import { colors, radius, shadows, spacing } from "@/src/theme/colors";
 import { useRouter } from "expo-router";
 import {
-    Check,
-    ChevronLeft,
-    Edit3,
-    MapPin,
-    Plus,
-    Trash2,
+  Check,
+  ChevronLeft,
+  Edit3,
+  MapPin,
+  Plus,
+  Trash2,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -342,8 +342,8 @@ const styles = StyleSheet.create({
     color: colors.status.successDark,
   },
   selectedIndicator: {
-    width: 26,
-    height: 26,
+    width: 25,
+    height: 25,
     borderRadius: radius.full,
     backgroundColor: colors.brand.primary,
     alignItems: "center",
