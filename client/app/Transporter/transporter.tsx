@@ -1595,7 +1595,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     color: colors.text.primary,
-    marginTop: 24,
+    marginTop: 23,
     marginBottom: 8,
   },
   overlaySubtitle: {
