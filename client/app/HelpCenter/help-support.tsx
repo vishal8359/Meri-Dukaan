@@ -508,8 +508,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   linkIconContainer: {
-    width: 40,
-    height: 40,
+    width: 39,
+    height: 39,
     borderRadius: radius.md,
     justifyContent: "center",
     alignItems: "center",
