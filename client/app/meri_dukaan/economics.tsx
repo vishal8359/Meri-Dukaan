@@ -693,8 +693,8 @@ const styles = StyleSheet.create({
     borderColor: colors.ui.border,
   },
   metricIcon: {
-    width: 36,
-    height: 36,
+    width: 35,
+    height: 35,
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
