@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 80,
+    paddingVertical: 78,
   },
   emptyIconWrap: {
     width: 96,
