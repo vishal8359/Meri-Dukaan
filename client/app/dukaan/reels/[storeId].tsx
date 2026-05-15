@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingVertical: 16,
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 15,
   },
   statItem: {
     flex: 1,
