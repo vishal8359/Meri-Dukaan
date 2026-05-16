@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     textAlign: "center",
     lineHeight: 20,
-    marginBottom: 28,
+    marginBottom: 27,
   },
   exploreCta: {
     flexDirection: "row",
