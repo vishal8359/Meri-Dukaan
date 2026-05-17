@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     backgroundColor: colors.brand.primaryLight,
-    paddingHorizontal: 24,
+    paddingHorizontal: 23,
     paddingVertical: 12,
     borderRadius: radius.md,
     ...shadows.small,
