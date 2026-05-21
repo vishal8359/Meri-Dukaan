@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "800",
     color: colors.text.primary,
-    marginBottom: 6,
+    marginBottom: 5,
   },
   emptySub: {
     fontSize: 14,
